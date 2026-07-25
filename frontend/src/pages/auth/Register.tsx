@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,7 @@ const schema = z
   .object({
     name: z.string().min(2, "Enter your full name"),
     email: z.string().email("Enter a valid email address"),
+    phone: z.string().min(10, "Enter a valid phone number"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
     role: z.enum(["founder", "freelancer", "employer", "investor", "mentor", "partner", "client"]),
@@ -43,6 +44,8 @@ type FormValues = z.infer<typeof schema>;
 export default function Register() {
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref") ?? undefined;
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -56,7 +59,7 @@ export default function Register() {
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
     try {
-      const user = await registerUser(values.name, values.email, values.password, values.role);
+      const user = await registerUser(values.name, values.email, values.password, values.phone, values.role, referralCode);
       navigate(dashboardPathForRole(user.role), { replace: true });
     } catch (err) {
       const message = isAxiosError(err) ? err.response?.data?.message : null;
@@ -77,6 +80,11 @@ export default function Register() {
         </>
       }
     >
+      {referralCode && (
+        <p className="mb-4 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+          You were invited by a MahaHub member — referral code <span className="font-mono">{referralCode}</span> will be applied.
+        </p>
+      )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         {serverError && (
           <div className="rounded-lg border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{serverError}</div>
@@ -92,6 +100,12 @@ export default function Register() {
           <Label htmlFor="email">Email Address</Label>
           <Input id="email" type="email" placeholder="you@example.com" {...register("email")} aria-invalid={!!errors.email} />
           {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <Input id="phone" type="tel" placeholder="+91 98765 43210" {...register("phone")} aria-invalid={!!errors.phone} />
+          {errors.phone && <p className="text-xs text-danger">{errors.phone.message}</p>}
         </div>
 
         <div className="space-y-2">

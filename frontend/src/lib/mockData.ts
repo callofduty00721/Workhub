@@ -55,7 +55,6 @@ export const SERVICE_CATEGORIES: Record<string, string[]> = {
     "Explainer Videos",
     "Product Videos",
     "AI Video",
-    "Photography",
   ],
   "Writing & Translation": [
     "Content Writing",
@@ -95,6 +94,23 @@ export const SERVICE_CATEGORIES: Record<string, string[]> = {
   ],
   "AI Services": ["AI Development", "Data", "AI Artists", "AI for Businesses", "AI Video", "AI Audio", "AI Content"],
   "Personal Growth": ["Self Improvement", "Fashion & Style", "Wellness & Fitness", "Gaming", "Leisure & Hobbies"],
+  Photography: [
+    "Product Photography",
+    "Portrait Photography",
+    "Lifestyle Photography",
+    "Real Estate Photography",
+    "Event Photography",
+    "Drone Photography",
+    "Photo Editing & Retouching",
+  ],
+  Data: [
+    "Data Analysis & Reports",
+    "Data Visualization",
+    "Data Engineering",
+    "Data Extraction & Web Scraping",
+    "Data Cleaning",
+    "Data Entry",
+  ],
 };
 
 export const SERVICE_CATEGORY_NAMES = Object.keys(SERVICE_CATEGORIES);

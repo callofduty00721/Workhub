@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, ClipboardList, Plus, Users } from "lucide-react";
+import { Briefcase, ClipboardList, Plus, Users, Eye } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,18 +8,39 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { jobApi } from "@/api/jobs";
+import { projectApi } from "@/api/projects";
+import type { ApplicationStatus, Job, Project } from "@/types";
+
+const STATUS_LABELS: Record<ApplicationStatus, string> = {
+  applied: "Applied",
+  shortlisted: "Shortlisted",
+  interview: "Interview",
+  hired: "Hired",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+};
 
 export default function EmployerDashboard({
   role = "employer",
   basePath = "/dashboard/employer",
   entityLabel = "Job",
+  source = "job",
 }: {
   role?: "employer" | "client";
   basePath?: string;
   entityLabel?: "Job" | "Project";
+  source?: "job" | "project";
 }) {
   const { user } = useAuth();
-  const { data: jobs, isLoading } = useQuery({ queryKey: ["jobs", "mine"], queryFn: jobApi.mine });
+  const routeSegment = source === "project" ? "projects" : "jobs";
+  const { data: jobs, isLoading } = useQuery<(Job | Project)[]>({
+    queryKey: [routeSegment, "mine"],
+    queryFn: () => (source === "project" ? projectApi.mine() : jobApi.mine()),
+  });
+  const { data: analytics } = useQuery<{ totalViews: number; totalApplications: number; byStatus: Partial<Record<ApplicationStatus, number>> }>({
+    queryKey: [routeSegment, "analytics", "mine"],
+    queryFn: () => (source === "project" ? projectApi.myAnalytics() : jobApi.myAnalytics()),
+  });
 
   const totalApplicants = jobs?.reduce((sum, j) => sum + j.applicationsCount, 0) ?? 0;
   const openJobs = jobs?.filter((j) => j.status === "open").length ?? 0;
@@ -37,7 +58,7 @@ export default function EmployerDashboard({
         </Button>
       }
     >
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-5">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Briefcase className="h-5 w-5" />
@@ -59,7 +80,30 @@ export default function EmployerDashboard({
           <p className="text-2xl font-bold">{totalApplicants}</p>
           <p className="text-xs text-muted-foreground">Total Applicants</p>
         </Card>
+        <Card className="p-5">
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
+            <Eye className="h-5 w-5" />
+          </div>
+          <p className="text-2xl font-bold">{analytics?.totalViews ?? 0}</p>
+          <p className="text-xs text-muted-foreground">Total Views</p>
+        </Card>
       </div>
+
+      {analytics && !!analytics.totalApplications && (
+        <Card className="mt-6">
+          <CardContent className="p-6">
+            <h3 className="mb-4 text-base font-semibold">Applicant Funnel</h3>
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {(Object.keys(STATUS_LABELS) as ApplicationStatus[]).map((status) => (
+                <div key={status} className="rounded-lg border border-border p-3 text-center">
+                  <p className="text-lg font-bold">{analytics.byStatus[status] ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">{STATUS_LABELS[status]}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mt-6">
         <CardContent className="p-6">
@@ -90,15 +134,15 @@ export default function EmployerDashboard({
                       </Badge>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {job.location} · {job.applicationsCount} applicants
+                      {job.location} · {job.applicationsCount} applicants · {job.viewsCount} views
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`${basePath}/jobs/${job._id}/applicants`}>View Applicants</Link>
+                      <Link to={`${basePath}/${routeSegment}/${job._id}/applicants`}>View Applicants</Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`${basePath}/jobs/${job._id}/edit`}>Edit</Link>
+                      <Link to={`${basePath}/${routeSegment}/${job._id}/edit`}>Edit</Link>
                     </Button>
                   </div>
                 </div>

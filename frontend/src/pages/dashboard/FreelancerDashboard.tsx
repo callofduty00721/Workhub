@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Wallet, Briefcase, FileText, Star, Plus } from "lucide-react";
+import { Wallet, Briefcase, FileText, Star, Eye, Plus } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { jobApi } from "@/api/jobs";
+import { projectApi } from "@/api/projects";
 import { paymentApi } from "@/api/payments";
+import { serviceApi } from "@/api/freelancers";
 import { formatCurrency } from "@/lib/utils";
 import type { ApplicationStatus } from "@/types";
 
@@ -42,8 +44,13 @@ export default function FreelancerDashboard() {
   });
 
   const { data: recommended, isLoading: loadingRecommended } = useQuery({
-    queryKey: ["jobs", "recommended"],
-    queryFn: () => jobApi.list({ type: "freelance,contract", limit: 3 }),
+    queryKey: ["projects", "recommended"],
+    queryFn: () => projectApi.list({ limit: 3 }),
+  });
+
+  const { data: gigAnalytics, isLoading: loadingGigAnalytics } = useQuery({
+    queryKey: ["services", "analytics", "mine"],
+    queryFn: serviceApi.myAnalytics,
   });
 
   const activeProjects = applications?.filter((a) => a.status === "hired").length ?? 0;
@@ -59,6 +66,12 @@ export default function FreelancerDashboard() {
       icon: Star,
       color: "text-success bg-success/10",
       sub: `${user?.reviewCount ?? 0} reviews`,
+    },
+    {
+      label: "Profile Views",
+      value: String(user?.profileViews ?? 0),
+      icon: Eye,
+      color: "text-primary bg-primary/10",
     },
   ];
 
@@ -79,13 +92,13 @@ export default function FreelancerDashboard() {
       }
     >
       {isLoading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-28 w-full rounded-xl" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
           {metrics.map((m) => (
             <Card key={m.label} className="p-5">
               <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${m.color}`}>
@@ -165,13 +178,52 @@ export default function FreelancerDashboard() {
         </Card>
       </div>
 
+      {!!gigAnalytics?.services.length && (
+        <div className="mt-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-base font-semibold">Gig Performance</h3>
+                <Link to="/dashboard/freelancer/gigs" className="text-xs font-medium text-primary hover:underline">
+                  Manage Gigs
+                </Link>
+              </div>
+              {loadingGigAnalytics ? (
+                <Skeleton className="h-24 w-full" />
+              ) : (
+                <>
+                  <div className="mb-4 flex gap-6 text-sm">
+                    <span>
+                      <strong>{gigAnalytics.totalViews}</strong> <span className="text-muted-foreground">total views</span>
+                    </span>
+                    <span>
+                      <strong>{gigAnalytics.totalOrders}</strong> <span className="text-muted-foreground">total orders</span>
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {gigAnalytics.services.map((s) => (
+                      <div key={s._id} className="flex items-center justify-between rounded-lg border border-border p-3 text-sm">
+                        <span className="truncate">{s.title}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {s.viewsCount} views · {s.ordersCount} orders
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="mt-6">
         <Card>
           <CardContent className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-semibold">Open Projects You Could Apply To</h3>
-              <Link to="/jobs" className="text-xs font-medium text-primary hover:underline">
-                View All Jobs
+              <Link to="/freelancers?tab=projects" className="text-xs font-medium text-primary hover:underline">
+                View All Projects
               </Link>
             </div>
             {loadingRecommended ? (
@@ -184,14 +236,18 @@ export default function FreelancerDashboard() {
               <p className="py-6 text-center text-sm text-muted-foreground">No open projects right now — check back soon.</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-3">
-                {recommended.data.map((job) => (
-                  <Link key={job._id} to={`/jobs/${job._id}`} className="rounded-lg border border-border p-4 transition-colors hover:border-primary">
-                    <p className="text-sm font-semibold">{job.title}</p>
+                {recommended.data.map((project) => (
+                  <Link
+                    key={project._id}
+                    to={`/projects/${project._id}`}
+                    className="rounded-lg border border-border p-4 transition-colors hover:border-primary"
+                  >
+                    <p className="text-sm font-semibold">{project.title}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {job.salaryMin > 0 ? `${formatCurrency(job.salaryMin)} - ${formatCurrency(job.salaryMax)}` : "Rate on request"}
+                      {project.budgetMin > 0 ? `${formatCurrency(project.budgetMin)} - ${formatCurrency(project.budgetMax)}` : "Rate on request"}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      {job.skills.slice(0, 3).map((t) => (
+                      {project.skills.slice(0, 3).map((t) => (
                         <Badge key={t} variant="outline" className="text-[10px]">
                           {t}
                         </Badge>

@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { Conversation, Message } from "@/types";
+import type { Conversation, Message, MessageAttachment } from "@/types";
 
 export const chatApi = {
   conversations: () => api.get<{ success: boolean; data: Conversation[] }>("/chat/conversations").then((r) => r.data.data),
@@ -10,6 +10,8 @@ export const chatApi = {
   messages: (conversationId: string) =>
     api.get<{ success: boolean; data: Message[] }>(`/chat/conversations/${conversationId}/messages`).then((r) => r.data.data),
 
-  sendMessage: (conversationId: string, text: string) =>
-    api.post<{ success: boolean; data: Message }>(`/chat/conversations/${conversationId}/messages`, { text }).then((r) => r.data.data),
+  sendMessage: (conversationId: string, text: string, attachments?: MessageAttachment[]) =>
+    api
+      .post<{ success: boolean; data: Message }>(`/chat/conversations/${conversationId}/messages`, { text, attachments })
+      .then((r) => r.data.data),
 };

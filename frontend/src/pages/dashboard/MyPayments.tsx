@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Wallet, Briefcase, FolderKanban, Trophy, Flag, Loader2 } from "lucide-react";
+import { Wallet, Briefcase, FolderKanban, Trophy, Flag, Lock, Unlock, Loader2, Receipt } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { paymentApi } from "@/api/payments";
+import { OrderStatusPanel } from "@/components/payments/OrderStatusPanel";
 import { formatCurrency, initialsFromName } from "@/lib/utils";
 import type { Payment, PaymentType } from "@/types";
 
@@ -44,6 +46,11 @@ export default function MyPayments({ role = "client" }: { role?: "client" | "emp
       setDisputing(null);
       setReason("");
     },
+  });
+
+  const releaseMutation = useMutation({
+    mutationFn: (paymentId: string) => paymentApi.releasePayment(paymentId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments", "mine"] }),
   });
 
   const totalSpent = result?.totalSpent ?? 0;
@@ -86,47 +93,78 @@ export default function MyPayments({ role = "client" }: { role?: "client" | "emp
                     const payee = typeof payment.payee === "object" ? payment.payee : null;
                     const Icon = TYPE_ICONS[payment.type];
                     return (
-                      <div key={payment._id} className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-white">
-                            {payee ? initialsFromName(payee.name) : <Icon className="h-4 w-4" />}
+                      <div key={payment._id} className="rounded-lg border border-border p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-white">
+                              {payee ? initialsFromName(payee.name) : <Icon className="h-4 w-4" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium">{payee?.name ?? "Freelancer"}</p>
+                              <p className="truncate text-xs text-muted-foreground">{payment.note || TYPE_LABELS[payment.type]}</p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium">{payee?.name ?? "Freelancer"}</p>
-                            <p className="truncate text-xs text-muted-foreground">{payment.note || TYPE_LABELS[payment.type]}</p>
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 flex-wrap items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">
-                            {TYPE_LABELS[payment.type]}
-                          </Badge>
-                          <Badge
-                            variant={
-                              payment.status === "paid"
-                                ? "success"
-                                : payment.status === "failed"
-                                  ? "danger"
-                                  : payment.status === "refunded" || payment.status === "partially_refunded"
-                                    ? "warning"
-                                    : "outline"
-                            }
-                          >
-                            {payment.status === "partially_refunded"
-                              ? `Partially Refunded (${formatCurrency(payment.refundedAmount ?? 0)})`
-                              : payment.status[0].toUpperCase() + payment.status.slice(1)}
-                          </Badge>
-                          {payment.disputeStatus && payment.disputeStatus !== "none" && (
-                            <Badge variant="danger" className="capitalize">
-                              Dispute: {payment.disputeStatus}
+                          <div className="flex shrink-0 flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="text-[10px]">
+                              {TYPE_LABELS[payment.type]}
                             </Badge>
-                          )}
-                          <span className="text-sm font-semibold">{formatCurrency(payment.amount)}</span>
-                          {payment.status === "paid" && (!payment.disputeStatus || payment.disputeStatus === "none") && (
-                            <Button variant="outline" size="sm" onClick={() => setDisputing(payment)}>
-                              <Flag className="h-3.5 w-3.5" /> Dispute
-                            </Button>
-                          )}
+                            <Badge
+                              variant={
+                                payment.status === "paid"
+                                  ? "success"
+                                  : payment.status === "failed"
+                                    ? "danger"
+                                    : payment.status === "refunded" || payment.status === "partially_refunded"
+                                      ? "warning"
+                                      : "outline"
+                              }
+                            >
+                              {payment.status === "partially_refunded"
+                                ? `Partially Refunded (${formatCurrency(payment.refundedAmount ?? 0)})`
+                                : payment.status[0].toUpperCase() + payment.status.slice(1)}
+                            </Badge>
+                            {payment.disputeStatus && payment.disputeStatus !== "none" && (
+                              <Badge variant="danger" className="capitalize">
+                                Dispute: {payment.disputeStatus}
+                              </Badge>
+                            )}
+                            {payment.status === "paid" &&
+                              (payment.escrowStatus === "held" ? (
+                                <>
+                                  <Badge variant="warning" className="flex items-center gap-1 text-[10px]">
+                                    <Lock className="h-3 w-3" /> In Escrow
+                                  </Badge>
+                                  {(!payment.orderStatus || payment.orderStatus === "not_applicable") && (
+                                    <Button
+                                      variant="gradient"
+                                      size="sm"
+                                      disabled={releaseMutation.isPending}
+                                      onClick={() => releaseMutation.mutate(payment._id)}
+                                    >
+                                      {releaseMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlock className="h-3.5 w-3.5" />}
+                                      Approve & Release
+                                    </Button>
+                                  )}
+                                </>
+                              ) : (
+                                <Badge variant="success" className="flex items-center gap-1 text-[10px]">
+                                  <Unlock className="h-3 w-3" /> Released
+                                </Badge>
+                              ))}
+                            <span className="text-sm font-semibold">{formatCurrency(payment.amount)}</span>
+                            {payment.status === "paid" && (
+                              <Link to={`/payments/${payment._id}/invoice`} target="_blank" className="text-muted-foreground hover:text-foreground" title="Download invoice">
+                                <Receipt className="h-4 w-4" />
+                              </Link>
+                            )}
+                            {payment.status === "paid" && (!payment.disputeStatus || payment.disputeStatus === "none") && (
+                              <Button variant="outline" size="sm" onClick={() => setDisputing(payment)}>
+                                <Flag className="h-3.5 w-3.5" /> Dispute
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                        <OrderStatusPanel payment={payment} viewerRole="client" invalidateKey={["payments", "mine"]} />
                       </div>
                     );
                   })}

@@ -17,6 +17,8 @@ export const startupApi = {
 
   mine: () => api.get<{ success: boolean; data: Startup[] }>("/startups/mine").then((r) => r.data.data),
 
+  followedByMe: () => api.get<{ success: boolean; data: Startup[] }>("/startups/followed/mine").then((r) => r.data.data),
+
   getById: (id: string) => api.get<{ success: boolean; data: Startup }>(`/startups/${id}`).then((r) => r.data.data),
 
   create: (payload: Partial<Startup>) =>

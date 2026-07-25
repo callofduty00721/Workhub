@@ -11,6 +11,8 @@ import {
   resetPassword,
   verifyEmail,
   resendVerificationEmail,
+  changePassword,
+  deactivateAccount,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -33,6 +35,8 @@ router.post("/forgot-password", authLimiter, forgotPassword);
 router.post("/reset-password/:token", authLimiter, resetPassword);
 router.get("/verify-email/:token", verifyEmail);
 router.post("/resend-verification", protect, resendVerificationEmail);
+router.put("/change-password", authLimiter, protect, changePassword);
+router.post("/deactivate", authLimiter, protect, deactivateAccount);
 router.get("/me", protect, me);
 
 export default router;

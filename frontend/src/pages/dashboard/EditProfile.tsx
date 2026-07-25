@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { Loader2, Plus, Trash2, ExternalLink } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
+import { Loader2, Plus, Trash2, ExternalLink, FileText, X, ShieldCheck, ShieldAlert, Clock, BadgeCheck, Sparkles } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import type { DashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,19 +11,54 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FileUpload } from "@/components/shared/FileUpload";
+import { FormGuidelines } from "@/components/shared/FormGuidelines";
+import { FieldLabel } from "@/components/shared/FieldInfo";
 import { userApi } from "@/api/users";
+import { paymentApi } from "@/api/payments";
 import { useAuth } from "@/context/AuthContext";
-import { initialsFromName } from "@/lib/utils";
-import type { PartnerType, ExperienceEntry, EducationEntry, AchievementEntry, PortfolioItem } from "@/types";
+import { initialsFromName, formatCurrency } from "@/lib/utils";
+import type { PartnerType, ExperienceEntry, EducationEntry, AchievementEntry, PortfolioItem, WithdrawalMethod, AvailabilityStatus } from "@/types";
 import { COUNTRIES, STATES_BY_COUNTRY } from "@/lib/geo";
 import { SERVICE_CATEGORIES, SERVICE_CATEGORY_NAMES } from "@/lib/mockData";
 
 const EMPTY_EXPERIENCE: ExperienceEntry = { title: "", company: "", location: "", startLabel: "", endLabel: "Present", description: "" };
 const EMPTY_EDUCATION: EducationEntry = { degree: "", institution: "", startLabel: "", endLabel: "" };
 const EMPTY_ACHIEVEMENT: AchievementEntry = { title: "", description: "", dateLabel: "" };
-const EMPTY_PORTFOLIO_ITEM: PortfolioItem = { title: "", description: "", image: "", link: "" };
+const EMPTY_PORTFOLIO_ITEM: PortfolioItem = { title: "", description: "", image: "", link: "", tags: [], clientName: "", projectRole: "" };
+const TYPE_LABELS: Record<string, string> = { gig_order: "Gig Order", job_hire: "Job / Project", contest_prize: "Contest Prize" };
+const WORKING_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+// "9:00 AM - 6:00 PM" (display string, what's actually saved) <-> "09:00"/"18:00"
+// (24h values <input type="time"> needs) — converts between the two so the
+// picker can be pre-filled from an existing profile and still save the same
+// human-readable format shown elsewhere.
+function to24Hour(label: string): string {
+  const match = label.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return "";
+  let [, h, m, ampm] = match;
+  let hour = Number(h);
+  if (ampm.toUpperCase() === "PM" && hour !== 12) hour += 12;
+  if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, "0")}:${m}`;
+}
+
+function to12Hour(value: string): string {
+  if (!value) return "";
+  const [h, m] = value.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+// 30-minute-increment options for the Working Hours dropdowns — { value:
+// "09:00" (24h, used internally) label: "9:00 AM" (shown in the list) }.
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const value = `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 === 0 ? "00" : "30"}`;
+  return { value, label: to12Hour(value) };
+});
 
 const DASHBOARD_ROLES: DashboardRole[] = [
   "founder",
@@ -62,7 +98,22 @@ export default function EditProfile() {
   const [skillsInput, setSkillsInput] = useState(user?.skills?.join(", ") ?? "");
   const [hourlyRate, setHourlyRate] = useState(user?.hourlyRate ?? 0);
   const [yearsOfExperience, setYearsOfExperience] = useState(user?.yearsOfExperience ?? 0);
+  const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityStatus>(user?.availabilityStatus ?? "available");
+  const [workingDays, setWorkingDays] = useState<string[]>(user?.workingDays ?? []);
+  const [workingHours, setWorkingHours] = useState(user?.workingHours ?? "");
+  const [workingHoursStart, setWorkingHoursStart] = useState(() => to24Hour(user?.workingHours?.split("-")[0] ?? ""));
+  const [workingHoursEnd, setWorkingHoursEnd] = useState(() => to24Hour(user?.workingHours?.split("-")[1] ?? ""));
+  const [responseTimeLabel, setResponseTimeLabel] = useState(user?.responseTimeLabel ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [resumeUrl, setResumeUrl] = useState(user?.resumeUrl ?? "");
+  const [videoIntro, setVideoIntro] = useState(user?.videoIntro ?? "");
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(user?.portfolioItems ?? []);
+  const [payoutMethod, setPayoutMethod] = useState<WithdrawalMethod>(user?.payoutDetails?.preferredMethod ?? "upi");
+  const [payoutUpiId, setPayoutUpiId] = useState(user?.payoutDetails?.upiId ?? "");
+  const [payoutBankAccountNumber, setPayoutBankAccountNumber] = useState(user?.payoutDetails?.bankAccountNumber ?? "");
+  const [payoutBankIfsc, setPayoutBankIfsc] = useState(user?.payoutDetails?.bankIfsc ?? "");
+  const [payoutBankAccountHolder, setPayoutBankAccountHolder] = useState(user?.payoutDetails?.bankAccountHolder ?? "");
+  const [kycDocuments, setKycDocuments] = useState<{ url: string; name: string }[]>([]);
 
   // Investor
   const [focusInput, setFocusInput] = useState(user?.investmentFocus?.join(", ") ?? "");
@@ -121,6 +172,40 @@ export default function EditProfile() {
   };
   const addPortfolioItem = () => setPortfolioItems((prev) => [...prev, { ...EMPTY_PORTFOLIO_ITEM }]);
   const removePortfolioItem = (index: number) => setPortfolioItems((prev) => prev.filter((_, i) => i !== index));
+  const portfolioItemTags = (index: number) => portfolioItems[index]?.tags?.join(", ") ?? "";
+  const portfolioItemVerifiedPaymentId = (item: PortfolioItem) =>
+    typeof item.verifiedPayment === "string" ? item.verifiedPayment : (item.verifiedPayment?._id ?? "");
+
+  // Only real, released payments the freelancer actually received can back a
+  // "Verified" badge — the backend re-checks this ownership on save too.
+  const { data: completedPayments } = useQuery({
+    queryKey: ["payments", "earnings", "verifiable"],
+    queryFn: () => paymentApi.myEarnings({ limit: 200 }),
+    enabled: user?.role === "freelancer",
+  });
+  const verifiablePayments = (completedPayments?.payments ?? []).filter((p) => p.escrowStatus === "released");
+
+  // Completed work not yet turned into a portfolio item — shown as one-click
+  // suggestions above the manual list so freelancers don't have to retype
+  // details that already exist on the payment (title, client, delivered image).
+  const linkedPaymentIds = new Set(portfolioItems.map((item) => portfolioItemVerifiedPaymentId(item)).filter(Boolean));
+  const suggestedPayments = verifiablePayments.filter((p) => !linkedPaymentIds.has(p._id));
+
+  const addPortfolioItemFromPayment = (payment: (typeof verifiablePayments)[number]) => {
+    const payerName = typeof payment.payer === "object" ? payment.payer.name : "";
+    const image = payment.deliverables?.find((d) => /\.(png|jpe?g|gif|webp|svg)$/i.test(d.url))?.url ?? "";
+    setPortfolioItems((prev) => [
+      ...prev,
+      {
+        ...EMPTY_PORTFOLIO_ITEM,
+        title: payment.note || "",
+        description: payment.deliveryNote || "",
+        image,
+        clientName: payerName,
+        verifiedPayment: payment._id,
+      },
+    ]);
+  };
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -135,7 +220,21 @@ export default function EditProfile() {
         skills: splitList(skillsInput),
         hourlyRate,
         yearsOfExperience,
+        availabilityStatus,
+        workingDays,
+        workingHours,
+        responseTimeLabel,
+        phone,
+        resumeUrl,
+        videoIntro,
         portfolioItems,
+        payoutDetails: {
+          preferredMethod: payoutMethod,
+          upiId: payoutUpiId,
+          bankAccountNumber: payoutBankAccountNumber,
+          bankIfsc: payoutBankIfsc,
+          bankAccountHolder: payoutBankAccountHolder,
+        },
         investmentFocus: splitList(focusInput),
         ticketSizeMin,
         ticketSizeMax,
@@ -162,6 +261,14 @@ export default function EditProfile() {
     onSuccess: () => refreshUser(),
   });
 
+  const kycMutation = useMutation({
+    mutationFn: () => userApi.submitKyc(kycDocuments),
+    onSuccess: () => {
+      refreshUser();
+      setKycDocuments([]);
+    },
+  });
+
   if (!user) return null;
 
   return (
@@ -180,6 +287,14 @@ export default function EditProfile() {
       }
     >
       <div className="space-y-6">
+        <FormGuidelines
+          tips={[
+            "Keep your headline and bio clear and concise",
+            "Use simple, professional language",
+            "Add accurate and honest information",
+            "A complete profile builds trust and gets more matches",
+          ]}
+        />
         <Card>
           <CardContent className="space-y-5 p-6">
             <h3 className="text-base font-semibold">Basic Info</h3>
@@ -194,7 +309,7 @@ export default function EditProfile() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Cover Photo</Label>
+              <FieldLabel info="A banner image at the top of your profile (optional).">Cover Photo</FieldLabel>
               {coverImage && (
                 <img src={coverImage} alt="Cover preview" className="h-24 w-full rounded-lg object-cover" />
               )}
@@ -204,12 +319,14 @@ export default function EditProfile() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="headline">Headline</Label>
+              <FieldLabel htmlFor="headline" info="A short line about who you are, shown under your name.">
+                Headline
+              </FieldLabel>
               <Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Product Designer, Ex-Google" />
             </div>
             <div className="grid gap-5 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label>Country</Label>
+                <FieldLabel info="The country you live in.">Country</FieldLabel>
                 <Select
                   value={country}
                   onValueChange={(v) => {
@@ -226,7 +343,7 @@ export default function EditProfile() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>State</Label>
+                <FieldLabel info="The state you live in.">State</FieldLabel>
                 <Select value={state} onValueChange={setState}>
                   <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                   <SelectContent>
@@ -237,12 +354,14 @@ export default function EditProfile() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <FieldLabel htmlFor="city" info="The city you live in.">City</FieldLabel>
                 <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Enter city" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
+              <FieldLabel htmlFor="bio" info="Write a little about yourself in simple words.">
+                Bio
+              </FieldLabel>
               <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself..." />
             </div>
           </CardContent>
@@ -331,7 +450,7 @@ export default function EditProfile() {
           </Card>
         )}
 
-        {user.role === "founder" && (
+        {(user.role === "founder" || user.role === "freelancer") && (
           <Card>
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center justify-between">
@@ -389,7 +508,7 @@ export default function EditProfile() {
           </Card>
         )}
 
-        {user.role === "founder" && (
+        {(user.role === "founder" || user.role === "freelancer") && (
           <Card>
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center justify-between">
@@ -439,13 +558,13 @@ export default function EditProfile() {
           </Card>
         )}
 
-        {user.role === "founder" && (
+        {(user.role === "founder" || user.role === "freelancer") && (
           <Card>
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold">Achievements</h3>
+                <h3 className="text-base font-semibold">{user.role === "freelancer" ? "Certificates" : "Achievements"}</h3>
                 <Button variant="outline" size="sm" onClick={addAchievement}>
-                  <Plus className="h-3.5 w-3.5" /> Add Achievement
+                  <Plus className="h-3.5 w-3.5" /> Add {user.role === "freelancer" ? "Certificate" : "Achievement"}
                 </Button>
               </div>
 
@@ -486,10 +605,32 @@ export default function EditProfile() {
         {user.role === "freelancer" && (
           <Card>
             <CardContent className="space-y-5 p-6">
-              <h3 className="text-base font-semibold">Freelancer Details</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold">Freelancer Details</h3>
+                <div className="flex items-center gap-2 rounded-full border border-border p-1">
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityStatus("available")}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      availabilityStatus === "available" ? "bg-success text-success-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    Available
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityStatus("busy")}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      availabilityStatus === "busy" ? "bg-warning text-warning-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    Busy
+                  </button>
+                </div>
+              </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <FieldLabel info="The category your work falls under.">Category</FieldLabel>
                   <Select
                     value={category}
                     onValueChange={(value) => {
@@ -510,7 +651,7 @@ export default function EditProfile() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Sub-Category</Label>
+                  <FieldLabel info="A more specific type within your category.">Sub-Category</FieldLabel>
                   {category && SERVICE_CATEGORIES[category]?.length ? (
                     <Select value={subCategory} onValueChange={setSubCategory}>
                       <SelectTrigger>
@@ -530,19 +671,152 @@ export default function EditProfile() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Skills (comma separated)</Label>
+                <FieldLabel info="Add skills separated by commas.">
+                  Skills (comma separated)
+                </FieldLabel>
                 <Input value={skillsInput} onChange={(e) => setSkillsInput(e.target.value)} placeholder="React, Node.js, UI Design" />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel info="Languages you can communicate in — shown on your profile so clients know before reaching out.">
+                  Languages (comma separated)
+                </FieldLabel>
+                <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="English, Marathi, Hindi" />
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Hourly Rate (₹)</Label>
+                  <FieldLabel info="Your usual rate per hour.">Hourly Rate (₹)</FieldLabel>
                   <Input type="number" min={0} value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Years of Experience</Label>
+                  <FieldLabel info="How many years you've been working.">Years of Experience</FieldLabel>
                   <Input type="number" min={0} value={yearsOfExperience} onChange={(e) => setYearsOfExperience(Number(e.target.value))} />
                 </div>
+                <div className="space-y-2">
+                  <FieldLabel info="The hours you usually work each day.">
+                    Working Hours
+                  </FieldLabel>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={workingHoursStart}
+                      onValueChange={(v) => {
+                        setWorkingHoursStart(v);
+                        setWorkingHours([to12Hour(v), to12Hour(workingHoursEnd)].filter(Boolean).join(" - "));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Start time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIME_OPTIONS.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-sm text-muted-foreground">to</span>
+                    <Select
+                      value={workingHoursEnd}
+                      onValueChange={(v) => {
+                        setWorkingHoursEnd(v);
+                        setWorkingHours([to12Hour(workingHoursStart), to12Hour(v)].filter(Boolean).join(" - "));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="End time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIME_OPTIONS.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {workingHours && <p className="text-[11px] text-muted-foreground">Shown on profile as: {workingHours}</p>}
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel info="The days you usually work.">Working Days</FieldLabel>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="outline" className="w-full justify-start font-normal">
+                        {workingDays.length > 0 ? workingDays.join(", ") : "Select working days"}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                      {WORKING_DAYS.map((day) => (
+                        <DropdownMenuCheckboxItem
+                          key={day}
+                          checked={workingDays.includes(day)}
+                          onCheckedChange={(checked) =>
+                            setWorkingDays((prev) => (checked ? [...prev, day] : prev.filter((d) => d !== day)))
+                          }
+                        >
+                          {day}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel info="Shows how often you deliver work on time. This is calculated automatically.">
+                    On-Time Delivery (%)
+                  </FieldLabel>
+                  <Input type="number" value={user?.onTimeDeliveryPercent ?? 0} disabled />
+                  <p className="text-[11px] text-muted-foreground">Calculated automatically from your delivered orders — not editable.</p>
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel info="How fast you usually reply to messages.">
+                    Typical Response Time
+                  </FieldLabel>
+                  <Input value={responseTimeLabel} onChange={(e) => setResponseTimeLabel(e.target.value)} placeholder="1 Hour" />
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel info="Kept private — used only for verification and alerts.">Phone Number</FieldLabel>
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" />
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel info="Your account's email — filled in automatically, not editable here.">Email ID</FieldLabel>
+                  <Input value={user?.email ?? ""} disabled />
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground">Working hours and response time are self-reported and shown as-is on your public profile.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {user.role === "freelancer" && (
+          <Card>
+            <CardContent className="space-y-3 p-6">
+              <h3 className="text-base font-semibold">Resume</h3>
+              <p className="text-xs text-muted-foreground">Upload a PDF resume for clients to view on your profile.</p>
+              <FileUpload
+                folder="resume"
+                accept="application/pdf"
+                value={resumeUrl}
+                onUploaded={(url) => setResumeUrl(url)}
+                label="Click to upload your resume (PDF)"
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {user.role === "freelancer" && (
+          <Card>
+            <CardContent className="space-y-3 p-6">
+              <h3 className="text-base font-semibold">Video Introduction</h3>
+              <p className="text-xs text-muted-foreground">
+                A short video helps clients get a feel for you before they hire — max 50MB, 60 seconds.
+              </p>
+              <FileUpload
+                folder="profile_video"
+                accept="video/*"
+                value={videoIntro}
+                onUploaded={(url) => setVideoIntro(url)}
+                label="Click to upload your intro video"
+              />
+              {videoIntro && <video src={videoIntro} controls className="mt-2 max-h-64 w-full rounded-lg border border-border" />}
             </CardContent>
           </Card>
         )}
@@ -559,6 +833,29 @@ export default function EditProfile() {
                   <Plus className="h-3.5 w-3.5" /> Add Item
                 </Button>
               </div>
+
+              {suggestedPayments.length > 0 && (
+                <div className="space-y-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                    <Sparkles className="h-3.5 w-3.5" /> Add from your completed work
+                  </p>
+                  <div className="space-y-2">
+                    {suggestedPayments.map((p) => (
+                      <div key={p._id} className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{p.note || TYPE_LABELS[p.type]}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatCurrency(p.netAmount || p.amount)} · {new Date(p.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addPortfolioItemFromPayment(p)}>
+                          <Plus className="h-3.5 w-3.5" /> Add to Portfolio
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {portfolioItems.length === 0 && <p className="text-sm text-muted-foreground">No portfolio items added yet.</p>}
 
@@ -603,12 +900,177 @@ export default function EditProfile() {
                       Remove image
                     </button>
                   )}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label>Client (optional)</Label>
+                      <Input value={item.clientName ?? ""} onChange={(e) => updatePortfolioItem(i, { clientName: e.target.value })} placeholder="Acme Pvt Ltd" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Your Role (optional)</Label>
+                      <Input value={item.projectRole ?? ""} onChange={(e) => updatePortfolioItem(i, { projectRole: e.target.value })} placeholder="Lead Frontend Developer" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Tags (comma separated)</Label>
+                    <Input
+                      value={portfolioItemTags(i)}
+                      onChange={(e) => updatePortfolioItem(i, { tags: splitList(e.target.value) })}
+                      placeholder="React, Shopify, UI Design"
+                    />
+                  </div>
                   <div className="space-y-1.5">
                     <Label>Link (optional)</Label>
                     <Input value={item.link} onChange={(e) => updatePortfolioItem(i, { link: e.target.value })} placeholder="https://..." />
                   </div>
+                  {verifiablePayments.length > 0 && (
+                    <div className="space-y-1.5">
+                      <Label className="flex items-center gap-1">
+                        <BadgeCheck className="h-3.5 w-3.5 text-success" /> Link to a completed payment (shows a Verified badge)
+                      </Label>
+                      <Select
+                        value={portfolioItemVerifiedPaymentId(item) || "none"}
+                        onValueChange={(v) => updatePortfolioItem(i, { verifiedPayment: v === "none" ? null : v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Not linked" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not linked</SelectItem>
+                          {verifiablePayments.map((p) => (
+                            <SelectItem key={p._id} value={p._id}>
+                              {TYPE_LABELS[p.type]} · {formatCurrency(p.netAmount || p.amount)} · {new Date(p.createdAt).toLocaleDateString()}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {user.role === "freelancer" && (
+          <Card>
+            <CardContent className="space-y-4 p-6">
+              <div>
+                <h3 className="text-base font-semibold">Payout Details</h3>
+                <p className="text-xs text-muted-foreground">Save your UPI ID or bank details so you don&apos;t need to re-enter them every time you withdraw.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Preferred Method</Label>
+                <Select value={payoutMethod} onValueChange={(v) => setPayoutMethod(v as WithdrawalMethod)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {payoutMethod === "upi" ? (
+                <div className="space-y-2">
+                  <Label>UPI ID</Label>
+                  <Input value={payoutUpiId} onChange={(e) => setPayoutUpiId(e.target.value)} placeholder="yourname@upi" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Account Holder Name</Label>
+                    <Input value={payoutBankAccountHolder} onChange={(e) => setPayoutBankAccountHolder(e.target.value)} placeholder="As per bank records" />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Account Number</Label>
+                      <Input value={payoutBankAccountNumber} onChange={(e) => setPayoutBankAccountNumber(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>IFSC Code</Label>
+                      <Input value={payoutBankIfsc} onChange={(e) => setPayoutBankIfsc(e.target.value.toUpperCase())} placeholder="ABCD0123456" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {user.role === "freelancer" && (
+          <Card>
+            <CardContent className="space-y-4 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold">Identity Verification (KYC)</h3>
+                  <p className="text-xs text-muted-foreground">Required before you can withdraw your earnings.</p>
+                </div>
+                {user.kycStatus === "verified" && (
+                  <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Verified
+                  </span>
+                )}
+                {user.kycStatus === "pending" && (
+                  <span className="flex items-center gap-1 rounded-full bg-warning/10 px-3 py-1 text-xs font-medium text-warning">
+                    <Clock className="h-3.5 w-3.5" /> Under Review
+                  </span>
+                )}
+                {(user.kycStatus === "unverified" || !user.kycStatus) && (
+                  <span className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                    <ShieldAlert className="h-3.5 w-3.5" /> Not Verified
+                  </span>
+                )}
+                {user.kycStatus === "rejected" && (
+                  <span className="flex items-center gap-1 rounded-full bg-danger/10 px-3 py-1 text-xs font-medium text-danger">
+                    <ShieldAlert className="h-3.5 w-3.5" /> Rejected
+                  </span>
+                )}
+              </div>
+
+              {user.kycStatus === "rejected" && user.kycReviewNote && (
+                <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">Reason: {user.kycReviewNote}</p>
+              )}
+
+              {(user.kycStatus === "unverified" || user.kycStatus === "rejected" || !user.kycStatus) && (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Upload a government-issued ID (Aadhaar, PAN, passport, or driving licence) as an image or PDF.
+                  </p>
+                  <div className="space-y-2">
+                    {kycDocuments.map((doc, i) => (
+                      <div key={i} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs">
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate">{doc.name}</span>
+                        <button type="button" onClick={() => setKycDocuments((prev) => prev.filter((_, idx) => idx !== i))}>
+                          <X className="h-3.5 w-3.5 text-danger" />
+                        </button>
+                      </div>
+                    ))}
+                    <FileUpload
+                      folder="document"
+                      accept="image/png,image/jpeg,application/pdf"
+                      label="Upload ID document"
+                      onUploaded={(url, fileName) => setKycDocuments((prev) => [...prev, { url, name: fileName }])}
+                    />
+                  </div>
+                  {kycMutation.isError && (
+                    <p className="text-xs text-danger">
+                      {isAxiosError(kycMutation.error) ? kycMutation.error.response?.data?.message : "Something went wrong."}
+                    </p>
+                  )}
+                  {kycMutation.isSuccess && <p className="text-xs text-success">Submitted for review.</p>}
+                  <Button
+                    type="button"
+                    variant="gradient"
+                    size="sm"
+                    disabled={kycDocuments.length === 0 || kycMutation.isPending}
+                    onClick={() => kycMutation.mutate()}
+                  >
+                    {kycMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Submit for Verification
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         )}

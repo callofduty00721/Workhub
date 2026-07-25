@@ -4,6 +4,9 @@ import { ApiError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { notify } from "../utils/notify.js";
 
+const MAX_ATTACHMENTS_PER_MESSAGE = 5;
+const MAX_COMBINED_ATTACHMENT_BYTES = 256 * 1024 * 1024;
+
 export const getMyConversations = asyncHandler(async (req, res) => {
   const conversations = await Conversation.find({ participants: req.user._id })
     .populate("participants", "name avatar role")
@@ -54,11 +57,35 @@ export const sendMessage = asyncHandler(async (req, res) => {
   }
 
   const { text } = req.body;
-  if (!text?.trim()) throw new ApiError(400, "Message text is required");
+  const attachments = Array.isArray(req.body.attachments) ? req.body.attachments.filter((a) => a?.url) : [];
+  if (!text?.trim() && attachments.length === 0) throw new ApiError(400, "Message text or an attachment is required");
+  if (attachments.length > MAX_ATTACHMENTS_PER_MESSAGE) {
+    throw new ApiError(400, `You can attach up to ${MAX_ATTACHMENTS_PER_MESSAGE} files per message`);
+  }
+  const combinedBytes = attachments.reduce((sum, a) => sum + (a.size || 0), 0);
+  if (combinedBytes > MAX_COMBINED_ATTACHMENT_BYTES) {
+    throw new ApiError(400, "Combined attachments must be under 256MB");
+  }
 
-  const message = await Message.create({ conversation: conversation._id, sender: req.user._id, text, readBy: [req.user._id] });
+  const message = await Message.create({
+    conversation: conversation._id,
+    sender: req.user._id,
+    text: text?.trim() || "",
+    attachments,
+    readBy: [req.user._id],
+  });
 
-  conversation.lastMessage = text;
+  const firstAttachment = attachments[0];
+  const preview =
+    text?.trim() ||
+    (attachments.length > 1
+      ? `📎 ${attachments.length} files`
+      : firstAttachment?.type === "image"
+        ? "📷 Photo"
+        : firstAttachment?.type === "video"
+          ? "🎥 Video"
+          : `📎 ${firstAttachment?.name || "File"}`);
+  conversation.lastMessage = preview;
   conversation.lastMessageAt = new Date();
   await conversation.save();
 
@@ -78,7 +105,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
       user: recipientId,
       type: "new_message",
       title: "New message",
-      message: `${req.user.name}: ${text.slice(0, 80)}`,
+      message: `${req.user.name}: ${preview.slice(0, 80)}`,
       link: `/dashboard/messages?c=${conversation._id}`,
     });
   }

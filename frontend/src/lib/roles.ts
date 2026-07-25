@@ -23,6 +23,26 @@ export function dashboardPathForRole(role: UserRole): string {
   }
 }
 
+// Returns where "My Profile" in the navbar should go — only roles with a
+// public-facing profile page have one; employer/client/super_admin don't,
+// so callers should hide the link entirely when this returns null.
+export function publicProfilePathForRole(role: UserRole, userId: string): string | null {
+  switch (role) {
+    case "founder":
+      return `/founders/${userId}`;
+    case "freelancer":
+      return `/freelancers/${userId}`;
+    case "investor":
+      return `/investors/${userId}`;
+    case "mentor":
+      return `/mentors/${userId}`;
+    case "partner":
+      return `/partners/${userId}`;
+    default:
+      return null;
+  }
+}
+
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Admin",
   founder: "Founder",

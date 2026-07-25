@@ -20,9 +20,19 @@ import {
   listAllJobs,
   toggleJobStatus,
   removeJob,
+  listAllProjects,
+  toggleProjectStatus,
+  removeProject,
   listPayments,
   resolveDispute,
+  listWithdrawals,
+  resolveWithdrawal,
+  listKycRequests,
+  reviewKyc,
+  getPlatformSettings,
+  updatePlatformSettings,
 } from "../controllers/adminController.js";
+import { adminListSkillTests, createSkillTest, updateSkillTest, deleteSkillTest } from "../controllers/skillTestController.js";
 import { protect, authorize } from "../middleware/auth.js";
 
 const router = Router();
@@ -50,7 +60,20 @@ router.delete("/contests/:id", removeContest);
 router.get("/jobs", listAllJobs);
 router.put("/jobs/:id/toggle-status", toggleJobStatus);
 router.delete("/jobs/:id", removeJob);
+router.get("/projects", listAllProjects);
+router.put("/projects/:id/toggle-status", toggleProjectStatus);
+router.delete("/projects/:id", removeProject);
 router.get("/payments", listPayments);
 router.put("/payments/:id/resolve-dispute", resolveDispute);
+router.get("/withdrawals", listWithdrawals);
+router.put("/withdrawals/:id/resolve", resolveWithdrawal);
+router.get("/kyc-requests", listKycRequests);
+router.put("/kyc-requests/:userId/review", reviewKyc);
+router.get("/settings", getPlatformSettings);
+router.put("/settings", updatePlatformSettings);
+router.get("/skill-tests", adminListSkillTests);
+router.post("/skill-tests", createSkillTest);
+router.put("/skill-tests/:id", updateSkillTest);
+router.delete("/skill-tests/:id", deleteSkillTest);
 
 export default router;

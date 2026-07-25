@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, MapPin, ShieldCheck, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { startupApi } from "@/api/startups";
 import { useAuth } from "@/context/AuthContext";
 import { cn, formatFundingCompact } from "@/lib/utils";
@@ -50,9 +51,12 @@ export function StartupCard({ startup }: { startup: Startup }) {
         >
           <Heart className={cn("h-4 w-4", isFollowing && "fill-danger text-danger")} />
         </button>
-        <div className="absolute -bottom-5 left-4 flex h-11 w-11 items-center justify-center rounded-lg border-2 border-card bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white shadow-soft">
-          {startup.name[0]}
-        </div>
+        <Avatar className="absolute -bottom-5 left-4 h-11 w-11 rounded-lg border-2 border-card shadow-soft">
+          <AvatarImage src={startup.logo} alt={startup.name} className="rounded-lg object-cover" />
+          <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
+            {startup.name[0]}
+          </AvatarFallback>
+        </Avatar>
       </div>
 
       <Link to={`/startups/${startup._id}`} className="flex flex-1 flex-col p-4 pt-7">

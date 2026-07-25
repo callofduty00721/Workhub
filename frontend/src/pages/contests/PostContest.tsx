@@ -6,10 +6,11 @@ import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { FormGuidelines } from "@/components/shared/FormGuidelines";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/shared/FieldInfo";
 import { Button } from "@/components/ui/button";
 import { contestApi } from "@/api/contests";
 
@@ -80,40 +81,56 @@ export default function PostContest({
   return (
     <DashboardLayout role={role} title={isEdit ? "Edit Contest" : "Post a Contest"} subtitle="Get freelancers to compete and pick the best entry.">
       <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="space-y-6" noValidate>
+        <FormGuidelines
+          tips={[
+            "Be clear about what entries should include",
+            "Use simple, professional language",
+            "Set a fair prize amount for the effort involved",
+            "Clear briefs attract more quality entries",
+          ]}
+        />
         <Card>
           <CardContent className="space-y-5 p-6">
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="title">Contest Title</Label>
+                <FieldLabel htmlFor="title" info="A clear title tells freelancers what you want.">Contest Title</FieldLabel>
                 <Input id="title" placeholder="e.g. Design a Logo for Our Startup" {...register("title")} />
                 {errors.title && <p className="text-xs text-danger">{errors.title.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <FieldLabel htmlFor="category" info="Type of work, like Graphic Design or Writing.">Category</FieldLabel>
                 <Input id="category" placeholder="e.g. Graphic Design" {...register("category")} />
                 {errors.category && <p className="text-xs text-danger">{errors.category.message}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Brief</Label>
+              <FieldLabel htmlFor="description" info="Describe what you want in simple words.">
+                Brief
+              </FieldLabel>
               <Textarea id="description" placeholder="Describe what you're looking for..." {...register("description")} />
               {errors.description && <p className="text-xs text-danger">{errors.description.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="skillsInput">Skills (comma separated)</Label>
+              <FieldLabel htmlFor="skillsInput" info="Add skills separated by commas.">
+                Skills (comma separated)
+              </FieldLabel>
               <Input id="skillsInput" placeholder="Logo Design, Branding, Illustrator" {...register("skillsInput")} />
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="prizeAmount">Prize Amount (₹)</Label>
+                <FieldLabel htmlFor="prizeAmount" info="The prize money for the winner.">
+                  Prize Amount (₹)
+                </FieldLabel>
                 <Input id="prizeAmount" type="number" min={1} {...register("prizeAmount")} />
                 {errors.prizeAmount && <p className="text-xs text-danger">{errors.prizeAmount.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="deadline">Submission Deadline</Label>
+                <FieldLabel htmlFor="deadline" info="The last date to submit entries.">
+                  Submission Deadline
+                </FieldLabel>
                 <Input id="deadline" type="date" {...register("deadline")} />
                 {errors.deadline && <p className="text-xs text-danger">{errors.deadline.message}</p>}
               </div>

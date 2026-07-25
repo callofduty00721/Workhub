@@ -8,7 +8,11 @@ export type UploadFolder =
   | "pitch_deck"
   | "document"
   | "resume"
-  | "service_cover";
+  | "service_cover"
+  | "service_video"
+  | "profile_video"
+  | "chat_attachment"
+  | "job_attachment";
 
 export const uploadApi = {
   upload: (file: File, folder: UploadFolder) => {
@@ -16,7 +20,7 @@ export const uploadApi = {
     formData.append("file", file);
     formData.append("folder", folder);
     return api
-      .post<{ success: boolean; data: { url: string; publicId: string; name: string } }>("/uploads", formData, {
+      .post<{ success: boolean; data: { url: string; publicId: string; name: string; size: number } }>("/uploads", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data.data);

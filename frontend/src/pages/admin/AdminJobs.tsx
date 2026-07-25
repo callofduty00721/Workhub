@@ -8,32 +8,63 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { adminApi } from "@/api/admin";
+import type { Paginated, Job, Project } from "@/types";
+
+type Tab = "jobs" | "projects";
 
 export default function AdminJobs() {
+  const [tab, setTab] = useState<Tab>("jobs");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin", "jobs", { search, page }],
-    queryFn: () => adminApi.jobs({ search: search || undefined, page, limit: 20 }),
+  const isJobs = tab === "jobs";
+
+  const { data, isLoading } = useQuery<Paginated<Job | Project>>({
+    queryKey: ["admin", tab, { search, page }],
+    queryFn: () =>
+      isJobs
+        ? adminApi.jobs({ search: search || undefined, page, limit: 20 })
+        : adminApi.projects({ search: search || undefined, page, limit: 20 }),
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", tab] });
 
   const toggleMutation = useMutation({
-    mutationFn: (jobId: string) => adminApi.toggleJobStatus(jobId),
+    mutationFn: (id: string) => (isJobs ? adminApi.toggleJobStatus(id) : adminApi.toggleProjectStatus(id)),
     onSuccess: invalidate,
   });
 
   const removeMutation = useMutation({
-    mutationFn: (jobId: string) => adminApi.removeJob(jobId),
+    mutationFn: (id: string) => (isJobs ? adminApi.removeJob(id) : adminApi.removeProject(id)),
     onSuccess: invalidate,
   });
 
+  const switchTab = (next: Tab) => {
+    setTab(next);
+    setPage(1);
+    setSearch("");
+  };
+
   return (
     <DashboardLayout role="super_admin" title="Manage Jobs & Projects" subtitle="Moderate job and project postings on the platform.">
+      <div className="mb-5 flex items-center gap-2">
+        {(["jobs", "projects"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => switchTab(t)}
+            className={cn(
+              "rounded-lg px-3.5 py-1.5 text-sm font-medium capitalize transition-colors",
+              tab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
       <div className="relative mb-5 max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -42,7 +73,7 @@ export default function AdminJobs() {
             setPage(1);
             setSearch(e.target.value);
           }}
-          placeholder="Search by job title..."
+          placeholder={`Search by ${isJobs ? "job" : "project"} title...`}
           className="pl-9"
         />
       </div>
@@ -58,33 +89,33 @@ export default function AdminJobs() {
           <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="px-5 py-3 font-medium">Job</th>
-                <th className="px-5 py-3 font-medium">Employer</th>
+                <th className="px-5 py-3 font-medium">{isJobs ? "Job" : "Project"}</th>
+                <th className="px-5 py-3 font-medium">{isJobs ? "Employer" : "Client"}</th>
                 <th className="px-5 py-3 font-medium">Type</th>
                 <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {data?.data.map((job) => {
-                const employer = typeof job.employer === "object" ? job.employer : null;
+              {data?.data.map((item) => {
+                const employer = typeof item.employer === "object" ? item.employer : null;
                 return (
-                  <tr key={job._id} className="border-b border-border last:border-0">
+                  <tr key={item._id} className="border-b border-border last:border-0">
                     <td className="px-5 py-3">
-                      <Link to={`/jobs/${job._id}`} className="font-medium hover:underline">
-                        {job.title}
+                      <Link to={`/${isJobs ? "jobs" : "projects"}/${item._id}`} className="font-medium hover:underline">
+                        {item.title}
                       </Link>
-                      <p className="text-xs text-muted-foreground">{job.companyName}</p>
+                      <p className="text-xs text-muted-foreground">{item.companyName}</p>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">{employer?.name ?? "—"}</td>
                     <td className="px-5 py-3">
                       <Badge variant="outline" className="capitalize">
-                        {job.type.replace("_", " ")}
+                        {item.type.replace("_", " ")}
                       </Badge>
                     </td>
                     <td className="px-5 py-3">
-                      <Badge variant={job.status === "open" ? "success" : "outline"} className="capitalize">
-                        {job.status}
+                      <Badge variant={item.status === "open" ? "success" : "outline"} className="capitalize">
+                        {item.status}
                       </Badge>
                     </td>
                     <td className="px-5 py-3">
@@ -93,17 +124,17 @@ export default function AdminJobs() {
                           variant="outline"
                           size="sm"
                           disabled={toggleMutation.isPending}
-                          onClick={() => toggleMutation.mutate(job._id)}
+                          onClick={() => toggleMutation.mutate(item._id)}
                         >
-                          {job.status === "open" ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                          {job.status === "open" ? "Close" : "Reopen"}
+                          {item.status === "open" ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                          {item.status === "open" ? "Close" : "Reopen"}
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           className="text-danger hover:bg-danger/10"
                           disabled={removeMutation.isPending}
-                          onClick={() => confirm(`Remove "${job.title}"? This can't be undone.`) && removeMutation.mutate(job._id)}
+                          onClick={() => confirm(`Remove "${item.title}"? This can't be undone.`) && removeMutation.mutate(item._id)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

@@ -8,7 +8,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
   loginWithGoogle: (idToken: string) => Promise<User>;
-  register: (name: string, email: string, password: string, role?: UserRole) => Promise<User>;
+  register: (name: string, email: string, password: string, phone?: string, role?: UserRole, referralCode?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.user;
   }, []);
 
-  const register = useCallback(async (name: string, email: string, password: string, role?: UserRole) => {
-    const res = await authApi.register({ name, email, password, role });
+  const register = useCallback(async (name: string, email: string, password: string, phone?: string, role?: UserRole, referralCode?: string) => {
+    const res = await authApi.register({ name, email, password, phone, role, referralCode });
     setAccessToken(res.accessToken);
     setUser(res.user);
     return res.user;

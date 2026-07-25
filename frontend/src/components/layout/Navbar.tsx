@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import { cn, initialsFromName } from "@/lib/utils";
-import { dashboardPathForRole } from "@/lib/roles";
+import { dashboardPathForRole, publicProfilePathForRole } from "@/lib/roles";
 
 export const NAV_LINKS = [
   { label: "Home", to: "/" },
@@ -79,82 +79,87 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
           </nav>
         </div>
 
-        <div className="hidden items-center gap-2 md:flex">
-          {searchOpen ? (
-            <form onSubmit={handleSearchSubmit} className="flex items-center">
-              <Input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onBlur={() => !query && setSearchOpen(false)}
-                placeholder="Search MahaHub..."
-                className="h-9 w-56"
-              />
-              <button type="button" onClick={() => { setSearchOpen(false); setQuery(""); }} className="ml-1 rounded-md p-2 text-muted-foreground hover:text-foreground" aria-label="Close search">
-                <X className="h-4 w-4" />
-              </button>
-            </form>
-          ) : (
-            <Button variant="ghost" size="icon" aria-label="Search" onClick={() => setSearchOpen(true)}>
-              <Search className="h-4.5 w-4.5" />
-            </Button>
-          )}
+        <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
+            {searchOpen ? (
+              <form onSubmit={handleSearchSubmit} className="flex items-center">
+                <Input
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onBlur={() => !query && setSearchOpen(false)}
+                  placeholder="Search MahaHub..."
+                  className="h-9 w-56"
+                />
+                <button type="button" onClick={() => { setSearchOpen(false); setQuery(""); }} className="ml-1 rounded-md p-2 text-muted-foreground hover:text-foreground" aria-label="Close search">
+                  <X className="h-4 w-4" />
+                </button>
+              </form>
+            ) : (
+              <Button variant="ghost" size="icon" aria-label="Search" onClick={() => setSearchOpen(true)}>
+                <Search className="h-4.5 w-4.5" />
+              </Button>
+            )}
 
-          {user ? (
-            <>
-              <Button variant="ghost" size="icon" aria-label="Messages" asChild>
-                <Link to="/dashboard/messages">
-                  <MessageSquare className="h-4.5 w-4.5" />
-                </Link>
-              </Button>
-              <NotificationBell />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="ml-1 flex items-center gap-2 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring">
-                    <Avatar className="h-9 w-9 border border-border">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{initialsFromName(user.name)}</AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <p className="truncate font-semibold text-foreground">{user.name}</p>
-                    <p className="truncate text-xs font-normal capitalize text-muted-foreground">
-                      {user.role.replace("_", " ")}
-                    </p>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(dashboardPathForRole(user.role))}>Dashboard</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>Settings</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-danger focus:text-danger">
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" asChild>
-                <Link to="/login">Log In</Link>
-              </Button>
-              <Button variant="gradient" asChild>
-                <Link to="/register">Sign Up</Link>
-              </Button>
-            </>
+            {user ? (
+              <>
+                <Button variant="ghost" size="icon" aria-label="Messages" asChild>
+                  <Link to="/dashboard/messages">
+                    <MessageSquare className="h-4.5 w-4.5" />
+                  </Link>
+                </Button>
+                <NotificationBell />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="ml-1 flex items-center gap-2 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring">
+                      <Avatar className="h-9 w-9 border border-border">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback>{initialsFromName(user.name)}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <p className="truncate font-semibold text-foreground">{user.name}</p>
+                      <p className="truncate text-xs font-normal capitalize text-muted-foreground">
+                        {user.role.replace("_", " ")}
+                      </p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate(dashboardPathForRole(user.role))}>Dashboard</DropdownMenuItem>
+                    {publicProfilePathForRole(user.role, user.id) && (
+                      <DropdownMenuItem onClick={() => navigate(publicProfilePathForRole(user.role, user.id)!)}>My Profile</DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => navigate("/settings")}>Settings</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-danger focus:text-danger">
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Log In</Link>
+                </Button>
+                <Button variant="gradient" asChild>
+                  <Link to="/register">Sign Up</Link>
+                </Button>
+              </>
+            )}
+          </div>
+
+          {!hideMobileToggle && (
+            <button
+              className="rounded-md p-2 text-foreground lg:hidden"
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           )}
         </div>
-
-        {!hideMobileToggle && (
-          <button
-            className="rounded-md p-2 text-foreground lg:hidden"
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        )}
       </div>
 
       {!hideMobileToggle && open && (

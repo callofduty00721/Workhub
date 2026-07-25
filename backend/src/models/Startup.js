@@ -7,6 +7,8 @@ const teamMemberSchema = new mongoose.Schema(
     bio: { type: String, default: "" },
     linkedin: { type: String, default: "" },
     avatar: { type: String, default: "" },
+    skills: [{ type: String }],
+    joinedDate: { type: Date },
   },
   { _id: false }
 );
@@ -62,6 +64,10 @@ const openRoleSchema = new mongoose.Schema(
     type: { type: String, enum: ["full_time", "part_time"], default: "full_time" },
     workMode: { type: String, enum: ["on_site", "remote", "hybrid"], default: "on_site" },
     description: { type: String, default: "" },
+    requiredSkills: [{ type: String }],
+    requiredExperience: { type: String, default: "" },
+    salary: { type: String, default: "" },
+    responsibilities: [{ type: String }],
   },
   { _id: false }
 );

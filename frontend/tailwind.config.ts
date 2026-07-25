@@ -8,7 +8,7 @@ export default {
     container: {
       center: true,
       padding: "1.5rem",
-      screens: { "2xl": "1280px" },
+      screens: { "2xl": "1536px" },
     },
     extend: {
       colors: {
@@ -61,9 +61,9 @@ export default {
         xl: "calc(var(--radius) + 6px)",
       },
       boxShadow: {
-        soft: "0 2px 8px -2px rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04)",
-        card: "0 4px 24px -8px rgb(15 23 42 / 0.10)",
-        glow: "0 0 0 1px rgb(37 99 235 / 0.08), 0 8px 30px -8px rgb(37 99 235 / 0.25)",
+        soft: "none",
+        card: "none",
+        glow: "none",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],

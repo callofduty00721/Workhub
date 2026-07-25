@@ -4,6 +4,7 @@ import Service from "../models/Service.js";
 import Startup from "../models/Startup.js";
 import Payment from "../models/Payment.js";
 import Job from "../models/Job.js";
+import Project from "../models/Project.js";
 import Application from "../models/Application.js";
 import { ApiError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -19,12 +20,38 @@ async function hasCompletedRelationship(reviewerId, targetType, targetId) {
   }
 
   if (targetType === "user") {
-    const paidDirectly = await Payment.exists({ payer: reviewerId, payee: targetId, status: "paid" });
-    if (paidDirectly) return true;
+    // Symmetric: a completed payment or hire in EITHER direction qualifies —
+    // clients can review freelancers, and freelancers can review clients they
+    // worked with, since both sides know each other after a real transaction.
+    const relatedPayment = await Payment.exists({
+      status: "paid",
+      $or: [
+        { payer: reviewerId, payee: targetId },
+        { payer: targetId, payee: reviewerId },
+      ],
+    });
+    if (relatedPayment) return true;
 
-    const myJobIds = await Job.find({ employer: reviewerId }).distinct("_id");
-    if (!myJobIds.length) return false;
-    return Application.exists({ job: { $in: myJobIds }, applicant: targetId, status: "hired" });
+    // Application.job is polymorphic (Job or Project) — check both collections
+    // for a hire relationship, in either review direction.
+    const [reviewerJobIds, reviewerProjectIds, targetJobIds, targetProjectIds] = await Promise.all([
+      Job.find({ employer: reviewerId }).distinct("_id"),
+      Project.find({ employer: reviewerId }).distinct("_id"),
+      Job.find({ employer: targetId }).distinct("_id"),
+      Project.find({ employer: targetId }).distinct("_id"),
+    ]);
+
+    const reviewerPostingIds = [...reviewerJobIds, ...reviewerProjectIds];
+    if (reviewerPostingIds.length && (await Application.exists({ job: { $in: reviewerPostingIds }, applicant: targetId, status: "hired" }))) {
+      return true;
+    }
+
+    const targetPostingIds = [...targetJobIds, ...targetProjectIds];
+    if (targetPostingIds.length && (await Application.exists({ job: { $in: targetPostingIds }, applicant: reviewerId, status: "hired" }))) {
+      return true;
+    }
+
+    return false;
   }
 
   return true;

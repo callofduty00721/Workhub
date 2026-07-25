@@ -7,15 +7,32 @@ import { Button } from "@/components/ui/button";
 const COLUMNS = [
   {
     title: "Platform",
-    links: ["Startups", "Freelancers", "Jobs", "Investors", "Mentors"],
+    links: [
+      { label: "Startups", to: "/startups" },
+      { label: "Freelancers", to: "/freelancers" },
+      { label: "Jobs", to: "/jobs" },
+      { label: "Investors", to: "/investors" },
+      { label: "Mentors", to: "/mentors" },
+    ],
   },
   {
     title: "Company",
-    links: ["About Us", "Blog", "Careers", "Contact Us", "FAQs"],
+    links: [
+      { label: "About Us", to: "/about" },
+      { label: "Blog", to: "#" },
+      { label: "Careers", to: "#" },
+      { label: "Contact Us", to: "/contact" },
+      { label: "FAQs", to: "#" },
+    ],
   },
   {
     title: "Legal",
-    links: ["Terms & Conditions", "Privacy Policy", "Refund Policy", "Pricing"],
+    links: [
+      { label: "Terms & Conditions", to: "/terms" },
+      { label: "Privacy Policy", to: "/privacy" },
+      { label: "Refund Policy", to: "/refund" },
+      { label: "Pricing", to: "/pricing" },
+    ],
   },
 ];
 
@@ -47,9 +64,9 @@ export function Footer() {
             <h4 className="mb-4 text-sm font-semibold text-foreground">{col.title}</h4>
             <ul className="space-y-2.5">
               {col.links.map((link) => (
-                <li key={link}>
-                  <Link to="#" className="text-sm text-muted-foreground transition-colors hover:text-primary">
-                    {link}
+                <li key={link.label}>
+                  <Link to={link.to} className="text-sm text-muted-foreground transition-colors hover:text-primary">
+                    {link.label}
                   </Link>
                 </li>
               ))}

@@ -5,6 +5,7 @@ import User from "../src/models/User.js";
 import Service from "../src/models/Service.js";
 import Job from "../src/models/Job.js";
 import Contest from "../src/models/Contest.js";
+import SkillTest from "../src/models/SkillTest.js";
 
 const DEMO_PASSWORD = "Demo@12345";
 
@@ -49,6 +50,14 @@ const CLIENT = {
   location: "Mumbai, Maharashtra, India",
 };
 
+const EMPLOYER = {
+  name: "Vikram Joshi",
+  email: "vikram.joshi@mahahub.demo",
+  headline: "HR Manager, TechNova Solutions",
+  companyName: "TechNova Solutions",
+  location: "Bengaluru, Karnataka, India",
+};
+
 async function upsertUser(data, role) {
   let user = await User.findOne({ email: data.email });
   if (!user) {
@@ -62,13 +71,14 @@ async function upsertUser(data, role) {
 }
 
 async function upsertByTitle(Model, filter, payload) {
+  const label = filter.title ?? filter.skill ?? JSON.stringify(filter);
   const existing = await Model.findOne(filter);
   if (existing) {
-    console.log(`Skipping (already exists): ${filter.title}`);
+    console.log(`Skipping (already exists): ${label}`);
     return existing;
   }
   const created = await Model.create(payload);
-  console.log(`Created: ${filter.title}`);
+  console.log(`Created: ${label}`);
   return created;
 }
 
@@ -77,6 +87,7 @@ async function run() {
 
   const [aditi, rohan, sarah] = await Promise.all(FREELANCERS.map((f) => upsertUser(f, "freelancer")));
   const client = await upsertUser(CLIENT, "client");
+  const employer = await upsertUser(EMPLOYER, "employer");
 
   // 3 Gigs (Marathi, Hindi, English)
   await upsertByTitle(
@@ -92,6 +103,35 @@ async function run() {
       price: 3000,
       deliveryDays: 4,
       skills: ["Logo Design", "Branding", "Illustrator"],
+      packages: [
+        {
+          name: "basic",
+          title: "Basic Logo",
+          description: "2 लोगो कन्सेप्ट्स, फायनल फाईल्ससह.",
+          price: 3000,
+          deliveryDays: 4,
+          revisions: 2,
+          features: ["2 लोगो कन्सेप्ट्स", "PNG + JPG फाईल्स", "2 रिव्हिजन"],
+        },
+        {
+          name: "standard",
+          title: "Logo + Brand Kit",
+          description: "लोगो सोबत संपूर्ण कलर पॅलेट आणि फॉन्ट गाइड.",
+          price: 6000,
+          deliveryDays: 6,
+          revisions: 4,
+          features: ["3 लोगो कन्सेप्ट्स", "कलर पॅलेट + फॉन्ट गाइड", "सोशल मीडिया किट", "4 रिव्हिजन"],
+        },
+        {
+          name: "premium",
+          title: "Complete Branding",
+          description: "संपूर्ण ब्रँड आयडेंटिटी — लोगो, गाइडलाईन आणि स्टेशनरी डिझाईन.",
+          price: 12000,
+          deliveryDays: 10,
+          revisions: 8,
+          features: ["5 लोगो कन्सेप्ट्स", "संपूर्ण ब्रँड गाइडलाईन", "बिझनेस कार्ड + लेटरहेड डिझाईन", "अमर्यादित रिव्हिजन"],
+        },
+      ],
     }
   );
 
@@ -108,6 +148,35 @@ async function run() {
       price: 15000,
       deliveryDays: 10,
       skills: ["React", "Node.js", "MongoDB"],
+      packages: [
+        {
+          name: "basic",
+          title: "Landing Page",
+          description: "एक रिस्पॉन्सिव लैंडिंग पेज।",
+          price: 15000,
+          deliveryDays: 10,
+          revisions: 2,
+          features: ["1 पेज रिस्पॉन्सिव वेबसाइट", "बेसिक SEO सेटअप", "मोबाइल फ्रेंडली"],
+        },
+        {
+          name: "standard",
+          title: "Multi-Page Website",
+          description: "एडमिन पैनल के साथ पूरी वेबसाइट।",
+          price: 25000,
+          deliveryDays: 14,
+          revisions: 3,
+          features: ["5 पेज तक वेबसाइट", "एडमिन पैनल", "API इंटीग्रेशन"],
+        },
+        {
+          name: "premium",
+          title: "Full Web App",
+          description: "डेटाबेस और सपोर्ट के साथ पूरा वेब ऐप।",
+          price: 45000,
+          deliveryDays: 21,
+          revisions: 5,
+          features: ["पूरा वेब ऐप", "डेटाबेस डिज़ाइन", "3 महीने का सपोर्ट"],
+        },
+      ],
     }
   );
 
@@ -124,6 +193,35 @@ async function run() {
       price: 2000,
       deliveryDays: 3,
       skills: ["Content Writing", "SEO", "Copywriting"],
+      packages: [
+        {
+          name: "basic",
+          title: "1 Blog Post",
+          description: "A single well-researched, SEO-optimized blog post.",
+          price: 2000,
+          deliveryDays: 3,
+          revisions: 1,
+          features: ["800-1000 word blog post", "Basic SEO keywords", "1 revision"],
+        },
+        {
+          name: "standard",
+          title: "4 Blog Posts",
+          description: "A month's worth of blog content.",
+          price: 7000,
+          deliveryDays: 7,
+          revisions: 2,
+          features: ["4 blog posts (800-1000 words each)", "SEO keyword optimization", "2 rounds of edits"],
+        },
+        {
+          name: "premium",
+          title: "Content Package",
+          description: "Full content package including landing page copy.",
+          price: 15000,
+          deliveryDays: 14,
+          revisions: 3,
+          features: ["8 blog posts + landing page copy", "Full SEO keyword research", "Priority delivery"],
+        },
+      ],
     }
   );
 
@@ -189,6 +287,76 @@ async function run() {
     }
   );
 
+  // 3 Jobs (Job model, type=full_time/part_time/internship, posted by the employer)
+  await upsertByTitle(
+    Job,
+    { title: "Frontend Developer" },
+    {
+      employer: employer._id,
+      title: "Frontend Developer",
+      companyName: EMPLOYER.companyName,
+      description:
+        "TechNova Solutions is hiring a Frontend Developer to build and maintain our customer-facing React applications. You'll work closely with our design and backend teams to ship polished, performant UI.",
+      responsibilities: "Build reusable React components, collaborate with designers, optimize app performance, write tests.",
+      requirements: "2+ years with React and TypeScript, strong CSS fundamentals, experience with REST APIs.",
+      type: "full_time",
+      experienceLevel: "mid",
+      skills: ["React", "TypeScript", "Tailwind CSS"],
+      location: "Bengaluru, Karnataka, India",
+      isRemote: false,
+      salaryMin: 45000,
+      salaryMax: 70000,
+      currency: "INR",
+      status: "open",
+    }
+  );
+
+  await upsertByTitle(
+    Job,
+    { title: "Part-Time Graphic Designer" },
+    {
+      employer: employer._id,
+      title: "Part-Time Graphic Designer",
+      companyName: EMPLOYER.companyName,
+      description:
+        "We're looking for a part-time graphic designer to support our marketing team with social media creatives, presentation decks, and occasional print materials.",
+      responsibilities: "Design social media graphics, presentation templates, and marketing collateral on a weekly basis.",
+      requirements: "Proficiency in Illustrator/Photoshop or Figma, a strong portfolio, ability to turn around requests quickly.",
+      type: "part_time",
+      experienceLevel: "entry",
+      skills: ["Graphic Design", "Illustrator", "Figma"],
+      location: "Pune, Maharashtra, India",
+      isRemote: true,
+      salaryMin: 15000,
+      salaryMax: 25000,
+      currency: "INR",
+      status: "open",
+    }
+  );
+
+  await upsertByTitle(
+    Job,
+    { title: "Marketing Intern" },
+    {
+      employer: employer._id,
+      title: "Marketing Intern",
+      companyName: EMPLOYER.companyName,
+      description:
+        "Join TechNova Solutions as a Marketing Intern and get hands-on experience running social media campaigns, writing content, and analyzing campaign performance.",
+      responsibilities: "Assist with social media scheduling, write short-form content, track campaign metrics.",
+      requirements: "Currently pursuing or recently completed a degree in marketing, communications, or a related field.",
+      type: "internship",
+      experienceLevel: "entry",
+      skills: ["Social Media", "Content Writing", "Analytics"],
+      location: "Mumbai, Maharashtra, India",
+      isRemote: false,
+      salaryMin: 8000,
+      salaryMax: 12000,
+      currency: "INR",
+      status: "open",
+    }
+  );
+
   // 3 Contests (posted by the client)
   const contestDeadline = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
@@ -238,6 +406,61 @@ async function run() {
       currency: "INR",
       deadline: contestDeadline(21),
       status: "open",
+    }
+  );
+
+  // 3 Skill Tests
+  await upsertByTitle(
+    SkillTest,
+    { skill: "React" },
+    {
+      skill: "React",
+      description: "Tests core React concepts — components, hooks, and state management.",
+      passingScorePercent: 70,
+      createdBy: employer._id,
+      questions: [
+        { question: "Which hook is used to manage state in a functional component?", options: ["useEffect", "useState", "useRef", "useMemo"], correctIndex: 1 },
+        { question: "What does JSX compile down to?", options: ["HTML", "React.createElement calls", "CSS-in-JS", "WebAssembly"], correctIndex: 1 },
+        { question: "Which hook runs a side effect after render?", options: ["useState", "useCallback", "useEffect", "useContext"], correctIndex: 2 },
+        { question: "How do you prevent a component from re-rendering unnecessarily?", options: ["React.memo", "useState", "JSX.Fragment", "props.children"], correctIndex: 0 },
+        { question: "What is the correct way to update state based on the previous state?", options: ["setState(state + 1)", "setState(prev => prev + 1)", "state = state + 1", "this.state++"], correctIndex: 1 },
+      ],
+    }
+  );
+
+  await upsertByTitle(
+    SkillTest,
+    { skill: "Content Writing" },
+    {
+      skill: "Content Writing",
+      description: "Tests fundamentals of clear, SEO-aware content writing.",
+      passingScorePercent: 70,
+      createdBy: employer._id,
+      questions: [
+        { question: "What is the primary goal of a meta description?", options: ["Improve page load speed", "Summarize the page to encourage clicks in search results", "Add keywords invisibly", "Replace the page title"], correctIndex: 1 },
+        { question: "What is 'readability' in content writing primarily concerned with?", options: ["Word count", "How easy the text is to read and understand", "Number of images", "Font size"], correctIndex: 1 },
+        { question: "What's a good practice for headings in a long article?", options: ["Avoid headings entirely", "Use one giant paragraph", "Break content into scannable H2/H3 sections", "Bold every sentence"], correctIndex: 2 },
+        { question: "What does 'keyword stuffing' refer to?", options: ["A recommended SEO technique", "Overusing a keyword unnaturally, which hurts readability and SEO", "Writing long-form content", "Using synonyms for variety"], correctIndex: 1 },
+        { question: "What is a call-to-action (CTA)?", options: ["A legal disclaimer", "A prompt encouraging the reader to take a specific action", "A type of heading", "A citation format"], correctIndex: 1 },
+      ],
+    }
+  );
+
+  await upsertByTitle(
+    SkillTest,
+    { skill: "Graphic Design" },
+    {
+      skill: "Graphic Design",
+      description: "Tests core visual design principles.",
+      passingScorePercent: 70,
+      createdBy: employer._id,
+      questions: [
+        { question: "What is the color model used for print design?", options: ["RGB", "CMYK", "HEX", "HSL"], correctIndex: 1 },
+        { question: "What does 'white space' refer to in design?", options: ["Only literally white-colored areas", "Empty space around elements that improves clarity", "A design mistake", "The background layer"], correctIndex: 1 },
+        { question: "Which file format supports transparency and is common for web graphics?", options: ["JPEG", "PNG", "BMP", "TIFF"], correctIndex: 1 },
+        { question: "What is 'kerning' in typography?", options: ["Line spacing", "The space between individual letter pairs", "Font weight", "Paragraph alignment"], correctIndex: 1 },
+        { question: "What is the standard resolution for high-quality print design?", options: ["72 DPI", "150 DPI", "300 DPI", "1080 DPI"], correctIndex: 2 },
+      ],
     }
   );
 

@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { AdminStats, AdminVerificationRequest, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job } from "@/types";
+import type { AdminStats, AdminVerificationRequest, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job, Project, Withdrawal, PlatformSettings } from "@/types";
 
 export interface AdminUserFilters {
   search?: string;
@@ -75,6 +75,13 @@ export const adminApi = {
 
   removeJob: (jobId: string) => api.delete(`/admin/jobs/${jobId}`).then((r) => r.data),
 
+  projects: (filters: AdminModerationFilters = {}) => api.get<Paginated<Project>>("/admin/projects", { params: filters }).then((r) => r.data),
+
+  toggleProjectStatus: (projectId: string) =>
+    api.put<{ success: boolean; status: Project["status"] }>(`/admin/projects/${projectId}/toggle-status`).then((r) => r.data),
+
+  removeProject: (projectId: string) => api.delete(`/admin/projects/${projectId}`).then((r) => r.data),
+
   payments: (filters: { disputeStatus?: string; page?: number; limit?: number } = {}) =>
     api.get<Paginated<Payment>>("/admin/payments", { params: filters }).then((r) => r.data),
 
@@ -82,4 +89,34 @@ export const adminApi = {
     api
       .put<{ success: boolean; data: Payment }>(`/admin/payments/${paymentId}/resolve-dispute`, { action, note, refundAmount })
       .then((r) => r.data.data),
+
+  withdrawals: (filters: { status?: string; page?: number; limit?: number } = {}) =>
+    api.get<Paginated<Withdrawal>>("/admin/withdrawals", { params: filters }).then((r) => r.data),
+
+  resolveWithdrawal: (withdrawalId: string, action: "complete" | "reject", note?: string) =>
+    api
+      .put<{ success: boolean; data: Withdrawal }>(`/admin/withdrawals/${withdrawalId}/resolve`, { action, note })
+      .then((r) => r.data.data),
+
+  kycRequests: () =>
+    api
+      .get<{ success: boolean; data: AdminKycRequest[] }>("/admin/kyc-requests")
+      .then((r) => r.data.data),
+
+  reviewKyc: (userId: string, action: "approve" | "reject", note?: string) =>
+    api.put<{ success: boolean; data: User }>(`/admin/kyc-requests/${userId}/review`, { action, note }).then((r) => r.data.data),
+
+  getSettings: () => api.get<{ success: boolean; data: PlatformSettings }>("/admin/settings").then((r) => r.data.data),
+
+  updateSettings: (commissionPercent: number) =>
+    api.put<{ success: boolean; data: PlatformSettings }>("/admin/settings", { commissionPercent }).then((r) => r.data.data),
 };
+
+export interface AdminKycRequest {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  kycDocuments: { url: string; name: string }[];
+  kycSubmittedAt: string;
+}

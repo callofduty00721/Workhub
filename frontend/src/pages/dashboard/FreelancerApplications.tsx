@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { jobApi } from "@/api/jobs";
 import { chatApi } from "@/api/chat";
+import { MilestonesPanel } from "@/components/jobs/MilestonesPanel";
+import { WorkDiary } from "@/components/jobs/WorkDiary";
+import { ContractPanel } from "@/components/jobs/ContractPanel";
 import { formatCurrency } from "@/lib/utils";
 import type { ApplicationStatus } from "@/types";
 
@@ -71,7 +74,7 @@ export default function FreelancerApplications() {
               {applications.map((app) => {
                 const job = typeof app.job === "object" ? app.job : null;
                 const employerId = job && typeof job.employer === "object" ? job.employer._id : (job?.employer as string | undefined);
-                const isProposal = job?.type === "freelance" || job?.type === "contract";
+                const isProposal = app.onModel === "Project";
                 return (
                   <div key={app._id} className="rounded-lg border border-border p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -97,6 +100,14 @@ export default function FreelancerApplications() {
                         {app.status}
                       </Badge>
                     </div>
+
+                    {app.status === "hired" && !!app.proposedRate && (
+                      <div className="space-y-3">
+                        <ContractPanel application={app} viewerRole="freelancer" />
+                        <MilestonesPanel applicationId={app._id} readOnly />
+                        <WorkDiary applicationId={app._id} hourlyRate={app.proposedRate} viewerRole="freelancer" />
+                      </div>
+                    )}
 
                     <div className="mt-3 flex flex-wrap gap-2">
                       {employerId && (

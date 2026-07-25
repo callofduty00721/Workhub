@@ -32,11 +32,11 @@ describe("FreelancerCard", () => {
     expect(screen.getByText(/₹800/)).toBeInTheDocument();
   });
 
-  it("shows only the first 4 skills", () => {
+  it("shows all skills in the slider", () => {
     renderCard({ ...baseFreelancer, skills: ["A", "B", "C", "D", "E"] });
     expect(screen.getByText("A")).toBeInTheDocument();
     expect(screen.getByText("D")).toBeInTheDocument();
-    expect(screen.queryByText("E")).not.toBeInTheDocument();
+    expect(screen.getByText("E")).toBeInTheDocument();
   });
 
   it("shows 'Rate on request' when hourlyRate is 0", () => {

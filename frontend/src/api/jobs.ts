@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { Application, Job, Paginated } from "@/types";
+import type { Application, ApplicationStatus, Job, JobAccessLogEntry, Paginated } from "@/types";
 
 export interface JobFilters {
   search?: string;
@@ -7,6 +7,13 @@ export interface JobFilters {
   isRemote?: boolean;
   page?: number;
   limit?: number;
+}
+
+export interface JobAnalytics {
+  totalViews: number;
+  totalApplications: number;
+  byStatus: Partial<Record<ApplicationStatus, number>>;
+  jobs: Pick<Job, "_id" | "title" | "viewsCount" | "applicationsCount" | "status">[];
 }
 
 export const jobApi = {
@@ -35,4 +42,24 @@ export const jobApi = {
     api.put<{ success: boolean; data: Application }>(`/jobs/applications/${applicationId}/status`, { status }).then((r) => r.data.data),
 
   myApplications: () => api.get<{ success: boolean; data: Application[] }>("/applications/mine").then((r) => r.data.data),
+
+  signContract: (applicationId: string, signatureName: string) =>
+    api.post<{ success: boolean; data: Application }>(`/applications/${applicationId}/contract/sign`, { signatureName }).then((r) => r.data.data),
+
+  myAnalytics: () => api.get<{ success: boolean; data: JobAnalytics }>("/jobs/analytics/mine").then((r) => r.data.data),
+
+  invitedToMe: () => api.get<{ success: boolean; data: Job[] }>("/jobs/invited").then((r) => r.data.data),
+
+  invite: (id: string, freelancerId: string) =>
+    api.put<{ success: boolean; data: Job }>(`/jobs/${id}/invite`, { freelancerId }).then((r) => r.data.data),
+
+  revokeInvite: (id: string, freelancerId: string) =>
+    api.delete<{ success: boolean; data: Job }>(`/jobs/${id}/invite/${freelancerId}`).then((r) => r.data.data),
+
+  acceptNda: (id: string) => api.post<{ success: boolean; data: { ndaAccepted: boolean } }>(`/jobs/${id}/accept-nda`).then((r) => r.data.data),
+
+  getAttachmentUrl: (id: string, index: number) =>
+    api.get<{ success: boolean; data: { url: string; name: string } }>(`/jobs/${id}/attachments/${index}/signed-url`).then((r) => r.data.data),
+
+  accessLog: (id: string) => api.get<{ success: boolean; data: JobAccessLogEntry[] }>(`/jobs/${id}/access-log`).then((r) => r.data.data),
 };

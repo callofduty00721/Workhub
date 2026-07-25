@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -73,10 +74,12 @@ import { startupUpdateApi } from "@/api/startupUpdates";
 import { discussionApi } from "@/api/discussions";
 import { chatApi } from "@/api/chat";
 import { investmentApi } from "@/api/investments";
+import { authApi } from "@/api/auth";
 import { loadRazorpayScript } from "@/lib/razorpay";
 import { formatCurrency, formatCompactNumber, cn, initialsFromName } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { JoinTeamModal } from "@/components/startup/JoinTeamModal";
+import { RoleDetailsModal } from "@/components/startup/RoleDetailsModal";
 import type {
   Discussion,
   DiscussionComment,
@@ -206,6 +209,7 @@ export default function StartupDetails() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [joinModal, setJoinModal] = useState<{ open: boolean; role: OpenRole | null }>({ open: false, role: null });
+  const [roleDetailsModal, setRoleDetailsModal] = useState<{ open: boolean; role: OpenRole | null }>({ open: false, role: null });
   const [productModal, setProductModal] = useState<StartupProduct | null>(null);
   const [discussionComposerOpen, setDiscussionComposerOpen] = useState(false);
 
@@ -463,9 +467,12 @@ export default function StartupDetails() {
                 <p className="mt-3 text-[13.5px] leading-relaxed text-[#374151]">{startup.tagline}</p>
 
                 <div className="mt-4 border-t border-[#f1f5f9] pt-4 flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[11px] font-bold text-white">
-                    {founder ? initialsFromName(founder.name) : "?"}
-                  </div>
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={founder?.avatar} alt={founder?.name} />
+                    <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[11px] font-bold text-white">
+                      {founder ? initialsFromName(founder.name) : "?"}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     {founder ? (
                       <Link to={`/founders/${founder._id}`} className="text-[12.5px] font-bold text-[#0f172a] hover:underline">
@@ -681,6 +688,7 @@ export default function StartupDetails() {
                     openRoles={startup.openRoles}
                     team={startup.team}
                     onOpenModal={(role) => setJoinModal({ open: true, role })}
+                    onViewDetails={(role) => setRoleDetailsModal({ open: true, role })}
                   />
                 )}
 
@@ -848,9 +856,12 @@ export default function StartupDetails() {
                       <div className="divide-y divide-[#f1f5f9]">
                         {investorPartners.map((p) => (
                           <div key={p._id} className="flex items-center gap-3 py-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-xs font-bold text-white">
-                              {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full rounded-full object-cover" /> : initialsFromName(p.name)}
-                            </div>
+                            <Avatar className="h-12 w-12 shrink-0">
+                              <AvatarImage src={p.avatar} alt={p.name} />
+                              <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-xs font-bold text-white">
+                                {initialsFromName(p.name)}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="flex-1">
                               <p className="text-[13px] font-bold">{p.name}</p>
                               <p className="text-[11.5px] capitalize text-[#64748b]">{p.role}</p>
@@ -1326,9 +1337,12 @@ export default function StartupDetails() {
                     <div className="mt-3 space-y-3">
                       {recentActivity.map((d) => (
                         <div key={d._id} className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                            {initialsFromName(d.author.name)}
-                          </div>
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarImage src={d.author.avatar} alt={d.author.name} />
+                            <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
+                              {initialsFromName(d.author.name)}
+                            </AvatarFallback>
+                          </Avatar>
                           <p className="min-w-0 flex-1 truncate text-[11.5px] text-[#334155]">
                             <span className="font-semibold text-[#0f172a]">{d.author.name}</span> started a discussion
                           </p>
@@ -1406,9 +1420,12 @@ export default function StartupDetails() {
                       ) : (
                         investorPartners.slice(0, 4).map((p) => (
                           <div key={p._id} className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                              {initialsFromName(p.name)}
-                            </div>
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={p.avatar} alt={p.name} />
+                              <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
+                                {initialsFromName(p.name)}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[12.5px] font-semibold text-[#0f172a]">{p.name}</p>
                               <p className="truncate text-[10.5px] capitalize text-[#64748b]">{p.role}</p>
@@ -1484,9 +1501,12 @@ export default function StartupDetails() {
                 ) : (
                   investorPartners.map((p) => (
                     <div key={p._id} className="flex items-center gap-2.5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                        {initialsFromName(p.name)}
-                      </div>
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={p.avatar} alt={p.name} />
+                        <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
+                          {initialsFromName(p.name)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-[12.5px] font-semibold text-[#0f172a]">{p.name}</p>
                         <p className="truncate text-[10.5px] capitalize text-[#64748b]">{p.role}</p>
@@ -1521,6 +1541,16 @@ export default function StartupDetails() {
         role={joinModal.role}
         open={joinModal.open}
         onOpenChange={(open) => setJoinModal((s) => ({ ...s, open }))}
+      />
+
+      <RoleDetailsModal
+        role={roleDetailsModal.role}
+        open={roleDetailsModal.open}
+        onOpenChange={(open) => setRoleDetailsModal((s) => ({ ...s, open }))}
+        onJoin={() => {
+          setJoinModal({ open: true, role: roleDetailsModal.role });
+          setRoleDetailsModal({ open: false, role: null });
+        }}
       />
 
       <ProductDetailModal product={productModal} onOpenChange={(open) => !open && setProductModal(null)} />
@@ -1826,6 +1856,10 @@ function InvestmentsSection({
     },
   });
 
+  const resendVerificationMutation = useMutation({
+    mutationFn: () => authApi.resendVerification(),
+  });
+
   const handleVerify = async (investmentId: string) => {
     if (!user) return;
     setVerifyError(null);
@@ -2062,7 +2096,25 @@ function InvestmentsSection({
               <p className="text-[10.5px] text-[#94a3b8]">
                 By submitting, you confirm you have actually sent this amount to the founder outside MahaHub. This is not a verified transaction.
               </p>
-              {formError && <p className="text-[11px] text-danger">{formError}</p>}
+              {formError && (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-danger">{formError}</p>
+                  {formError.toLowerCase().includes("verify your email") && (
+                    <button
+                      type="button"
+                      onClick={() => resendVerificationMutation.mutate()}
+                      disabled={resendVerificationMutation.isPending || resendVerificationMutation.isSuccess}
+                      className="text-[11px] font-bold text-[#2563eb] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {resendVerificationMutation.isSuccess
+                        ? "Verification email sent — check your inbox"
+                        : resendVerificationMutation.isPending
+                          ? "Sending..."
+                          : "Resend verification email"}
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={handlePayAndSubmit}
@@ -2774,9 +2826,12 @@ function DiscussionsTab({
               <div className="mt-3 space-y-3">
                 {popularDiscussions.map((d) => (
                   <div key={d._id} className="flex items-start gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                      {initialsFromName(d.author.name)}
-                    </div>
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarImage src={d.author.avatar} alt={d.author.name} />
+                      <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
+                        {initialsFromName(d.author.name)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12px] font-semibold text-[#0f172a]">{d.title}</p>
                       <p className="text-[10.5px] text-[#94a3b8]">{d.author.name} · {timeAgo(d.createdAt)}</p>
@@ -2840,9 +2895,12 @@ function DiscussionReplies({ discussionId, startupId, canPost }: { discussionId:
       ) : (
         comments.map((c) => (
           <div key={c._id} className="flex items-start gap-2.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[9.5px] font-bold text-white">
-              {initialsFromName(c.author.name)}
-            </div>
+            <Avatar className="h-7 w-7 shrink-0">
+              <AvatarImage src={c.author.avatar} alt={c.author.name} />
+              <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[9.5px] font-bold text-white">
+                {initialsFromName(c.author.name)}
+              </AvatarFallback>
+            </Avatar>
             <div>
               <p className="text-[11.5px] font-bold text-[#0f172a]">
                 {c.author.name} <span className="ml-1 font-normal text-[#94a3b8]">· {timeAgo(c.createdAt)}</span>
@@ -2889,10 +2947,12 @@ function TeamTab({
   openRoles,
   team,
   onOpenModal,
+  onViewDetails,
 }: {
   openRoles: OpenRole[];
   team: TeamMember[];
   onOpenModal: (role: OpenRole | null) => void;
+  onViewDetails: (role: OpenRole) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
   const visibleRoles = showAll ? openRoles : openRoles.slice(0, 6);
@@ -2936,12 +2996,29 @@ function TeamTab({
                       </div>
                     </div>
                     {role.description && <p className="mt-2.5 text-[12px] leading-relaxed text-[#64748b]">{role.description}</p>}
-                    <button
-                      onClick={() => onOpenModal(role)}
-                      className="mt-3 rounded-lg border border-[#2563eb] px-3.5 py-1.5 text-[12px] font-bold text-[#2563eb] hover:bg-[#e8effe]"
-                    >
-                      Join Team
-                    </button>
+                    {(role.requiredSkills?.length ?? 0) > 0 && (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        {role.requiredSkills!.map((skill) => (
+                          <span key={skill} className="rounded-full bg-[#f1ebfc] px-2 py-0.5 text-[10.5px] font-semibold text-[#7c3aed]">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={() => onViewDetails(role)}
+                        className="rounded-lg border border-[#e2e8f0] px-3.5 py-1.5 text-[12px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => onOpenModal(role)}
+                        className="rounded-lg border border-[#2563eb] px-3.5 py-1.5 text-[12px] font-bold text-[#2563eb] hover:bg-[#e8effe]"
+                      >
+                        Join Team
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -2969,7 +3046,21 @@ function TeamTab({
                 <div className="min-w-0">
                   <p className="text-[13px] font-bold">{member.name}</p>
                   <p className="text-[11.5px] font-semibold text-[#2563eb]">{member.role}</p>
+                  {member.joinedDate && (
+                    <p className="mt-0.5 text-[10.5px] text-[#94a3b8]">
+                      Joined {new Date(member.joinedDate).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}
+                    </p>
+                  )}
                   {member.bio && <p className="mt-1 text-[11.5px] text-[#64748b]">{member.bio}</p>}
+                  {(member.skills?.length ?? 0) > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {member.skills!.map((skill) => (
+                        <span key={skill} className="rounded-full bg-[#f1ebfc] px-2 py-0.5 text-[10px] font-semibold text-[#7c3aed]">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {member.linkedin && (
                     <a href={member.linkedin} target="_blank" rel="noreferrer" className="mt-1 inline-block text-[#2563eb]">
                       <Linkedin className="h-3.5 w-3.5" />

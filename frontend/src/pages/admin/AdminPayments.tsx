@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -77,6 +78,11 @@ export default function AdminPayments() {
                     </td>
                     <td className="px-5 py-3">{formatCurrency(payment.amount)}</td>
                     <td className="px-5 py-3 max-w-xs">
+                      {payment.disputeEscalated && (
+                        <Badge variant="danger" className="mb-1 flex w-fit items-center gap-1 text-[10px]">
+                          <AlertTriangle className="h-3 w-3" /> Escalated
+                        </Badge>
+                      )}
                       <p className="line-clamp-2 text-xs text-muted-foreground">{payment.disputeReason}</p>
                     </td>
                     <td className="px-5 py-3">

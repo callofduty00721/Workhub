@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { JobCard } from "./JobCard";
+import { AuthProvider } from "@/context/AuthContext";
 import type { Job } from "@/types";
 
 const baseJob: Job = {
@@ -20,14 +22,20 @@ const baseJob: Job = {
   currency: "INR",
   status: "open",
   applicationsCount: 4,
+  viewsCount: 20,
   createdAt: new Date().toISOString(),
 };
 
 function renderCard(job: Job) {
+  const queryClient = new QueryClient();
   return render(
-    <MemoryRouter>
-      <JobCard job={job} />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <AuthProvider>
+          <JobCard job={job} />
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 

@@ -35,6 +35,23 @@ export interface PortfolioItem {
   description?: string;
   image?: string;
   link?: string;
+  tags?: string[];
+  clientName?: string;
+  projectRole?: string;
+  // Populated on the public freelancer profile endpoint; a plain id string
+  // when read back from the edit-profile form (or null/undefined if unset).
+  verifiedPayment?: string | { _id: string; type: PaymentType; amount: number; netAmount?: number; createdAt: string } | null;
+}
+
+export type AvailabilityStatus = "available" | "busy";
+export type KycStatus = "unverified" | "pending" | "verified" | "rejected";
+
+export interface PayoutDetails {
+  preferredMethod: WithdrawalMethod;
+  upiId?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankAccountHolder?: string;
 }
 
 export interface SocialLinks {
@@ -58,7 +75,31 @@ export interface User {
   skills?: string[];
   hourlyRate?: number;
   yearsOfExperience?: number;
+  availabilityStatus?: AvailabilityStatus;
+  hoursPerWeekAvailable?: number;
+  workingDays?: string[];
+  workingHours?: string;
+  referralCode?: string;
+  referralBonusBalance?: number;
+  referralBonusTotal?: number;
+  videoIntro?: string;
+  totalHoursWorked?: number;
+  onTimeDeliveryPercent?: number;
+  responseTimeLabel?: string;
+  phone?: string;
+  resumeUrl?: string;
+  resumeUpdatedAt?: string;
+  lastActiveAt?: string;
+  savedJobs?: string[];
+  savedProjects?: string[];
+  savedServices?: string[];
   portfolioItems?: PortfolioItem[];
+  payoutDetails?: PayoutDetails;
+  kycStatus?: KycStatus;
+  kycDocuments?: { url: string; name: string }[];
+  kycSubmittedAt?: string;
+  kycReviewNote?: string;
+  profileViews?: number;
   investmentFocus?: string[];
   ticketSizeMin?: number;
   ticketSizeMax?: number;
@@ -68,6 +109,7 @@ export interface User {
   organizationName?: string;
   partnerType?: PartnerType;
   companyName?: string;
+  company?: string | null;
   linkedIn?: string;
   industries?: string[];
   pastStartupsCount?: number;
@@ -86,6 +128,7 @@ export interface User {
   isEmailVerified: boolean;
   isProfileComplete: boolean;
   isBanned?: boolean;
+  emailNotificationsEnabled?: boolean;
   createdAt: string;
 }
 
@@ -97,6 +140,8 @@ export interface TeamMember {
   bio?: string;
   linkedin?: string;
   avatar?: string;
+  skills?: string[];
+  joinedDate?: string;
 }
 
 export interface Milestone {
@@ -145,6 +190,10 @@ export interface OpenRole {
   type: OpenRoleType;
   workMode: WorkMode;
   description?: string;
+  requiredSkills?: string[];
+  requiredExperience?: string;
+  salary?: string;
+  responsibilities?: string[];
 }
 
 export type TeamApplicationStatus = "pending" | "reviewing" | "accepted" | "rejected";
@@ -341,9 +390,16 @@ export interface Paginated<T> {
 export type JobType = "full_time" | "part_time" | "contract" | "internship" | "freelance";
 export type ExperienceLevel = "entry" | "mid" | "senior" | "lead";
 
+export type JobVisibility = "public" | "invite_only";
+
+export interface JobAttachment {
+  key?: string;
+  name: string;
+}
+
 export interface Job {
   _id: string;
-  employer: { _id: string; name: string; avatar?: string } | string;
+  employer: { _id: string; name: string; avatar?: string; email?: string } | string;
   title: string;
   companyName: string;
   description: string;
@@ -359,6 +415,56 @@ export interface Job {
   currency: string;
   status: "open" | "closed" | "draft";
   applicationsCount: number;
+  viewsCount: number;
+  visibility?: JobVisibility;
+  invitedFreelancers?: (string | { _id: string; name: string; avatar?: string; email?: string })[];
+  requiresNda?: boolean;
+  ndaText?: string;
+  ndaAccepted?: boolean;
+  attachments?: JobAttachment[];
+  createdAt: string;
+}
+
+export type ProjectType = "freelance" | "contract";
+
+// Bid-based work — separate from Job (salaried employment). Posted by Client
+// accounts; freelancers propose their own rate/delivery time per application
+// rather than accepting a fixed salary.
+export interface Project {
+  _id: string;
+  employer: { _id: string; name: string; avatar?: string; email?: string } | string;
+  title: string;
+  companyName: string;
+  description: string;
+  requirements?: string;
+  type: ProjectType;
+  skills: string[];
+  location: string;
+  isRemote: boolean;
+  budgetMin: number;
+  budgetMax: number;
+  expectedDeliveryDays?: number;
+  currency: string;
+  status: "open" | "closed" | "draft";
+  applicationsCount: number;
+  viewsCount: number;
+  visibility?: JobVisibility;
+  invitedFreelancers?: (string | { _id: string; name: string; avatar?: string; email?: string })[];
+  requiresNda?: boolean;
+  ndaText?: string;
+  ndaAccepted?: boolean;
+  attachments?: JobAttachment[];
+  createdAt: string;
+}
+
+export interface JobAccessLogEntry {
+  _id: string;
+  job: string;
+  user: { _id: string; name: string; avatar?: string } | string;
+  action: "viewed_details" | "accepted_nda" | "viewed_attachment";
+  attachmentName?: string;
+  ip?: string;
+  userAgent?: string;
   createdAt: string;
 }
 
@@ -366,7 +472,8 @@ export type ApplicationStatus = "applied" | "shortlisted" | "interview" | "rejec
 
 export interface Application {
   _id: string;
-  job: Job | string;
+  job: Job | Project | string;
+  onModel?: "Job" | "Project";
   applicant: { _id: string; name: string; avatar?: string; email?: string; headline?: string; location?: string } | string;
   coverLetter?: string;
   resumeUrl?: string;
@@ -374,6 +481,13 @@ export interface Application {
   deliveryDays?: number;
   status: ApplicationStatus;
   withdrawnAt?: string;
+  contract?: {
+    text?: string;
+    employerSignedAt?: string;
+    employerSignatureName?: string;
+    freelancerSignedAt?: string;
+    freelancerSignatureName?: string;
+  };
   createdAt: string;
 }
 
@@ -406,9 +520,27 @@ export interface ContestEntry {
   createdAt: string;
 }
 
+export type PackageName = "basic" | "standard" | "premium";
+
+export interface ServicePackage {
+  name: PackageName;
+  title?: string;
+  description?: string;
+  price: number;
+  deliveryDays: number;
+  // -1 means unlimited.
+  revisions?: number;
+  features?: string[];
+}
+
 export interface Service {
   _id: string;
-  freelancer: { _id: string; name: string; avatar?: string; rating?: number; reviewCount?: number } | string;
+  freelancer:
+    | { _id: string; name: string; avatar?: string; headline?: string; location?: string; rating?: number; reviewCount?: number; portfolioItems?: PortfolioItem[] }
+    | string;
+  // Set when the freelancer belongs to an agency/Company team — teammates can
+  // jointly manage this gig (see CompanyTeam.tsx), and it's shown as a badge.
+  company?: { _id: string; name: string } | string | null;
   title: string;
   description: string;
   category: string;
@@ -416,10 +548,15 @@ export interface Service {
   priceType: "fixed" | "hourly";
   price: number;
   deliveryDays: number;
+  // -1 means unlimited.
+  revisions?: number;
+  packages?: ServicePackage[];
   skills: string[];
   images?: string[];
+  video?: string;
   status: "active" | "paused";
   ordersCount: number;
+  viewsCount: number;
   rating: number;
   reviewCount: number;
   createdAt: string;
@@ -438,6 +575,9 @@ export interface FreelancerSummary {
   rating: number;
   reviewCount: number;
   yearsOfExperience: number;
+  availabilityStatus?: AvailabilityStatus;
+  level?: "new" | "level_1" | "top_rated";
+  company?: { _id: string; name: string } | null;
 }
 
 export interface Conversation {
@@ -447,11 +587,19 @@ export interface Conversation {
   lastMessageAt: string;
 }
 
+export interface MessageAttachment {
+  url: string;
+  name?: string;
+  type: "image" | "video" | "file";
+  size?: number;
+}
+
 export interface Message {
   _id: string;
   conversation: string;
   sender: string;
   text: string;
+  attachments?: MessageAttachment[];
   readBy: string[];
   createdAt: string;
 }
@@ -676,29 +824,129 @@ export type PaymentType = "gig_order" | "job_hire" | "contest_prize";
 
 export type DisputeStatus = "none" | "raised" | "refunded" | "rejected";
 
+export type OrderStatus = "not_applicable" | "in_progress" | "delivered" | "revision_requested" | "completed";
+
+export interface Deliverable {
+  url: string;
+  name?: string;
+}
+
+export interface ExtensionRequest {
+  requestedBy: string;
+  proposedDeadline: string;
+  reason?: string;
+  status: "none" | "pending" | "approved" | "rejected";
+}
+
 export interface Payment {
   _id: string;
-  payer: { _id: string; name: string; avatar?: string; email?: string } | string;
+  payer: { _id: string; name: string; avatar?: string; email?: string; companyName?: string } | string;
   payee: { _id: string; name: string; avatar?: string; email?: string } | string;
   type: PaymentType;
   amount: number;
+  commissionPercent?: number;
+  commissionAmount?: number;
+  netAmount?: number;
   currency: string;
   status: "pending" | "paid" | "failed" | "refunded" | "partially_refunded";
+  providerPaymentId?: string;
+  escrowStatus?: "held" | "released";
+  releasedAt?: string;
   refundedAmount?: number;
   disputeStatus?: DisputeStatus;
   disputeReason?: string;
   disputeResolutionNote?: string;
+  disputeRaisedAt?: string;
+  disputeEscalated?: boolean;
   service?: string;
+  servicePackage?: { name: PackageName; title?: string; price: number; deliveryDays: number; revisions?: number };
   application?: string;
+  milestone?: string;
   contest?: string;
   contestEntry?: string;
   note?: string;
+  orderStatus?: OrderStatus;
+  deadline?: string;
+  deliverables?: Deliverable[];
+  deliveryNote?: string;
+  deliveredAt?: string;
+  revisionsAllowed?: number;
+  revisionsUsed?: number;
+  revisionRequestReason?: string;
+  extensionRequest?: ExtensionRequest;
   createdAt: string;
+}
+
+export interface WalletSummary {
+  heldAmount: number;
+  releasedAmount: number;
+  withdrawnTotal: number;
+  pendingWithdrawal: number;
+  availableBalance: number;
 }
 
 export interface EarningsSummary {
   totalEarnings: number;
   byType: Partial<Record<PaymentType, number>>;
+  wallet: WalletSummary;
   payments: Payment[];
   pagination: { page: number; limit: number; total: number; pages: number };
+}
+
+export type WithdrawalMethod = "upi" | "bank";
+export type WithdrawalStatus = "pending" | "completed" | "rejected";
+
+export interface Withdrawal {
+  _id: string;
+  freelancer: { _id: string; name: string; avatar?: string; email?: string } | string;
+  amount: number;
+  method: WithdrawalMethod;
+  upiId?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankAccountHolder?: string;
+  status: WithdrawalStatus;
+  provider?: "manual" | "razorpayx";
+  providerPayoutId?: string;
+  adminNote?: string;
+  processedAt?: string;
+  createdAt: string;
+}
+
+export interface JobAlert {
+  _id: string;
+  user: string;
+  keywords: string[];
+  remoteOnly: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export type MilestoneStatus = "pending" | "funded" | "released";
+
+export interface ProjectMilestone {
+  _id: string;
+  application: string;
+  title: string;
+  amount: number;
+  order: number;
+  status: MilestoneStatus;
+  createdAt: string;
+}
+
+export interface TimeEntry {
+  _id: string;
+  application: string;
+  freelancer: string;
+  date: string;
+  hours: number;
+  description?: string;
+  billed: boolean;
+  payment?: string;
+  createdAt: string;
+}
+
+export interface PlatformSettings {
+  _id: string;
+  commissionPercent: number;
 }

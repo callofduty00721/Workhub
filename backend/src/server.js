@@ -4,6 +4,7 @@ import app from "./app.js";
 import { connectDB } from "./config/db.js";
 import { initSocket } from "./socket/index.js";
 import { startInvestmentRefundJob } from "./jobs/investmentRefundJob.js";
+import { startDisputeEscalationJob } from "./jobs/disputeEscalationJob.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -19,6 +20,7 @@ const start = async () => {
   });
 
   startInvestmentRefundJob(app);
+  startDisputeEscalationJob(app);
 };
 
 start().catch((err) => {

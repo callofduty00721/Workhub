@@ -45,6 +45,17 @@ export const getMyStartups = asyncHandler(async (req, res) => {
   res.json({ success: true, data: items });
 });
 
+export const getFollowedStartups = asyncHandler(async (req, res) => {
+  const startups = await Startup.find({
+    $or: [{ followers: req.user._id }, { interested: req.user._id }],
+  })
+    .select("name tagline coverImage industry stage location fundingRaised fundingNeeded rating reviewCount isFeatured isVerified followers")
+    .populate("founder", "name avatar")
+    .sort({ updatedAt: -1 });
+
+  res.json({ success: true, data: startups });
+});
+
 export const getStartupById = asyncHandler(async (req, res) => {
   const startup = await Startup.findById(req.params.id)
     .select("-reports -verificationRequests")

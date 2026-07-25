@@ -12,6 +12,7 @@ export function FileUpload({
   value,
   onUploaded,
   className,
+  validate,
 }: {
   folder: UploadFolder;
   accept?: string;
@@ -19,6 +20,9 @@ export function FileUpload({
   value?: string;
   onUploaded: (url: string, fileName: string) => void;
   className?: string;
+  // Runs client-side before the file is uploaded — return an error string to
+  // block the upload (e.g. video too long), or null/undefined to proceed.
+  validate?: (file: File) => Promise<string | null | undefined>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -27,6 +31,13 @@ export function FileUpload({
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
+    if (validate) {
+      const validationError = await validate(file);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    }
     setIsUploading(true);
     try {
       const result = await uploadApi.upload(file, folder);

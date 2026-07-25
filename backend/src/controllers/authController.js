@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import { z } from "zod";
 import User, { ROLE_VALUES } from "../models/User.js";
+
+// super_admin is deliberately excluded — it must never be assignable through
+// public self-registration, only granted manually (e.g. via a DB update).
+const PUBLIC_ROLE_VALUES = ROLE_VALUES.filter((r) => r !== "super_admin");
 import { ApiError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import {
@@ -17,7 +21,9 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(ROLE_VALUES).optional(),
+  phone: z.string().optional(),
+  role: z.enum(PUBLIC_ROLE_VALUES).optional(),
+  referralCode: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -43,11 +49,17 @@ export const register = asyncHandler(async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) throw new ApiError(400, "Validation failed", parsed.error.flatten().fieldErrors);
 
-  const { name, email, password, role } = parsed.data;
+  const { name, email, password, phone, role, referralCode } = parsed.data;
   const existing = await User.findOne({ email });
   if (existing) throw new ApiError(409, "An account with this email already exists");
 
-  const user = await User.create({ name, email, password, role: role || "freelancer" });
+  let referredBy = null;
+  if (referralCode) {
+    const referrer = await User.findOne({ referralCode: referralCode.trim().toUpperCase() });
+    if (referrer) referredBy = referrer._id;
+  }
+
+  const user = await User.create({ name, email, password, phone, role: role || "freelancer", referredBy });
   await sendVerificationEmail(user);
 
   const accessToken = issueSession(res, user);
@@ -64,6 +76,7 @@ export const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid email or password");
   }
   if (user.isBanned) throw new ApiError(403, "This account has been suspended");
+  if (user.isDeactivated) throw new ApiError(403, "This account has been deactivated. Contact support to reactivate it.");
 
   const accessToken = issueSession(res, user);
   res.json({ success: true, user: user.toSafeJSON(), accessToken });
@@ -101,6 +114,7 @@ export const googleLogin = asyncHandler(async (req, res) => {
   }
 
   if (user.isBanned) throw new ApiError(403, "This account has been suspended");
+  if (user.isDeactivated) throw new ApiError(403, "This account has been deactivated. Contact support to reactivate it.");
 
   const accessToken = issueSession(res, user);
   res.json({ success: true, user: user.toSafeJSON(), accessToken });
@@ -204,4 +218,44 @@ export const resetPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   res.json({ success: true, message: "Password reset successfully. Please log in with your new password." });
+});
+
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword) throw new ApiError(400, "Enter your current password");
+  if (!newPassword || newPassword.length < 8) throw new ApiError(400, "New password must be at least 8 characters");
+
+  const user = await User.findById(req.user._id).select("+password");
+  if (!user.password) {
+    throw new ApiError(400, "This account signed up with Google and has no password to change — use 'Forgot password' to set one.");
+  }
+  if (!(await user.comparePassword(currentPassword))) {
+    throw new ApiError(401, "Current password is incorrect");
+  }
+
+  user.password = newPassword;
+  user.refreshTokenVersion += 1;
+  await user.save();
+
+  // The current session's refresh token is now stale too (version bumped),
+  // so re-issue one right away rather than forcing an immediate re-login.
+  const accessToken = issueSession(res, user);
+  res.json({ success: true, message: "Password changed successfully.", accessToken });
+});
+
+export const deactivateAccount = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+
+  const user = await User.findById(req.user._id).select("+password");
+  if (user.password) {
+    if (!password) throw new ApiError(400, "Enter your password to confirm");
+    if (!(await user.comparePassword(password))) throw new ApiError(401, "Incorrect password");
+  }
+
+  user.isDeactivated = true;
+  user.refreshTokenVersion += 1;
+  await user.save();
+
+  res.clearCookie(REFRESH_COOKIE_NAME, { path: "/api/auth" });
+  res.json({ success: true, message: "Your account has been deactivated." });
 });

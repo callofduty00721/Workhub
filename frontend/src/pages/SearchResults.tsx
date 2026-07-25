@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FreelancerCard } from "@/components/freelancers/FreelancerCard";
-import { ServiceCard } from "@/components/freelancers/ServiceCard";
+import { ServiceCard } from "@/components/gigs/ServiceCard";
 import { JobCard } from "@/components/jobs/JobCard";
 import { ContestCard } from "@/components/contests/ContestCard";
 import { startupApi } from "@/api/startups";

@@ -1,65 +1,56 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Users, Briefcase, FolderKanban, Trophy, ShieldCheck, Lock, ShieldAlert, Headphones, ChevronRight } from "lucide-react";
+import { Search, Users, Briefcase, FolderKanban, Trophy, ShieldCheck, Lock, ShieldAlert, Headphones, ChevronRight, LayoutGrid } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FreelancerCard } from "@/components/freelancers/FreelancerCard";
-import { ServiceCard } from "@/components/freelancers/ServiceCard";
-import { JobCard } from "@/components/jobs/JobCard";
 import { ContestCard } from "@/components/contests/ContestCard";
-import { freelancerApi, serviceApi } from "@/api/freelancers";
-import { jobApi } from "@/api/jobs";
+import { freelancerApi } from "@/api/freelancers";
 import { contestApi } from "@/api/contests";
 import { SERVICE_CATEGORIES, SERVICE_CATEGORY_NAMES } from "@/lib/mockData";
 
+// Code-split — each tab's browsing/filter logic only downloads once someone
+// actually opens that tab, instead of bundling it all into this hub page.
+const GigList = lazy(() => import("@/pages/gigs/GigList"));
+const ProjectList = lazy(() => import("@/pages/projects/ProjectList"));
+
 const POPULAR_SKILLS = ["UI/UX Design", "Web Development", "Content Writing", "Digital Marketing", "Video Editing"];
 
-// "Projects" is freelance/contract-type work — kept as its own tab, separate
-// from the full-time/part-time/internship listings on the main /jobs board.
-const PROJECT_TYPES = "freelance,contract";
-
 type SectionTab = "freelancers" | "services" | "projects" | "contests";
+const SECTION_TABS: SectionTab[] = ["freelancers", "services", "projects", "contests"];
 
 export default function FreelancerList() {
-  const [tab, setTab] = useState<SectionTab>("freelancers");
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [tab, setTab] = useState<SectionTab>(
+    SECTION_TABS.includes(initialTab as SectionTab) ? (initialTab as SectionTab) : "freelancers"
+  );
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [subCategory, setSubCategory] = useState<string>("all");
+  const [level, setLevel] = useState<string>("all");
+  const [rateMin, setRateMin] = useState("");
+  const [rateMax, setRateMax] = useState("");
 
   const { data: freelancers, isLoading: loadingFreelancers } = useQuery({
-    queryKey: ["freelancers", { search, category, subCategory }],
+    queryKey: ["freelancers", { search, category, subCategory, level, rateMin, rateMax }],
     queryFn: () =>
       freelancerApi.list({
         search: search || undefined,
         category: category === "all" ? undefined : category,
         subCategory: subCategory === "all" ? undefined : subCategory,
+        level: level === "all" ? undefined : (level as "new" | "level_1" | "top_rated"),
+        rateMin: rateMin ? Number(rateMin) : undefined,
+        rateMax: rateMax ? Number(rateMax) : undefined,
         limit: 12,
       }),
     enabled: tab === "freelancers",
   });
 
-  const { data: services, isLoading: loadingServices } = useQuery({
-    queryKey: ["services", { search, category, subCategory }],
-    queryFn: () =>
-      serviceApi.list({
-        search: search || undefined,
-        category: category === "all" ? undefined : category,
-        subCategory: subCategory === "all" ? undefined : subCategory,
-        limit: 12,
-      }),
-    enabled: tab === "services",
-  });
-
   const subCategoryOptions = category !== "all" ? SERVICE_CATEGORIES[category] ?? [] : [];
-
-  const { data: projects, isLoading: loadingProjects } = useQuery({
-    queryKey: ["jobs", { search, type: PROJECT_TYPES }],
-    queryFn: () => jobApi.list({ search: search || undefined, type: PROJECT_TYPES, limit: 12 }),
-    enabled: tab === "projects",
-  });
 
   const { data: contests, isLoading: loadingContests } = useQuery({
     queryKey: ["contests", { search }],
@@ -93,7 +84,7 @@ export default function FreelancerList() {
                 className="pl-9"
               />
             </div>
-            {(tab === "freelancers" || tab === "services") && (
+            {tab === "freelancers" && (
               <>
                 <Select
                   value={category}
@@ -153,78 +144,74 @@ export default function FreelancerList() {
           <SwitchCard icon={Trophy} title="Contests" subtitle="Run contests & get creative ideas" active={tab === "contests"} onClick={() => setTab("contests")} />
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as SectionTab)}>
-          <TabsList>
-            <TabsTrigger value="freelancers">
-              <Users className="mr-1.5 h-3.5 w-3.5" /> Freelancers
-            </TabsTrigger>
-            <TabsTrigger value="services">
-              <Briefcase className="mr-1.5 h-3.5 w-3.5" /> Gigs
-            </TabsTrigger>
-            <TabsTrigger value="projects">
-              <FolderKanban className="mr-1.5 h-3.5 w-3.5" /> Projects
-            </TabsTrigger>
-            <TabsTrigger value="contests">
-              <Trophy className="mr-1.5 h-3.5 w-3.5" /> Contests
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="freelancers">
-            {loadingFreelancers ? (
-              <GridSkeleton />
-            ) : !freelancers?.data.length ? (
-              <EmptyState icon={Users} text="No freelancers found. Try a different search." />
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {freelancers.data.map((f) => (
-                  <FreelancerCard key={f._id} freelancer={f} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="services">
-            {loadingServices ? (
-              <GridSkeleton />
-            ) : !services?.data.length ? (
-              <EmptyState icon={Briefcase} text="No gigs listed yet." />
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {services.data.map((s) => (
-                  <ServiceCard key={s._id} service={s} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="projects">
-            {loadingProjects ? (
-              <GridSkeleton />
-            ) : !projects?.data.length ? (
-              <EmptyState icon={FolderKanban} text="No projects posted yet." />
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {projects.data.map((job) => (
-                  <JobCard key={job._id} job={job} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="contests">
-            {loadingContests ? (
-              <GridSkeleton />
-            ) : !contests?.data.length ? (
-              <EmptyState icon={Trophy} text="No contests running yet." />
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {contests.data.map((contest) => (
-                  <ContestCard key={contest._id} contest={contest} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        {tab === "freelancers" ? (
+          <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+            <div className="space-y-6">
+              <CategorySidebar
+                category={category}
+                subCategory={subCategory}
+                onSelectCategory={(c) => {
+                  setCategory(c);
+                  setSubCategory("all");
+                }}
+                onSelectSubCategory={setSubCategory}
+              />
+              <FilterPanel title="Filters">
+                <FilterField label="Freelancer Level">
+                  <Select value={level} onValueChange={setLevel}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any Level</SelectItem>
+                      <SelectItem value="top_rated">Top Rated</SelectItem>
+                      <SelectItem value="level_1">Level 1</SelectItem>
+                      <SelectItem value="new">New Seller</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FilterField>
+                <FilterField label="Hourly Rate (₹)">
+                  <div className="flex items-center gap-2">
+                    <Input type="number" min={0} placeholder="Min" value={rateMin} onChange={(e) => setRateMin(e.target.value)} className="h-8 text-xs" />
+                    <span className="text-xs text-muted-foreground">–</span>
+                    <Input type="number" min={0} placeholder="Max" value={rateMax} onChange={(e) => setRateMax(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                </FilterField>
+              </FilterPanel>
+            </div>
+            <div className="min-w-0">
+              {loadingFreelancers ? (
+                <GridSkeleton />
+              ) : !freelancers?.data.length ? (
+                <EmptyState icon={Users} text="No freelancers found. Try a different search." />
+              ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {freelancers.data.map((f) => (
+                    <FreelancerCard key={f._id} freelancer={f} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : tab === "services" ? (
+          <Suspense fallback={<GridSkeleton />}>
+            <GigList search={search} />
+          </Suspense>
+        ) : tab === "projects" ? (
+          <Suspense fallback={<GridSkeleton />}>
+            <ProjectList search={search} />
+          </Suspense>
+        ) : loadingContests ? (
+          <GridSkeleton />
+        ) : !contests?.data.length ? (
+          <EmptyState icon={Trophy} text="No contests running yet." />
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {contests.data.map((contest) => (
+              <ContestCard key={contest._id} contest={contest} />
+            ))}
+          </div>
+        )}
 
         {/* Trust badges */}
         <div className="mt-14 grid gap-4 rounded-xl border border-border bg-card p-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -234,6 +221,89 @@ export default function FreelancerList() {
           <TrustBadge icon={Headphones} title="24/7 Support" subtitle="Always here to help" />
         </div>
       </div>
+    </div>
+  );
+}
+
+function CategorySidebar({
+  category,
+  subCategory,
+  onSelectCategory,
+  onSelectSubCategory,
+}: {
+  category: string;
+  subCategory: string;
+  onSelectCategory: (category: string) => void;
+  onSelectSubCategory: (subCategory: string) => void;
+}) {
+  return (
+    <aside className="h-fit rounded-xl border border-border bg-card lg:sticky lg:top-4">
+      <div className="border-b border-border px-4 py-3">
+        <h3 className="text-sm font-semibold">Categories</h3>
+      </div>
+      <nav className="max-h-[70vh] overflow-y-auto py-1.5 scrollbar-thin">
+        <button
+          type="button"
+          onClick={() => onSelectCategory("all")}
+          className={`flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors ${
+            category === "all" ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-accent"
+          }`}
+        >
+          <LayoutGrid className="h-3.5 w-3.5 shrink-0" /> All Categories
+        </button>
+        {SERVICE_CATEGORY_NAMES.map((c) => {
+          const isActive = category === c;
+          const subOptions = SERVICE_CATEGORIES[c] ?? [];
+          return (
+            <div key={c}>
+              <button
+                type="button"
+                onClick={() => onSelectCategory(isActive ? "all" : c)}
+                className={`flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm transition-colors ${
+                  isActive ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-accent"
+                }`}
+              >
+                <span className="truncate">{c}</span>
+                {subOptions.length > 0 && <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${isActive ? "rotate-90" : ""}`} />}
+              </button>
+              {isActive && subOptions.length > 0 && (
+                <div className="pb-1">
+                  {subOptions.map((sub) => (
+                    <button
+                      key={sub}
+                      type="button"
+                      onClick={() => onSelectSubCategory(sub)}
+                      className={`flex w-full items-center gap-2 py-1.5 pl-9 pr-4 text-left text-xs transition-colors ${
+                        subCategory === sub ? "font-medium text-primary" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}
+
+function FilterPanel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <h3 className="mb-3 text-sm font-semibold">{title}</h3>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      {children}
     </div>
   );
 }

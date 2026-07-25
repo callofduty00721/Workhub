@@ -82,11 +82,20 @@ export function JoinTeamModal({
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e8effe] text-[#2563eb]">
               <Users2 className="h-4.5 w-4.5" />
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="text-[13px] font-bold text-[#0f172a]">{role.title}</p>
               <p className="text-[11.5px] text-[#64748b]">
                 {role.type === "full_time" ? "Full Time" : "Part Time"} · {WORK_MODE_LABELS[role.workMode]}
               </p>
+              {(role.requiredSkills?.length ?? 0) > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {role.requiredSkills!.map((skill) => (
+                    <span key={skill} className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#7c3aed]">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (

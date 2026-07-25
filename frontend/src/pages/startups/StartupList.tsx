@@ -14,14 +14,11 @@ import {
   Users2,
   Clock,
   Lightbulb,
-  CheckCircle2,
   Rocket,
-  UserPlus,
-  TrendingUp,
-  GraduationCap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { startupApi, type StartupFilters } from "@/api/startups";
 import { INDUSTRIES, INDUSTRY_SUBCATEGORIES } from "@/lib/mockData";
@@ -54,20 +51,6 @@ const TOP_TABS = [
   { value: "popular", label: "Popular" },
   { value: "new", label: "New Launches" },
 ] as const;
-
-const WHY_ITEMS = [
-  "Showcase your idea to the right people",
-  "Find co-founders, team & experts",
-  "Connect with investors & partners",
-  "Get valuable feedback & grow faster",
-];
-
-const QUICK_ACTIONS = [
-  { icon: Rocket, title: "Post Your Startup", desc: "Share your idea with the community", to: "/dashboard/founder/startup" },
-  { icon: UserPlus, title: "Find Co-Founders", desc: "Connect with talented people", to: "/startups" },
-  { icon: TrendingUp, title: "Explore Investors", desc: "Find the right investors for you", to: "/investors" },
-  { icon: GraduationCap, title: "Browse Mentors", desc: "Get guidance from industry experts", to: "/mentors" },
-];
 
 export default function StartupList() {
   const { user } = useAuth();
@@ -107,11 +90,6 @@ export default function StartupList() {
         page,
         limit: 12,
       }),
-  });
-
-  const { data: featured } = useQuery({
-    queryKey: ["startups", "featured-rail"],
-    queryFn: () => startupApi.list({ sort: "funding", limit: 3 }),
   });
 
   const followMutation = useMutation({
@@ -175,7 +153,7 @@ export default function StartupList() {
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[240px_1fr_300px]">
+        <div className="grid gap-6 lg:grid-cols-[210px_1fr]">
           {/* Filters sidebar */}
           <aside className="space-y-4">
             <div className="rounded-xl border border-[#e2e8f0] bg-white p-4">
@@ -347,7 +325,7 @@ export default function StartupList() {
             </div>
 
             {isLoading && (
-              <div className={cn("grid gap-5", view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")}>
+              <div className={cn("grid gap-4", view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" : "grid-cols-1")}>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-72 w-full rounded-xl" />
                 ))}
@@ -370,7 +348,7 @@ export default function StartupList() {
 
             {!isLoading && !isError && (data?.data.length ?? 0) > 0 && (
               <>
-                <div className={cn("grid gap-5", view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")}>
+                <div className={cn("grid gap-4", view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" : "grid-cols-1")}>
                   {data!.data.map((startup) => (
                     <StartupListCard
                       key={startup._id}
@@ -440,85 +418,6 @@ export default function StartupList() {
               </Link>
             </div>
           </div>
-
-          {/* Right widgets */}
-          <aside className="space-y-5">
-            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
-              <h3 className="text-[14px] font-bold text-[#0f172a]">Why MahaHub Startups?</h3>
-              <div className="mt-3 space-y-2.5">
-                {WHY_ITEMS.map((item) => (
-                  <div key={item} className="flex items-start gap-2 text-[12.5px] text-[#334155]">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <Link
-                to={user?.role === "founder" ? "/dashboard/founder/startup" : "/register"}
-                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#e8effe] py-2.5 text-[12.5px] font-bold text-[#2563eb] hover:bg-[#d9e5fd]"
-              >
-                <Rocket className="h-3.5 w-3.5" /> Post Your Startup Now
-              </Link>
-            </div>
-
-            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-[14px] font-bold text-[#0f172a]">Featured Startups</h3>
-                <Link to="/startups" className="text-[11.5px] font-bold text-[#2563eb]">View All</Link>
-              </div>
-              <div className="space-y-4">
-                {featured?.data.map((s, i) => {
-                  const pct = Math.min(100, Math.round((s.fundingRaised / (s.fundingNeeded || 1)) * 100));
-                  const colors = [{ bg: "#e7f7ec", fg: "#16a34a" }, { bg: "#e8effe", fg: "#2563eb" }, { bg: "#f1ebfc", fg: "#7c3aed" }][i % 3];
-                  return (
-                    <Link key={s._id} to={`/startups/${s._id}`} className="block">
-                      <div className="flex items-start gap-2.5">
-                        <span
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold"
-                          style={{ background: colors.bg, color: colors.fg }}
-                        >
-                          {s.name[0]}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <p className="truncate text-[12.5px] font-bold text-[#0f172a]">{s.name}</p>
-                            <span
-                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                              style={{ background: STAGE_COLORS[s.stage].bg, color: STAGE_COLORS[s.stage].fg }}
-                            >
-                              {STAGES.find((st) => st.value === s.stage)?.label}
-                            </span>
-                          </div>
-                          <p className="truncate text-[11px] text-[#64748b]">{s.tagline}</p>
-                          <p className="mt-1 text-[11px] font-semibold text-[#0f172a]">{formatFundingCompact(s.fundingRaised)} Raised</p>
-                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[#e2e8f0]">
-                            <div className="h-full rounded-full bg-[#2563eb]" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
-              <h3 className="mb-3 text-[14px] font-bold text-[#0f172a]">Quick Actions</h3>
-              <div className="space-y-3.5">
-                {QUICK_ACTIONS.map((a) => (
-                  <Link key={a.title} to={a.to} className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#f1f5f9] text-[#2563eb]">
-                      <a.icon className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <p className="text-[12.5px] font-bold text-[#0f172a]">{a.title}</p>
-                      <p className="text-[11px] text-[#64748b]">{a.desc}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </aside>
         </div>
       </div>
     </div>
@@ -547,7 +446,8 @@ function StartupListCard({
 }) {
   const founder = typeof startup.founder === "object" ? startup.founder : null;
   const pct = Math.min(100, Math.round((startup.fundingRaised / (startup.fundingNeeded || 1)) * 100));
-  const seeking = (startup.openRoles?.length ?? 0) > 0 ? "Seeking Team" : "Seeking Investment";
+  const seekingTeam = (startup.openRoles?.length ?? 0) > 0;
+  const seekingInvestment = startup.fundingRaised < startup.fundingNeeded;
   const stageColor = STAGE_COLORS[startup.stage];
 
   return (
@@ -577,12 +477,15 @@ function StartupListCard({
             {STAGES.find((s) => s.value === startup.stage)?.label}
           </span>
         </div>
-        <p className="mb-3 line-clamp-2 text-[12px] text-[#64748b]">{startup.tagline}</p>
+        <p className="mb-3 line-clamp-2 min-h-[2.2em] text-[12px] leading-[1.35] text-[#64748b]">{startup.tagline}</p>
 
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[9px] font-bold text-white">
-            {founder ? initialsFromName(founder.name) : "?"}
-          </div>
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={founder?.avatar} alt={founder?.name} />
+            <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[9px] font-bold text-white">
+              {founder ? initialsFromName(founder.name) : "?"}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <p className="text-[11.5px] font-semibold text-[#0f172a]">{founder?.name}</p>
             <p className="text-[10.5px] text-[#94a3b8]">{startup.location}</p>
@@ -608,7 +511,14 @@ function StartupListCard({
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" /> {startup.interested.length} Interested
           </span>
-          <span className="ml-auto rounded-full bg-[#f1ebfc] px-2 py-0.5 text-[10px] font-bold text-[#7c3aed]">{seeking}</span>
+          <span className="ml-auto flex flex-wrap justify-end gap-1.5">
+            {seekingTeam && (
+              <span className="rounded-full bg-[#f1ebfc] px-2 py-0.5 text-[10px] font-bold text-[#7c3aed]">Seeking Team</span>
+            )}
+            {seekingInvestment && (
+              <span className="rounded-full bg-[#e8effe] px-2 py-0.5 text-[10px] font-bold text-[#2563eb]">Seeking Investment</span>
+            )}
+          </span>
         </div>
       </Link>
     </div>

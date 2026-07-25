@@ -1,15 +1,19 @@
 import User, { ROLE_VALUES } from "../models/User.js";
 import Startup from "../models/Startup.js";
 import Job from "../models/Job.js";
+import Project from "../models/Project.js";
 import Service from "../models/Service.js";
 import Contest from "../models/Contest.js";
 import ContestEntry from "../models/ContestEntry.js";
 import Investment from "../models/Investment.js";
 import Payment from "../models/Payment.js";
-import { getRazorpayClient, isRazorpayConfigured } from "../config/payments.js";
+import Withdrawal from "../models/Withdrawal.js";
+import PlatformSettings from "../models/PlatformSettings.js";
+import { getRazorpayClient, isRazorpayConfigured, isRazorpayXConfigured } from "../config/payments.js";
 import { ApiError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { notify } from "../utils/notify.js";
+import { refreshFreelancerLevel } from "../utils/freelancerLevel.js";
 
 const NEW_ACCOUNT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const AUTO_FLAG_MIN_COUNT = 3;
@@ -456,6 +460,62 @@ export const removeJob = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Job removed" });
 });
 
+// --- Projects moderation ---
+
+export const listAllProjects = asyncHandler(async (req, res) => {
+  const { search, status, page = 1, limit = 20 } = req.query;
+
+  const filter = {};
+  if (status) filter.status = status;
+  if (search) filter.title = new RegExp(search, "i");
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+
+  const [items, total] = await Promise.all([
+    Project.find(filter)
+      .populate("employer", "name email avatar")
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum),
+    Project.countDocuments(filter),
+  ]);
+
+  res.json({
+    success: true,
+    data: items,
+    pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+  });
+});
+
+export const toggleProjectStatus = asyncHandler(async (req, res) => {
+  const project = await Project.findById(req.params.id);
+  if (!project) throw new ApiError(404, "Project not found");
+
+  project.status = project.status === "closed" ? "open" : "closed";
+  await project.save();
+
+  if (project.status === "closed") {
+    await notify(req.app, {
+      user: project.employer,
+      type: "system",
+      title: "Your posting was closed by an admin",
+      message: `"${project.title}" was closed and is no longer visible to applicants.`,
+      link: "/dashboard/client",
+    });
+  }
+
+  res.json({ success: true, status: project.status });
+});
+
+export const removeProject = asyncHandler(async (req, res) => {
+  const project = await Project.findById(req.params.id);
+  if (!project) throw new ApiError(404, "Project not found");
+
+  await project.deleteOne();
+  res.json({ success: true, message: "Project removed" });
+});
+
 // --- Payments moderation (disputes) ---
 
 export const listPayments = asyncHandler(async (req, res) => {
@@ -511,6 +571,7 @@ export const resolveDispute = asyncHandler(async (req, res) => {
   }
   payment.disputeResolutionNote = note || "";
   await payment.save();
+  refreshFreelancerLevel(payment.payee).catch(() => {});
 
   await notify(req.app, {
     user: payment.payer,
@@ -523,5 +584,189 @@ export const resolveDispute = asyncHandler(async (req, res) => {
     link: "/dashboard/client/payments",
   });
 
+  await notify(req.app, {
+    user: payment.payee,
+    type: "system",
+    title:
+      action === "refund"
+        ? `A dispute on your payment was resolved with a ₹${payment.refundedAmount} refund`
+        : "A dispute on your payment was rejected — no refund issued",
+    message: note || "",
+    link: "/dashboard/freelancer/earnings",
+  });
+
   res.json({ success: true, data: payment });
+});
+
+// --- Withdrawal requests moderation ---
+
+export const listWithdrawals = asyncHandler(async (req, res) => {
+  const { status, page = 1, limit = 20 } = req.query;
+
+  const filter = {};
+  if (status) filter.status = status;
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+
+  const [items, total] = await Promise.all([
+    Withdrawal.find(filter)
+      .populate("freelancer", "name email avatar")
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum),
+    Withdrawal.countDocuments(filter),
+  ]);
+
+  res.json({
+    success: true,
+    data: items,
+    pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+  });
+});
+
+// Creates a RazorpayX Contact + Fund Account for the freelancer (if needed) and
+// fires the actual Payout. Returns null (not an error) when RazorpayX isn't
+// configured, so the caller can fall back to today's "admin sent it manually" flow.
+async function attemptRazorpayXPayout(withdrawal, freelancer) {
+  if (!isRazorpayXConfigured()) return null;
+  const razorpay = getRazorpayClient();
+
+  const contact = await razorpay.contacts.create({
+    name: freelancer.name,
+    email: freelancer.email,
+    type: "vendor",
+    reference_id: freelancer._id.toString(),
+  });
+
+  const fundAccount =
+    withdrawal.method === "upi"
+      ? await razorpay.fundAccount.create({
+          contact_id: contact.id,
+          account_type: "vpa",
+          vpa: { address: withdrawal.upiId },
+        })
+      : await razorpay.fundAccount.create({
+          contact_id: contact.id,
+          account_type: "bank_account",
+          bank_account: {
+            name: withdrawal.bankAccountHolder,
+            ifsc: withdrawal.bankIfsc,
+            account_number: withdrawal.bankAccountNumber,
+          },
+        });
+
+  return razorpay.payouts.create({
+    account_number: process.env.RAZORPAYX_ACCOUNT_NUMBER,
+    fund_account_id: fundAccount.id,
+    amount: Math.round(withdrawal.amount * 100),
+    currency: "INR",
+    mode: withdrawal.method === "upi" ? "UPI" : "IMPS",
+    purpose: "payout",
+    queue_if_low_balance: true,
+    reference_id: withdrawal._id.toString(),
+    narration: `MahaHub withdrawal ${withdrawal._id}`,
+  });
+}
+
+export const resolveWithdrawal = asyncHandler(async (req, res) => {
+  const { action, note } = req.body;
+  if (!["complete", "reject"].includes(action)) throw new ApiError(400, "Invalid action");
+
+  const withdrawal = await Withdrawal.findById(req.params.id);
+  if (!withdrawal) throw new ApiError(404, "Withdrawal request not found");
+  if (withdrawal.status !== "pending") throw new ApiError(400, "This withdrawal request has already been processed");
+
+  let payout = null;
+  if (action === "complete") {
+    const freelancer = await User.findById(withdrawal.freelancer);
+    try {
+      payout = await attemptRazorpayXPayout(withdrawal, freelancer);
+    } catch (err) {
+      throw new ApiError(502, `RazorpayX payout failed: ${err.error?.description || err.message}`);
+    }
+  }
+
+  withdrawal.status = action === "complete" ? "completed" : "rejected";
+  withdrawal.provider = payout ? "razorpayx" : "manual";
+  withdrawal.providerPayoutId = payout?.id || "";
+  withdrawal.adminNote = note || "";
+  withdrawal.processedAt = new Date();
+  await withdrawal.save();
+
+  const destinationLabel =
+    withdrawal.method === "upi" ? withdrawal.upiId : `${withdrawal.bankAccountHolder} · ${withdrawal.bankAccountNumber}`;
+
+  await notify(req.app, {
+    user: withdrawal.freelancer,
+    type: "system",
+    title:
+      action === "complete"
+        ? `₹${withdrawal.amount} withdrawal completed`
+        : `₹${withdrawal.amount} withdrawal request rejected`,
+    message:
+      action === "complete"
+        ? `Sent to ${destinationLabel}${payout ? " via RazorpayX" : ""}.${note ? ` Note: ${note}` : ""}`
+        : note || "Contact support if you have questions.",
+    link: "/dashboard/freelancer/earnings",
+  });
+
+  res.json({ success: true, data: withdrawal });
+});
+
+// --- KYC moderation ---
+
+export const listKycRequests = asyncHandler(async (req, res) => {
+  const users = await User.find({ kycStatus: "pending" })
+    .select("name email avatar kycDocuments kycSubmittedAt")
+    .sort({ kycSubmittedAt: 1 });
+  res.json({ success: true, data: users });
+});
+
+export const reviewKyc = asyncHandler(async (req, res) => {
+  const { action, note } = req.body;
+  if (!["approve", "reject"].includes(action)) throw new ApiError(400, "Invalid action");
+
+  const user = await User.findById(req.params.userId);
+  if (!user) throw new ApiError(404, "User not found");
+  if (user.kycStatus !== "pending") throw new ApiError(400, "This user has no pending verification request");
+
+  user.kycStatus = action === "approve" ? "verified" : "rejected";
+  user.kycReviewNote = note || "";
+  await user.save();
+
+  await notify(req.app, {
+    user: user._id,
+    type: "system",
+    title: action === "approve" ? "Your identity was verified" : "Verification request rejected",
+    message:
+      action === "approve"
+        ? "You're now KYC-verified and can withdraw your earnings."
+        : note || "Please resubmit with clearer documents.",
+    link: "/dashboard/freelancer/earnings",
+  });
+
+  res.json({ success: true, data: user.toSafeJSON() });
+});
+
+// --- Platform settings (commission rate) ---
+
+export const getPlatformSettings = asyncHandler(async (req, res) => {
+  let settings = await PlatformSettings.findOne();
+  if (!settings) settings = await PlatformSettings.create({});
+  res.json({ success: true, data: settings });
+});
+
+export const updatePlatformSettings = asyncHandler(async (req, res) => {
+  const { commissionPercent } = req.body;
+  if (commissionPercent === undefined || commissionPercent < 0 || commissionPercent > 100) {
+    throw new ApiError(400, "Commission percent must be between 0 and 100");
+  }
+
+  let settings = await PlatformSettings.findOne();
+  if (!settings) settings = new PlatformSettings();
+  settings.commissionPercent = commissionPercent;
+  await settings.save();
+
+  res.json({ success: true, data: settings });
 });

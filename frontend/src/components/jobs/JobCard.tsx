@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { MapPin, Briefcase, Wifi } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SaveButton } from "@/components/shared/SaveButton";
 import { formatCurrency } from "@/lib/utils";
 import type { Job } from "@/types";
 
@@ -14,22 +16,30 @@ const TYPE_LABELS: Record<Job["type"], string> = {
 };
 
 export function JobCard({ job }: { job: Job }) {
+  const employer = typeof job.employer === "object" ? job.employer : null;
+
   return (
     <Link to={`/jobs/${job._id}`}>
       <Card className="flex h-full flex-col p-5 transition-all hover:-translate-y-0.5 hover:shadow-card">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
-              {job.companyName[0]}
-            </div>
+            <Avatar className="h-11 w-11 shrink-0 rounded-lg">
+              <AvatarImage src={employer?.avatar} alt={job.companyName} className="rounded-lg object-cover" />
+              <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
+                {job.companyName[0]}
+              </AvatarFallback>
+            </Avatar>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{job.title}</p>
               <p className="truncate text-xs text-muted-foreground">{job.companyName}</p>
             </div>
           </div>
-          <Badge variant="secondary" className="shrink-0 text-[10px]">
-            {TYPE_LABELS[job.type]}
-          </Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant="secondary" className="text-[10px]">
+              {TYPE_LABELS[job.type]}
+            </Badge>
+            <SaveButton type="job" id={job._id} className="h-6 w-6 bg-muted text-muted-foreground hover:bg-muted hover:text-primary" />
+          </div>
         </div>
 
         <p className="mb-4 line-clamp-2 flex-1 text-sm text-muted-foreground">{job.description}</p>

@@ -6,10 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { serviceApi } from "@/api/freelancers";
-import { formatCurrency } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { formatCurrency, initialsFromName } from "@/lib/utils";
 
 export default function MyGigs() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: services, isLoading } = useQuery({ queryKey: ["services", "mine"], queryFn: serviceApi.mine });
 
@@ -49,7 +52,10 @@ export default function MyGigs() {
         </Card>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
+          {services.map((service) => {
+            const postedBy = typeof service.freelancer === "object" ? service.freelancer : null;
+            const isTeammateGig = !!postedBy && postedBy._id !== user?.id;
+            return (
             <Card key={service._id} className="flex flex-col p-5">
               <div className="mb-2 flex items-center justify-between">
                 <Badge variant="outline" className="text-[10px]">
@@ -59,6 +65,15 @@ export default function MyGigs() {
                   {service.status}
                 </Badge>
               </div>
+              {isTeammateGig && postedBy && (
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Avatar className="h-4 w-4">
+                    <AvatarImage src={postedBy.avatar} alt={postedBy.name} />
+                    <AvatarFallback className="text-[8px]">{initialsFromName(postedBy.name)}</AvatarFallback>
+                  </Avatar>
+                  Posted by {postedBy.name}
+                </div>
+              )}
               <p className="mb-3 line-clamp-2 flex-1 text-sm font-medium">{service.title}</p>
               <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
                 <span>{service.ordersCount} orders</span>
@@ -81,7 +96,8 @@ export default function MyGigs() {
                 </Button>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </DashboardLayout>

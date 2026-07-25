@@ -20,6 +20,7 @@ export const protect = asyncHandler(async (req, res, next) => {
   const user = await User.findById(payload.sub);
   if (!user) throw new ApiError(401, "Not authorized, user no longer exists");
   if (user.isBanned) throw new ApiError(403, "This account has been suspended");
+  if (user.isDeactivated) throw new ApiError(403, "This account has been deactivated. Contact support to reactivate it.");
 
   req.user = user;
   next();
@@ -35,7 +36,7 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
   try {
     const payload = verifyAccessToken(header.split(" ")[1]);
     const user = await User.findById(payload.sub);
-    if (user && !user.isBanned) req.user = user;
+    if (user && !user.isBanned && !user.isDeactivated) req.user = user;
   } catch {
     // ignore invalid/expired tokens — request proceeds unauthenticated
   }

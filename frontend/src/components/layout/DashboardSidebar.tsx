@@ -18,6 +18,11 @@ import {
   ShieldAlert,
   UserRound,
   Trophy,
+  ArrowDownToLine,
+  Bell,
+  Truck,
+  Bookmark,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFounderTeamApplications } from "@/hooks/useFounderTeamApplications";
@@ -39,26 +44,35 @@ const FOUNDER_ITEMS: SidebarItem[] = [
   { label: "Investors", to: "/dashboard/founder/investors", icon: Wallet },
   { label: "Connect & Grow", to: "/investors", icon: Handshake },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
 ];
 
 const FREELANCER_ITEMS: SidebarItem[] = [
   { label: "Dashboard", to: "/dashboard/freelancer", icon: LayoutDashboard },
-  { label: "Find Jobs", to: "/dashboard/freelancer/jobs", icon: Briefcase },
+  { label: "Find Jobs & Projects", to: "/freelancers?tab=projects", icon: Briefcase },
   { label: "My Applications", to: "/dashboard/freelancer/applications", icon: ClipboardList },
   { label: "My Contest Entries", to: "/dashboard/freelancer/contests", icon: Trophy },
   { label: "My Projects", to: "/dashboard/freelancer/projects", icon: CheckSquare },
   { label: "My Gigs", to: "/dashboard/freelancer/gigs", icon: Rocket },
+  { label: "Company Team", to: "/dashboard/freelancer/company", icon: Building2 },
+  { label: "My Orders", to: "/dashboard/freelancer/orders", icon: Truck },
+  { label: "Saved", to: "/dashboard/freelancer/saved", icon: Bookmark },
+  { label: "Skill Tests", to: "/dashboard/freelancer/skill-tests", icon: GraduationCap },
   { label: "Earnings", to: "/dashboard/freelancer/earnings", icon: Wallet },
+  { label: "Job Alerts", to: "/dashboard/freelancer/alerts", icon: Bell },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
   { label: "Reviews", to: "/dashboard/freelancer/reviews", icon: Star },
 ];
 
 const EMPLOYER_ITEMS: SidebarItem[] = [
   { label: "Dashboard & My Jobs", to: "/dashboard/employer", icon: LayoutDashboard },
   { label: "Post a Job", to: "/dashboard/employer/post-job", icon: Rocket },
+  { label: "Company Team", to: "/dashboard/employer/company", icon: Building2 },
   { label: "My Contests", to: "/dashboard/employer/contests", icon: Trophy },
   { label: "My Payments", to: "/dashboard/employer/payments", icon: Wallet },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
 ];
 
 const ADMIN_ITEMS: SidebarItem[] = [
@@ -70,31 +84,40 @@ const ADMIN_ITEMS: SidebarItem[] = [
   { label: "Gigs", to: "/dashboard/admin/gigs", icon: Briefcase },
   { label: "Contests", to: "/dashboard/admin/contests", icon: Trophy },
   { label: "Payment Disputes", to: "/dashboard/admin/payments", icon: Wallet },
+  { label: "Withdrawals", to: "/dashboard/admin/withdrawals", icon: ArrowDownToLine },
+  { label: "KYC Requests", to: "/dashboard/admin/kyc", icon: ShieldAlert },
+  { label: "Platform Settings", to: "/dashboard/admin/settings", icon: Settings },
+  { label: "Skill Tests", to: "/dashboard/admin/skill-tests", icon: GraduationCap },
 ];
 
 const INVESTOR_ITEMS: SidebarItem[] = [
   { label: "Deal Flow", to: "/dashboard/investor", icon: TrendingUp },
   { label: "Browse Startups", to: "/startups", icon: Rocket },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
 ];
 
 const MENTOR_ITEMS: SidebarItem[] = [
   { label: "Session Requests", to: "/dashboard/mentor", icon: GraduationCap },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
 ];
 
 const PARTNER_ITEMS: SidebarItem[] = [
   { label: "My Profile", to: "/dashboard/profile", icon: Building2 },
   { label: "Browse Startups", to: "/startups", icon: Rocket },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
 ];
 
 const CLIENT_ITEMS: SidebarItem[] = [
   { label: "Dashboard & My Projects", to: "/dashboard/client", icon: FolderKanban },
   { label: "Post a Project", to: "/dashboard/client/post-job", icon: Rocket },
+  { label: "Company Team", to: "/dashboard/client/company", icon: Building2 },
   { label: "My Contests", to: "/dashboard/client/contests", icon: Trophy },
   { label: "My Payments", to: "/dashboard/client/payments", icon: Wallet },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
 ];
 
 export type DashboardRole = Extract<
@@ -136,6 +159,9 @@ export function DashboardSidebar({
   });
   if (role === "founder" && user?.id) {
     items = [...items, { label: "My Public Profile", to: `/founders/${user.id}`, icon: UserRound }];
+  }
+  if (role === "freelancer" && user?.id) {
+    items = [...items, { label: "My Public Profile", to: `/freelancers/${user.id}`, icon: UserRound }];
   }
 
   return (

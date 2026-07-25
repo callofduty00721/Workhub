@@ -52,6 +52,13 @@ const portfolioItemSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     image: { type: String, default: "" },
     link: { type: String, default: "" },
+    tags: [{ type: String }],
+    clientName: { type: String, default: "" },
+    projectRole: { type: String, default: "" },
+    // Set only via the verified-payment picker in updateMyProfile, which checks
+    // the payment actually belongs to this freelancer and was paid+released —
+    // never trust a raw id copied straight from the request body.
+    verifiedPayment: { type: mongoose.Schema.Types.ObjectId, ref: "Payment", default: null },
   },
   { _id: false }
 );
@@ -75,7 +82,40 @@ const userSchema = new mongoose.Schema(
     skills: [{ type: String }],
     hourlyRate: { type: Number, default: 0 },
     yearsOfExperience: { type: Number, default: 0 },
+    availabilityStatus: { type: String, enum: ["available", "busy"], default: "available" },
+    hoursPerWeekAvailable: { type: Number, default: 0 },
+    workingDays: [{ type: String, enum: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] }],
+    workingHours: { type: String, default: "" },
+    // Cached copy of the level computed in utils/freelancerLevel.js — refreshed
+    // on escrow release / dispute resolution, not on every read, so it can be
+    // filtered on cheaply in freelancer list/search queries.
+    level: { type: String, enum: ["new", "level_1", "top_rated"], default: "new" },
+    // Self-reported trust signals a freelancer fills in themselves (like
+    // yearsOfExperience above) — not independently verified by the platform.
+    totalHoursWorked: { type: Number, default: 0 },
+    onTimeDeliveryPercent: { type: Number, default: 0, min: 0, max: 100 },
+    responseTimeLabel: { type: String, default: "" },
+    phone: { type: String, default: "" },
+    resumeUrl: { type: String, default: "" },
+    resumeUpdatedAt: { type: Date },
+    videoIntro: { type: String, default: "" },
     portfolioItems: [portfolioItemSchema],
+    payoutDetails: {
+      preferredMethod: { type: String, enum: ["upi", "bank"], default: "upi" },
+      upiId: { type: String, default: "" },
+      bankAccountNumber: { type: String, default: "" },
+      bankIfsc: { type: String, default: "" },
+      bankAccountHolder: { type: String, default: "" },
+    },
+
+    // KYC — required before a freelancer can withdraw real money
+    kycStatus: { type: String, enum: ["unverified", "pending", "verified", "rejected"], default: "unverified" },
+    kycDocuments: [{ url: { type: String, required: true }, name: { type: String, required: true } }],
+    kycSubmittedAt: { type: Date },
+    kycReviewNote: { type: String, default: "" },
+
+    // Analytics
+    profileViews: { type: Number, default: 0 },
 
     // Investor
     investmentFocus: [{ type: String }],
@@ -93,6 +133,10 @@ const userSchema = new mongoose.Schema(
 
     // Client
     companyName: { type: String, default: "" },
+
+    // Employer — the Company (team account) this user belongs to, if any. Distinct
+    // from `companyName` above (a free-text display label used by Client accounts).
+    company: { type: mongoose.Schema.Types.ObjectId, ref: "Company", default: null },
 
     // Founder
     linkedIn: { type: String, default: "" },
@@ -113,6 +157,19 @@ const userSchema = new mongoose.Schema(
       website: { type: String, default: "" },
     },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    savedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
+    savedProjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Project" }],
+    savedServices: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
+
+    // Referral program — every user gets a code at creation; referredBy is set
+    // once at signup if they arrived via someone else's code. Bonus balance is
+    // a separate informational credit ledger, deliberately NOT folded into the
+    // real-money withdrawal wallet (which is computed from Payment records) —
+    // keeps this additive feature from touching the escrow/payout math.
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    referralBonusBalance: { type: Number, default: 0 },
+    referralBonusTotal: { type: Number, default: 0 },
     lastActiveAt: { type: Date, default: Date.now },
 
     // Aggregate rating (freelancers, mentors, services all roll up onto the user)
@@ -127,6 +184,11 @@ const userSchema = new mongoose.Schema(
 
     isProfileComplete: { type: Boolean, default: false },
     isBanned: { type: Boolean, default: false },
+    // Self-service, distinct from isBanned (admin-imposed) — a deactivated
+    // account is blocked from logging in the same way, but only the account
+    // owner can trigger it and it's reported separately in the admin panel.
+    isDeactivated: { type: Boolean, default: false },
+    emailNotificationsEnabled: { type: Boolean, default: true },
     refreshTokenVersion: { type: Number, default: 0 },
   },
   { timestamps: true }
@@ -135,6 +197,21 @@ const userSchema = new mongoose.Schema(
 userSchema.pre("save", async function hashPassword(next) {
   if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+userSchema.pre("save", async function assignReferralCode(next) {
+  if (!this.isNew || this.referralCode) return next();
+  const base = (this.name || "user").replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase() || "USER";
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = `${base}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+    // eslint-disable-next-line no-await-in-loop
+    const exists = await this.constructor.exists({ referralCode: candidate });
+    if (!exists) {
+      this.referralCode = candidate;
+      break;
+    }
+  }
   next();
 });
 
@@ -173,7 +250,20 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     skills,
     hourlyRate,
     yearsOfExperience,
+    availabilityStatus,
+    hoursPerWeekAvailable,
+    workingDays,
+    workingHours,
+    level,
+    totalHoursWorked,
+    onTimeDeliveryPercent,
+    responseTimeLabel,
+    phone,
+    resumeUrl,
+    resumeUpdatedAt,
+    videoIntro,
     portfolioItems,
+    payoutDetails,
     investmentFocus,
     ticketSizeMin,
     ticketSizeMax,
@@ -183,6 +273,7 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     organizationName,
     partnerType,
     companyName,
+    company,
     linkedIn,
     industries,
     pastStartupsCount,
@@ -198,8 +289,21 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     socialLinks,
     rating,
     reviewCount,
+    kycStatus,
+    kycDocuments,
+    kycSubmittedAt,
+    kycReviewNote,
+    profileViews,
+    savedJobs,
+    savedProjects,
+    referralCode,
+    referralBonusBalance,
+    referralBonusTotal,
+    savedServices,
+    lastActiveAt,
     isEmailVerified,
     isProfileComplete,
+    emailNotificationsEnabled,
     createdAt,
   } = this;
   return {
@@ -217,7 +321,20 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     skills,
     hourlyRate,
     yearsOfExperience,
+    availabilityStatus,
+    hoursPerWeekAvailable,
+    workingDays,
+    workingHours,
+    level,
+    totalHoursWorked,
+    onTimeDeliveryPercent,
+    responseTimeLabel,
+    phone,
+    resumeUrl,
+    resumeUpdatedAt,
+    videoIntro,
     portfolioItems,
+    payoutDetails,
     investmentFocus,
     ticketSizeMin,
     ticketSizeMax,
@@ -227,6 +344,7 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     organizationName,
     partnerType,
     companyName,
+    company,
     linkedIn,
     industries,
     pastStartupsCount,
@@ -242,8 +360,21 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     socialLinks,
     rating,
     reviewCount,
+    kycStatus,
+    kycDocuments,
+    kycSubmittedAt,
+    kycReviewNote,
+    profileViews,
+    savedJobs,
+    savedProjects,
+    referralCode,
+    referralBonusBalance,
+    referralBonusTotal,
+    savedServices,
+    lastActiveAt,
     isEmailVerified,
     isProfileComplete,
+    emailNotificationsEnabled,
     createdAt,
   };
 };

@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { MapPin, Wifi, Briefcase, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { MapPin, Wifi, Briefcase, Clock, CheckCircle2, Loader2, Lock, ShieldCheck, FileText, Download } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { jobApi } from "@/api/jobs";
 import { formatCurrency } from "@/lib/utils";
@@ -21,7 +20,6 @@ const TYPE_LABELS: Record<string, string> = {
   part_time: "Part Time",
   contract: "Contract",
   internship: "Internship",
-  freelance: "Freelance",
 };
 
 export default function JobDetails() {
@@ -31,11 +29,29 @@ export default function JobDetails() {
   const queryClient = useQueryClient();
   const [coverLetter, setCoverLetter] = useState("");
   const [resumeUrl, setResumeUrl] = useState("");
-  const [proposedRate, setProposedRate] = useState(0);
-  const [deliveryDays, setDeliveryDays] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: job, isLoading } = useQuery({ queryKey: ["jobs", id], queryFn: () => jobApi.getById(id), enabled: !!id });
+
+  const acceptNdaMutation = useMutation({
+    mutationFn: () => jobApi.acceptNda(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["jobs", id] }),
+  });
+
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [openingAttachment, setOpeningAttachment] = useState<number | null>(null);
+  const openAttachment = async (index: number) => {
+    setAttachmentError(null);
+    setOpeningAttachment(index);
+    try {
+      const { url } = await jobApi.getAttachmentUrl(id, index);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setAttachmentError(isAxiosError(err) ? err.response?.data?.message || "Could not open this file" : "Could not open this file");
+    } finally {
+      setOpeningAttachment(null);
+    }
+  };
 
   const { data: myApplications } = useQuery({
     queryKey: ["applications", "mine"],
@@ -45,15 +61,8 @@ export default function JobDetails() {
 
   const alreadyApplied = myApplications?.some((a) => (typeof a.job === "string" ? a.job : a.job._id) === id);
 
-  const isProposalType = job?.type === "freelance" || job?.type === "contract";
-
   const applyMutation = useMutation({
-    mutationFn: () =>
-      jobApi.apply(id, {
-        coverLetter,
-        resumeUrl,
-        ...(isProposalType ? { proposedRate, deliveryDays } : {}),
-      }),
+    mutationFn: () => jobApi.apply(id, { coverLetter, resumeUrl }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications", "mine"] });
       setDialogOpen(false);
@@ -104,44 +113,102 @@ export default function JobDetails() {
                       {job.isRemote ? <Wifi className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
                       {job.isRemote ? "Remote" : job.location}
                     </Badge>
+                    {job.visibility === "invite_only" && (
+                      <Badge variant="warning" className="flex items-center gap-1">
+                        <Lock className="h-3 w-3" /> Private Project
+                      </Badge>
+                    )}
+                    {job.requiresNda && (
+                      <Badge variant={job.ndaAccepted ? "success" : "outline"} className="flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" /> {job.ndaAccepted ? "NDA Accepted" : "NDA Required"}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <div>
-                <h3 className="mb-2 text-base font-semibold">Job Description</h3>
-                <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">{job.description}</p>
-              </div>
-              {job.responsibilities && (
-                <div>
-                  <h3 className="mb-2 text-base font-semibold">Responsibilities</h3>
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{job.responsibilities}</p>
+          {job.requiresNda && !job.ndaAccepted ? (
+            <Card>
+              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                <ShieldCheck className="h-9 w-9 text-primary" />
+                <p className="text-base font-semibold">This project requires an NDA</p>
+                <p className="max-w-md text-sm text-muted-foreground">
+                  {job.companyName} requires you to accept a Non-Disclosure Agreement before viewing the full project description and files.
+                </p>
+                <div className="mt-2 max-h-48 w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-muted/40 p-4 text-left text-xs text-muted-foreground">
+                  {job.ndaText?.trim() ||
+                    "By accepting, you agree to keep all project details, files, and communications confidential, and not to disclose or use them for any purpose other than evaluating or completing this project."}
                 </div>
-              )}
-              {job.requirements && (
+                {!user ? (
+                  <Button variant="gradient" onClick={() => navigate("/login", { state: { from: `/jobs/${id}` } })}>
+                    Log in to review the NDA
+                  </Button>
+                ) : (
+                  <Button variant="gradient" disabled={acceptNdaMutation.isPending} onClick={() => acceptNdaMutation.mutate()}>
+                    {acceptNdaMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Accept NDA &amp; View Project
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="space-y-5 p-6">
                 <div>
-                  <h3 className="mb-2 text-base font-semibold">Requirements</h3>
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{job.requirements}</p>
+                  <h3 className="mb-2 text-base font-semibold">Job Description</h3>
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">{job.description}</p>
                 </div>
-              )}
-              {job.skills.length > 0 && (
-                <div>
-                  <h3 className="mb-2 text-base font-semibold">Skills</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {job.skills.map((skill) => (
-                      <Badge key={skill} variant="outline">
-                        {skill}
-                      </Badge>
-                    ))}
+                {job.responsibilities && (
+                  <div>
+                    <h3 className="mb-2 text-base font-semibold">Responsibilities</h3>
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{job.responsibilities}</p>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+                {job.requirements && (
+                  <div>
+                    <h3 className="mb-2 text-base font-semibold">Requirements</h3>
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{job.requirements}</p>
+                  </div>
+                )}
+                {job.skills.length > 0 && (
+                  <div>
+                    <h3 className="mb-2 text-base font-semibold">Skills</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {job.skills.map((skill) => (
+                        <Badge key={skill} variant="outline">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {!!job.attachments?.length && (
+                  <div>
+                    <h3 className="mb-2 text-base font-semibold">Confidential Attachments</h3>
+                    <div className="space-y-2">
+                      {job.attachments.map((a, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => openAttachment(i)}
+                          disabled={openingAttachment === i}
+                          className="flex w-full items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5 text-left text-sm hover:bg-accent"
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" /> {a.name}
+                          </span>
+                          {openingAttachment === i ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-muted-foreground" />}
+                        </button>
+                      ))}
+                    </div>
+                    {attachmentError && <p className="mt-2 text-xs text-danger">{attachmentError}</p>}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -180,15 +247,11 @@ export default function JobDetails() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>{isProposalType ? "Send a Proposal to" : "Apply to"} {job.title}</DialogTitle>
-                      <DialogDescription>
-                        {isProposalType
-                          ? `Pitch yourself and your bid to ${job.companyName}.`
-                          : `Add a short cover letter to introduce yourself to ${job.companyName}.`}
-                      </DialogDescription>
+                      <DialogTitle>Apply to {job.title}</DialogTitle>
+                      <DialogDescription>Add a short cover letter to introduce yourself to {job.companyName}.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-1.5">
-                      <Label>{isProposalType ? "Your Pitch" : "Cover Letter"}</Label>
+                      <Label>Cover Letter</Label>
                       <Textarea
                         value={coverLetter}
                         onChange={(e) => setCoverLetter(e.target.value)}
@@ -196,30 +259,6 @@ export default function JobDetails() {
                         className="min-h-[140px]"
                       />
                     </div>
-                    {isProposalType && (
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label>Your Bid ({job.currency})</Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            value={proposedRate || ""}
-                            onChange={(e) => setProposedRate(Number(e.target.value))}
-                            placeholder="e.g. 25000"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Delivery Time (days)</Label>
-                          <Input
-                            type="number"
-                            min={0}
-                            value={deliveryDays || ""}
-                            onChange={(e) => setDeliveryDays(Number(e.target.value))}
-                            placeholder="e.g. 14"
-                          />
-                        </div>
-                      </div>
-                    )}
                     <div className="mt-3">
                       <FileUpload
                         folder="resume"
@@ -236,7 +275,7 @@ export default function JobDetails() {
                     )}
                     <Button className="mt-4 w-full" variant="gradient" onClick={() => applyMutation.mutate()} disabled={applyMutation.isPending}>
                       {applyMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {isProposalType ? "Send Proposal" : "Submit Application"}
+                      Submit Application
                     </Button>
                   </DialogContent>
                 </Dialog>
