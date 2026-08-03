@@ -1,6 +1,6 @@
 import { Server } from "socket.io";
 import { verifyAccessToken } from "../utils/tokens.js";
-import User from "../models/User.js";
+import User from "../modules/shared/user.model.js";
 
 // In-memory presence: userId -> number of open sockets (a user can have multiple tabs).
 const onlineUsers = new Map();

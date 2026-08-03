@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { dashboardPathForRole } from "@/lib/roles";
+import { postLoginPath } from "@/lib/roles";
 import { isAxiosError } from "axios";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
@@ -37,7 +37,7 @@ export default function Login() {
     setServerError(null);
     try {
       const user = await login(values.email, values.password);
-      const redirectTo = (location.state as { from?: string } | null)?.from ?? dashboardPathForRole(user.role);
+      const redirectTo = (location.state as { from?: string } | null)?.from ?? postLoginPath(user.role);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       const message = isAxiosError(err) ? err.response?.data?.message : null;

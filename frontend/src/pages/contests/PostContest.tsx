@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldLabel } from "@/components/shared/FieldInfo";
+import { SkillsInput } from "@/components/shared/SkillsInput";
 import { Button } from "@/components/ui/button";
 import { contestApi } from "@/api/contests";
 
@@ -42,6 +43,7 @@ export default function PostContest({
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -116,7 +118,18 @@ export default function PostContest({
               <FieldLabel htmlFor="skillsInput" info="Add skills separated by commas.">
                 Skills (comma separated)
               </FieldLabel>
-              <Input id="skillsInput" placeholder="Logo Design, Branding, Illustrator" {...register("skillsInput")} />
+              <Controller
+                control={control}
+                name="skillsInput"
+                render={({ field }) => (
+                  <SkillsInput
+                    id="skillsInput"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    placeholder="Logo Design, Branding, Illustrator"
+                  />
+                )}
+              />
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">

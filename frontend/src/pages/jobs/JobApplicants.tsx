@@ -2,12 +2,31 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { ArrowLeft, Mail, MapPin, MessageSquare, CreditCard, CheckCircle2, Lock, Unlock, Loader2, ShieldCheck, Eye, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  MapPin,
+  MessageSquare,
+  CreditCard,
+  CheckCircle2,
+  Lock,
+  Unlock,
+  Loader2,
+  ShieldCheck,
+  Eye,
+  FileText,
+  CalendarClock,
+  Video,
+  Phone,
+} from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { jobApi } from "@/api/jobs";
 import { projectApi } from "@/api/projects";
@@ -19,7 +38,7 @@ import { WorkDiary } from "@/components/jobs/WorkDiary";
 import { ContractPanel } from "@/components/jobs/ContractPanel";
 import { useAuth } from "@/context/AuthContext";
 import { initialsFromName, formatCurrency } from "@/lib/utils";
-import type { ApplicationStatus, Job, Project } from "@/types";
+import type { Application, ApplicationStatus, Job, Project } from "@/types";
 
 const STATUSES: ApplicationStatus[] = ["applied", "shortlisted", "interview", "hired", "rejected"];
 
@@ -48,6 +67,11 @@ export default function JobApplicants({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [payError, setPayError] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState<Application | null>(null);
+  const [interviewDateTime, setInterviewDateTime] = useState("");
+  const [interviewMode, setInterviewMode] = useState<"video" | "in_person" | "phone">("video");
+  const [interviewLink, setInterviewLink] = useState("");
+  const [interviewLocation, setInterviewLocation] = useState("");
   const api = source === "project" ? projectApi : jobApi;
   const queryKeyPrefix = source === "project" ? "projects" : "jobs";
 
@@ -78,6 +102,23 @@ export default function JobApplicants({
     mutationFn: ({ applicationId, status }: { applicationId: string; status: ApplicationStatus }) =>
       jobApi.updateApplicationStatus(applicationId, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [queryKeyPrefix, id, "applications"] }),
+  });
+
+  const scheduleMutation = useMutation({
+    mutationFn: () =>
+      jobApi.scheduleInterview(scheduling!._id, {
+        scheduledAt: new Date(interviewDateTime).toISOString(),
+        mode: interviewMode,
+        meetingLink: interviewMode === "video" ? interviewLink : "",
+        location: interviewMode === "in_person" ? interviewLocation : "",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [queryKeyPrefix, id, "applications"] });
+      setScheduling(null);
+      setInterviewDateTime("");
+      setInterviewLink("");
+      setInterviewLocation("");
+    },
   });
 
   const messageMutation = useMutation({
@@ -200,6 +241,16 @@ export default function JobApplicants({
                         </p>
                       )}
                       {app.coverLetter && <p className="mt-2 line-clamp-2 max-w-md text-xs text-foreground/80">{app.coverLetter}</p>}
+                      {app.interview?.scheduledAt && (
+                        <div className="mt-2 flex items-center gap-1.5 text-xs text-foreground/80">
+                          <CalendarClock className="h-3.5 w-3.5 text-primary" />
+                          {new Date(app.interview.scheduledAt).toLocaleString()} ·{" "}
+                          {app.interview.mode === "video" ? "Video call" : app.interview.mode === "phone" ? "Phone call" : "In person"}
+                          <Badge variant={app.interview.status === "confirmed" ? "success" : "warning"} className="text-[10px]">
+                            {app.interview.status === "confirmed" ? "Confirmed" : "Awaiting confirmation"}
+                          </Badge>
+                        </div>
+                      )}
                       {applicant && app.status === "hired" && !!app.proposedRate && (
                         <div className="max-w-md space-y-3">
                           <ContractPanel application={app} viewerRole="employer" />
@@ -224,6 +275,22 @@ export default function JobApplicants({
                       >
                         {messageMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
                         Message
+                      </Button>
+                    )}
+                    {app.status !== "withdrawn" && app.status !== "rejected" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setScheduling(app);
+                          setInterviewMode(app.interview?.mode ?? "video");
+                          setInterviewLink(app.interview?.meetingLink ?? "");
+                          setInterviewLocation(app.interview?.location ?? "");
+                          setInterviewDateTime(app.interview?.scheduledAt ? app.interview.scheduledAt.slice(0, 16) : "");
+                        }}
+                      >
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        {app.interview?.scheduledAt ? "Reschedule" : "Schedule Interview"}
                       </Button>
                     )}
                     {applicant &&
@@ -296,6 +363,69 @@ export default function JobApplicants({
           })}
         </div>
       )}
+
+      <Dialog open={!!scheduling} onOpenChange={(open) => !open && setScheduling(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Schedule Interview</DialogTitle>
+            <DialogDescription>
+              {scheduling && typeof scheduling.applicant === "object" ? `With ${scheduling.applicant.name}.` : ""} The candidate will be notified and
+              asked to confirm.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Date &amp; Time</Label>
+              <Input type="datetime-local" value={interviewDateTime} onChange={(e) => setInterviewDateTime(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mode</Label>
+              <Select value={interviewMode} onValueChange={(v) => setInterviewMode(v as typeof interviewMode)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="video">
+                    <Video className="h-3.5 w-3.5" /> Video Call
+                  </SelectItem>
+                  <SelectItem value="phone">
+                    <Phone className="h-3.5 w-3.5" /> Phone Call
+                  </SelectItem>
+                  <SelectItem value="in_person">
+                    <MapPin className="h-3.5 w-3.5" /> In Person
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {interviewMode === "video" && (
+              <div className="space-y-1.5">
+                <Label>Meeting Link</Label>
+                <Input value={interviewLink} onChange={(e) => setInterviewLink(e.target.value)} placeholder="https://meet.google.com/..." />
+              </div>
+            )}
+            {interviewMode === "in_person" && (
+              <div className="space-y-1.5">
+                <Label>Location</Label>
+                <Input value={interviewLocation} onChange={(e) => setInterviewLocation(e.target.value)} placeholder="Office address" />
+              </div>
+            )}
+            {scheduleMutation.isError && (
+              <p className="text-xs text-danger">
+                {isAxiosError(scheduleMutation.error) ? scheduleMutation.error.response?.data?.message : "Something went wrong."}
+              </p>
+            )}
+            <Button
+              className="w-full"
+              variant="gradient"
+              disabled={!interviewDateTime || scheduleMutation.isPending}
+              onClick={() => scheduleMutation.mutate()}
+            >
+              {scheduleMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Confirm Schedule
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

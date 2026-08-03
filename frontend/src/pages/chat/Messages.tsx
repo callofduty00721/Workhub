@@ -22,6 +22,8 @@ const MAX_COMBINED_ATTACHMENT_MB = 256;
 const DASHBOARD_ROLES: DashboardRole[] = [
   "founder",
   "freelancer",
+  "job_seeker",
+  "influencer",
   "employer",
   "super_admin",
   "investor",

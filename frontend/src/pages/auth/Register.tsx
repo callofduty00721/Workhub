@@ -1,38 +1,25 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Loader2, Rocket, Briefcase, Building2, TrendingUp, GraduationCap, Handshake, Users } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { isAxiosError } from "axios";
 import { AuthShell } from "./AuthShell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { dashboardPathForRole } from "@/lib/roles";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
-import type { UserRole } from "@/types";
-
-const ROLE_OPTIONS: { value: UserRole; label: string; desc: string; icon: typeof Rocket }[] = [
-  { value: "founder", label: "Founder", desc: "I'm building a startup", icon: Rocket },
-  { value: "freelancer", label: "Freelancer", desc: "I want to find gigs or jobs", icon: Briefcase },
-  { value: "employer", label: "Employer", desc: "I want to hire", icon: Building2 },
-  { value: "investor", label: "Investor", desc: "I want to invest", icon: TrendingUp },
-  { value: "mentor", label: "Mentor", desc: "I want to mentor", icon: GraduationCap },
-  { value: "partner", label: "Partner", desc: "Accelerator, NGO, etc.", icon: Handshake },
-  { value: "client", label: "Client", desc: "I want to hire freelancers", icon: Users },
-];
 
 const schema = z
   .object({
     name: z.string().min(2, "Enter your full name"),
     email: z.string().email("Enter a valid email address"),
-    phone: z.string().min(10, "Enter a valid phone number"),
+    phone: z.string().regex(/^\d{10}$/, "Enter a valid 10-digit phone number"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
-    role: z.enum(["founder", "freelancer", "employer", "investor", "mentor", "partner", "client"]),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -52,14 +39,13 @@ export default function Register() {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { role: "founder" } });
+  } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
     try {
-      const user = await registerUser(values.name, values.email, values.password, values.phone, values.role, referralCode);
+      const user = await registerUser(values.name, values.email, values.password, values.phone, undefined, referralCode);
       navigate(dashboardPathForRole(user.role), { replace: true });
     } catch (err) {
       const message = isAxiosError(err) ? err.response?.data?.message : null;
@@ -104,7 +90,15 @@ export default function Register() {
 
         <div className="space-y-2">
           <Label htmlFor="phone">Phone Number</Label>
-          <Input id="phone" type="tel" placeholder="+91 98765 43210" {...register("phone")} aria-invalid={!!errors.phone} />
+          <Input
+            id="phone"
+            type="tel"
+            inputMode="numeric"
+            maxLength={10}
+            placeholder="98765 43210"
+            {...register("phone", { onChange: (e) => (e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10)) })}
+            aria-invalid={!!errors.phone}
+          />
           {errors.phone && <p className="text-xs text-danger">{errors.phone.message}</p>}
         </div>
 
@@ -136,33 +130,6 @@ export default function Register() {
           {errors.confirmPassword && <p className="text-xs text-danger">{errors.confirmPassword.message}</p>}
         </div>
 
-        <div className="space-y-2">
-          <Label>I am a</Label>
-          <Controller
-            control={control}
-            name="role"
-            render={({ field }) => (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {ROLE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => field.onChange(opt.value)}
-                    title={opt.desc}
-                    className={cn(
-                      "flex flex-col items-center gap-1 rounded-lg border p-2.5 text-center transition-colors",
-                      field.value === opt.value ? "border-primary bg-primary/5" : "border-border hover:bg-accent"
-                    )}
-                  >
-                    <opt.icon className={cn("h-4.5 w-4.5", field.value === opt.value ? "text-primary" : "text-muted-foreground")} />
-                    <span className="text-[11px] font-semibold leading-tight">{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          />
-        </div>
-
         <Button type="submit" variant="gradient" className="w-full" size="lg" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           Create Account
@@ -177,7 +144,7 @@ export default function Register() {
           <Link to="/privacy" className="underline hover:text-foreground">
             Privacy Policy
           </Link>
-          .
+          . You'll choose what you're here to do right after.
         </p>
       </form>
 

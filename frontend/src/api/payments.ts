@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { PlanId, Subscription, Payment, EarningsSummary, Paginated, Withdrawal, WithdrawalMethod, PackageName, Deliverable } from "@/types";
+import type { PlanRole, PlanTier, Subscription, Payment, EarningsSummary, Paginated, Withdrawal, WithdrawalMethod, PackageName, Deliverable } from "@/types";
 
 export interface PaymentHistoryFilters {
   page?: number;
@@ -19,27 +19,32 @@ export interface RazorpayOrderResponse {
 }
 
 export const paymentApi = {
-  createRazorpayOrder: (planId: PlanId) =>
+  createRazorpayOrder: (role: PlanRole, tier: PlanTier) =>
     api
       .post<{ success: boolean; data: { orderId: string; amount: number; currency: string; keyId: string; subscriptionId: string } }>(
         "/payments/razorpay/order",
-        { planId }
+        { role, tier }
       )
       .then((r) => r.data.data),
 
   verifyRazorpayPayment: (payload: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
     api.post<{ success: boolean; data: Subscription }>("/payments/razorpay/verify", payload).then((r) => r.data.data),
 
-  createStripeCheckout: (planId: PlanId) =>
-    api.post<{ success: boolean; data: { checkoutUrl: string } }>("/payments/stripe/checkout", { planId }).then((r) => r.data.data),
+  createStripeCheckout: (role: PlanRole, tier: PlanTier) =>
+    api.post<{ success: boolean; data: { checkoutUrl: string } }>("/payments/stripe/checkout", { role, tier }).then((r) => r.data.data),
 
   mySubscription: () => api.get<{ success: boolean; data: Subscription | null }>("/payments/subscription").then((r) => r.data.data),
 
-  createGigOrderPayment: (serviceId: string, payload: { packageName?: PackageName } = {}) =>
-    api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/gig-order/${serviceId}`, payload).then((r) => r.data.data),
+  createGigOrderPayment: (
+    serviceId: string,
+    payload: { packageName?: PackageName; extras?: { label: string; quantity: number }[] } = {}
+  ) => api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/gig-order/${serviceId}`, payload).then((r) => r.data.data),
 
   createJobHirePayment: (applicationId: string) =>
     api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/job-hire/${applicationId}`).then((r) => r.data.data),
+
+  createCampaignPayment: (applicationId: string) =>
+    api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/campaign/${applicationId}`).then((r) => r.data.data),
 
   createMilestonePayment: (milestoneId: string) =>
     api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/milestone/${milestoneId}`).then((r) => r.data.data),

@@ -1,33 +1,44 @@
 import { useState } from "react";
-import { BadgeCheck, ChevronLeft, ChevronRight, Link as LinkIcon, ZoomIn } from "lucide-react";
+import { BadgeCheck, ChevronLeft, ChevronRight, ExternalLink, FileText, Github, ImageIcon, PlayCircle, ZoomIn } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { HorizontalSlider } from "@/components/shared/HorizontalSlider";
 import type { PortfolioItem } from "@/types";
 
+interface ZoomState {
+  itemIndex: number;
+  imageIndex: number;
+}
+
 // Shared between FreelancerProfile (a freelancer's full portfolio) and
 // GigProfile (the portfolio of whoever posted that gig) so past-work proof
 // looks and behaves identically wherever it's shown.
 export function PortfolioGrid({ items }: { items: PortfolioItem[] }) {
-  const [zoomIndex, setZoomIndex] = useState<number | null>(null);
-  const imageIndexes = items.map((item, i) => (item.image ? i : -1)).filter((i) => i >= 0);
+  const [zoom, setZoom] = useState<ZoomState | null>(null);
+  const zoomItem = zoom ? items[zoom.itemIndex] : null;
+  const zoomImages = zoomItem?.images ?? [];
 
   return (
     <>
       <HorizontalSlider itemClassName="w-72">
         {items.map((item, i) => (
           <div key={i} className="overflow-hidden rounded-lg border border-border">
-            {item.image && (
+            {!!item.images?.length && (
               <button
                 type="button"
-                onClick={() => setZoomIndex(i)}
+                onClick={() => setZoom({ itemIndex: i, imageIndex: 0 })}
                 className="group relative block h-36 w-full overflow-hidden"
                 aria-label={`Zoom ${item.title}`}
               >
-                <img src={item.image} alt={item.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                <img src={item.images[0]} alt={item.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/30 group-hover:opacity-100">
                   <ZoomIn className="h-6 w-6 text-white" />
                 </span>
+                {item.images.length > 1 && (
+                  <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    <ImageIcon className="h-2.5 w-2.5" /> {item.images.length}
+                  </span>
+                )}
               </button>
             )}
             <div className="p-3.5">
@@ -52,35 +63,58 @@ export function PortfolioGrid({ items }: { items: PortfolioItem[] }) {
                   ))}
                 </div>
               )}
-              {item.link && (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <LinkIcon className="h-3 w-3" /> View
-                </a>
+              {(item.video || item.pdf || item.websiteLink || item.githubLink || item.liveDemoLink) && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {item.video && (
+                    <a href={item.video} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                      <PlayCircle className="h-3 w-3" /> Video
+                    </a>
+                  )}
+                  {item.pdf && (
+                    <a href={item.pdf} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                      <FileText className="h-3 w-3" /> PDF
+                    </a>
+                  )}
+                  {item.websiteLink && (
+                    <a href={item.websiteLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                      <ExternalLink className="h-3 w-3" /> Website
+                    </a>
+                  )}
+                  {item.githubLink && (
+                    <a href={item.githubLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                      <Github className="h-3 w-3" /> GitHub
+                    </a>
+                  )}
+                  {item.liveDemoLink && (
+                    <a href={item.liveDemoLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                      <ExternalLink className="h-3 w-3" /> Live Demo
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           </div>
         ))}
       </HorizontalSlider>
 
-      <Dialog open={zoomIndex !== null} onOpenChange={(open) => !open && setZoomIndex(null)}>
+      <Dialog open={zoom !== null} onOpenChange={(open) => !open && setZoom(null)}>
         <DialogContent className="max-w-4xl border-none bg-transparent p-0 shadow-none">
-          {zoomIndex !== null && items[zoomIndex]?.image && (
+          {zoom && zoomImages[zoom.imageIndex] && (
             <div className="relative">
-              <img src={items[zoomIndex].image} alt={items[zoomIndex].title} className="max-h-[80vh] w-full rounded-lg object-contain" />
-              <p className="mt-2 text-center text-sm font-medium text-white">{items[zoomIndex].title}</p>
-              {imageIndexes.length > 1 && (
+              <img src={zoomImages[zoom.imageIndex]} alt={zoomItem?.title} className="max-h-[80vh] w-full rounded-lg object-contain" />
+              <p className="mt-2 text-center text-sm font-medium text-white">
+                {zoomItem?.title}
+                {zoomImages.length > 1 && (
+                  <span className="ml-1.5 text-white/70">
+                    ({zoom.imageIndex + 1}/{zoomImages.length})
+                  </span>
+                )}
+              </p>
+              {zoomImages.length > 1 && (
                 <>
                   <button
                     type="button"
-                    onClick={() => {
-                      const pos = imageIndexes.indexOf(zoomIndex);
-                      setZoomIndex(imageIndexes[(pos - 1 + imageIndexes.length) % imageIndexes.length]);
-                    }}
+                    onClick={() => setZoom({ ...zoom, imageIndex: (zoom.imageIndex - 1 + zoomImages.length) % zoomImages.length })}
                     className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
                     aria-label="Previous image"
                   >
@@ -88,10 +122,7 @@ export function PortfolioGrid({ items }: { items: PortfolioItem[] }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      const pos = imageIndexes.indexOf(zoomIndex);
-                      setZoomIndex(imageIndexes[(pos + 1) % imageIndexes.length]);
-                    }}
+                    onClick={() => setZoom({ ...zoom, imageIndex: (zoom.imageIndex + 1) % zoomImages.length })}
                     className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
                     aria-label="Next image"
                   >

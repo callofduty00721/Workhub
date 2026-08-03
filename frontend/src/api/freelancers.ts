@@ -12,6 +12,8 @@ import type {
 } from "@/types";
 import type { VerifiedSkill } from "./skillTests";
 
+export type ServiceSort = "best_match" | "price_low" | "price_high" | "rating" | "newest";
+
 export interface ServiceFilters {
   search?: string;
   category?: string;
@@ -19,6 +21,10 @@ export interface ServiceFilters {
   priceMin?: number;
   priceMax?: number;
   maxDeliveryDays?: number;
+  level?: "new" | "level_1" | "top_rated";
+  minRating?: number;
+  language?: string;
+  sort?: ServiceSort;
   page?: number;
   limit?: number;
 }
@@ -31,6 +37,8 @@ export interface ServiceAnalytics {
 
 export const serviceApi = {
   list: (filters: ServiceFilters = {}) => api.get<Paginated<Service>>("/services", { params: filters }).then((r) => r.data),
+
+  categoryCounts: () => api.get<{ success: boolean; data: Record<string, number> }>("/services/category-counts").then((r) => r.data.data),
 
   mine: () => api.get<{ success: boolean; data: Service[] }>("/services/mine").then((r) => r.data.data),
 
@@ -47,15 +55,22 @@ export const serviceApi = {
 };
 
 export type FreelancerLevel = "new" | "level_1" | "top_rated";
+export type FreelancerSort = "best_match" | "rating" | "rate_low" | "rate_high" | "experience" | "newest";
 
 export interface FreelancerFilters {
   search?: string;
   skill?: string;
   category?: string;
   subCategory?: string;
+  location?: string;
   level?: FreelancerLevel;
   rateMin?: number;
   rateMax?: number;
+  minRating?: number;
+  minExperience?: number;
+  verifiedOnly?: boolean;
+  availability?: "available" | "busy";
+  sort?: FreelancerSort;
   page?: number;
   limit?: number;
 }
@@ -76,20 +91,20 @@ export type FreelancerProfileData = FreelancerSummary & {
   workingHours?: string;
   totalHoursWorked?: number;
   onTimeDeliveryPercent?: number;
-  responseTimeLabel?: string;
   phone?: string;
   resumeUrl?: string;
   resumeUpdatedAt?: string;
   lastActiveAt?: string;
-  createdAt?: string;
   experience?: ExperienceEntry[];
   education?: EducationEntry[];
   achievements?: AchievementEntry[];
-  languages?: string[];
   socialLinks?: SocialLinks;
   linkedIn?: string;
-  kycStatus?: KycStatus;
   isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  faceVerificationStatus?: KycStatus;
+  addressVerificationStatus?: KycStatus;
+  bankVerificationStatus?: KycStatus;
   videoIntro?: string;
   followersCount?: number;
   isFollowing?: boolean;
@@ -98,6 +113,8 @@ export type FreelancerProfileData = FreelancerSummary & {
 export const freelancerApi = {
   list: (filters: FreelancerFilters = {}) =>
     api.get<Paginated<FreelancerSummary>>("/freelancers", { params: filters }).then((r) => r.data),
+
+  categoryCounts: () => api.get<{ success: boolean; data: Record<string, number> }>("/freelancers/category-counts").then((r) => r.data.data),
 
   getProfile: (id: string) =>
     api

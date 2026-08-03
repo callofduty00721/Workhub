@@ -1,4 +1,4 @@
-import { refundExpiredVerifications } from "../controllers/investmentController.js";
+import { refundExpiredVerifications } from "../modules/startup/investment.controller.js";
 
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // every 6 hours
 

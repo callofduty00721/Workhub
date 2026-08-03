@@ -1,5 +1,5 @@
-import Payment from "../models/Payment.js";
-import User from "../models/User.js";
+import Payment from "../modules/shared/payment.model.js";
+import User from "../modules/shared/user.model.js";
 
 // Stats a public profile can actually back with real platform data, rather
 // than trusting self-reported numbers — jobsCompleted/repeatClients/jobSuccess

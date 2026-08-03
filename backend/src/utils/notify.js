@@ -1,5 +1,5 @@
-import Notification from "../models/Notification.js";
-import User from "../models/User.js";
+import Notification from "../modules/shared/notification.model.js";
+import User from "../modules/shared/user.model.js";
 import { sendEmail, isEmailConfigured } from "./email.js";
 
 // Low-signal, high-volume social notifications (follows/interest toggles) are

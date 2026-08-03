@@ -1,4 +1,4 @@
-import Alert from "../models/Alert.js";
+import Alert from "../modules/productivity/alert.model.js";
 import { notify } from "./notify.js";
 
 // Notifies freelancers whose saved alert keywords match a newly posted Job or

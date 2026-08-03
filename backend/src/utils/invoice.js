@@ -85,5 +85,6 @@ function describePayment(payment) {
   if (payment.type === "gig_order") return `Gig order payment${payment.servicePackage?.title ? ` — ${payment.servicePackage.title} package` : ""}`;
   if (payment.type === "job_hire") return "Job / project payment";
   if (payment.type === "contest_prize") return "Contest prize payment";
+  if (payment.type === "campaign") return "Influencer campaign payment";
   return "Payment";
 }

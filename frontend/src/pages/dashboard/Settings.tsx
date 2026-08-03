@@ -2,19 +2,32 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Loader2, KeyRound, Bell, AlertTriangle } from "lucide-react";
+import { Loader2, KeyRound, Bell, AlertTriangle, UserCog } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import type { DashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { authApi } from "@/api/auth";
 import { userApi } from "@/api/users";
 import { setAccessToken } from "@/api/axios";
 import { useAuth } from "@/context/AuthContext";
+import { CATEGORY_LABELS, CATEGORY_ROLES, ROLE_LABELS } from "@/lib/roles";
 
-const DASHBOARD_ROLES: DashboardRole[] = ["founder", "freelancer", "employer", "super_admin", "investor", "mentor", "partner", "client"];
+const DASHBOARD_ROLES: DashboardRole[] = [
+  "founder",
+  "freelancer",
+  "job_seeker",
+  "influencer",
+  "employer",
+  "super_admin",
+  "investor",
+  "mentor",
+  "partner",
+  "client",
+];
 
 export default function Settings() {
   const { user, logout, refreshUser } = useAuth();
@@ -78,6 +91,38 @@ export default function Settings() {
   return (
     <DashboardLayout role={sidebarRole} title="Account Settings" subtitle="Manage your password, notifications, and account.">
       <div className="space-y-6">
+        {user.selectedCategory && (
+          <Card>
+            <CardContent className="space-y-4 p-6">
+              <div className="flex items-center gap-2">
+                <UserCog className="h-4.5 w-4.5 text-primary" />
+                <h3 className="text-base font-semibold">Your Roles</h3>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Category</p>
+                <p className="text-sm font-medium">{CATEGORY_LABELS[user.selectedCategory]}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(user.roles ?? []).map((role) => (
+                  <Badge key={role} variant={role === user.role ? "default" : "outline"}>
+                    {ROLE_LABELS[role]}
+                    {role === user.role && " (active)"}
+                  </Badge>
+                ))}
+              </div>
+              {(user.roles?.length ?? 0) < CATEGORY_ROLES[user.selectedCategory].length && (
+                <Button variant="outline" size="sm" onClick={() => navigate("/onboarding/roles")}>
+                  Add another role
+                </Button>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Roles are switched from your profile menu in the navbar. Picking a different category resets your
+                current roles — do that only if you're changing what you use MahaHub for.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="space-y-4 p-6">
             <div className="flex items-center gap-2">

@@ -1,119 +1,120 @@
-export const HOME_STATS = [
-  { label: "Startups", value: "12,000+", icon: "rocket" as const, color: "bg-primary/10 text-primary" },
-  { label: "Freelancers", value: "9,500+", icon: "users" as const, color: "bg-secondary/10 text-secondary" },
-  { label: "Jobs Posted", value: "6,000+", icon: "briefcase" as const, color: "bg-warning/10 text-warning" },
-  { label: "Investors", value: "3,000+", icon: "handshake" as const, color: "bg-blue-500/10 text-blue-600" },
-  { label: "Community Members", value: "80,000+", icon: "heart" as const, color: "bg-pink-500/10 text-pink-600" },
-];
-
 export const CATEGORIES = ["SaaS", "AI / ML", "FinTech", "HealthTech", "AgriTech", "EdTech", "E-commerce", "Climate"];
 
-// Freelancer gig category/sub-category taxonomy — modeled on Fiverr's category
-// structure (Category -> Sub-category groups), kept separate from CATEGORIES
-// (legacy flat list) and from INDUSTRY_SUBCATEGORIES (used for startups).
-export const SERVICE_CATEGORIES: Record<string, string[]> = {
-  "Graphics & Design": [
-    "Logo & Brand Identity",
-    "Art & Illustration",
-    "Web & App Design",
-    "Product & Gaming",
-    "Print Design",
-    "Visual Design",
-    "Marketing Design",
-    "Packaging & Covers",
-    "Architecture & Building Design",
-    "Fashion & Merchandise",
-    "3D Design",
-  ],
-  "Programming & Tech": [
-    "Website Development",
-    "Website Platforms",
-    "Website Maintenance",
-    "AI Development",
-    "Chatbot Development",
-    "Game Development",
-    "Mobile App Development",
-    "Cloud & Cybersecurity",
-    "Data Science & ML",
-    "Software Development",
-    "Blockchain & Cryptocurrency",
-  ],
-  "Digital Marketing": [
-    "Search",
-    "Social",
-    "Methods & Techniques",
-    "Analytics & Strategy",
-    "Channel Specific",
-    "Industry & Purpose-Specific",
-  ],
-  "Video & Animation": [
-    "Editing & Post-Production",
-    "Social & Marketing Videos",
-    "Animation",
-    "Motion Graphics",
-    "Filmed Video Production",
-    "Explainer Videos",
-    "Product Videos",
-    "AI Video",
-  ],
-  "Writing & Translation": [
-    "Content Writing",
-    "Editing & Critique",
-    "Book & eBook Publishing",
-    "Career Writing",
-    "Business & Marketing Copy",
-    "Translation & Transcription",
-    "Industry Specific Content",
-  ],
-  "Music & Audio": [
-    "Music Production & Writing",
-    "Audio Engineering & Post Production",
-    "Voice Over & Narration",
-    "Streaming & Audio",
-    "DJing",
-    "Sound Design",
-    "Lessons & Transcriptions",
-  ],
-  Business: [
-    "Financial Services",
-    "Legal Services",
-    "Business Management",
-    "AI for Businesses",
-    "E-Commerce Management",
-    "Data & Business Intelligence",
-    "Sales & Customer Care",
-    "General & Administrative",
-  ],
-  Consulting: [
-    "Business Consultants",
-    "Marketing Strategy",
-    "Data Consulting",
-    "Coaching & Advice",
-    "Tech Consulting",
-    "Mentorship",
-  ],
-  "AI Services": ["AI Development", "Data", "AI Artists", "AI for Businesses", "AI Video", "AI Audio", "AI Content"],
-  "Personal Growth": ["Self Improvement", "Fashion & Style", "Wellness & Fitness", "Gaming", "Leisure & Hobbies"],
-  Photography: [
-    "Product Photography",
-    "Portrait Photography",
-    "Lifestyle Photography",
-    "Real Estate Photography",
-    "Event Photography",
-    "Drone Photography",
-    "Photo Editing & Retouching",
-  ],
-  Data: [
-    "Data Analysis & Reports",
-    "Data Visualization",
-    "Data Engineering",
-    "Data Extraction & Web Scraping",
-    "Data Cleaning",
-    "Data Entry",
-  ],
+// Freelancer gig category taxonomy — our own original 3-level browse
+// structure (Category -> Section -> specific skill), kept separate from
+// CATEGORIES (legacy flat list) and from INDUSTRY_SUBCATEGORIES (startups).
+// Section headers are visual groupings only — the leaf skill names are the
+// actual selectable/filterable sub-category values (see SERVICE_SUBCATEGORIES
+// below), same field freelancer profiles and gigs already store.
+export const SERVICE_CATEGORIES: Record<string, Record<string, string[]>> = {
+  "Graphics & Design": {
+    "Branding & Identity": ["Logo Design", "Brand Identity", "Business Card Design", "Brand Guidelines"],
+    "Illustration & Art": ["Illustration", "Character Design", "Portrait Art", "Tattoo Design"],
+    "UI/UX & Web Design": ["Website Design", "Mobile App Design", "Landing Page Design", "UX Research"],
+    "Print & Packaging": ["Packaging Design", "Brochure Design", "Flyer Design", "Book Cover Design"],
+    "3D & Motion": ["3D Modeling", "3D Product Rendering", "Motion Graphics"],
+  },
+  "Programming & Tech": {
+    "Web Development": ["Frontend Development", "Backend Development", "Full-Stack Development", "CMS Development"],
+    "Mobile Development": ["iOS App Development", "Android App Development", "Cross-Platform Apps"],
+    "Data & AI": ["Data Science", "Machine Learning", "AI Model Integration", "Data Engineering"],
+    "Infrastructure & Security": ["Cloud Architecture", "DevOps", "Cybersecurity Audits", "QA & Testing"],
+    "Emerging Tech": ["Blockchain Development", "Smart Contracts", "Game Development"],
+  },
+  "Digital Marketing": {
+    "Search & SEO": ["SEO Audits", "Keyword Research", "Local SEO", "Technical SEO"],
+    "Social Media": ["Social Media Management", "Social Media Ads", "Influencer Outreach"],
+    "Paid Advertising": ["Google Ads", "Meta Ads", "Ad Copywriting"],
+    "Strategy & Analytics": ["Marketing Strategy", "Analytics & Reporting", "Conversion Optimization"],
+    "Email & Automation": ["Email Marketing", "Marketing Automation", "Newsletter Design"],
+  },
+  "Video & Animation": {
+    Editing: ["Video Editing", "Trailer Editing", "Podcast Video Editing"],
+    Animation: ["2D Animation", "3D Animation", "Whiteboard Animation"],
+    "Motion Design": ["Motion Graphics", "Logo Animation", "Title Sequences"],
+    Production: ["Explainer Videos", "Product Demo Videos", "Corporate Videos"],
+    Specialty: ["AI Video Generation", "VFX & Compositing"],
+  },
+  "Writing & Translation": {
+    "Content Writing": ["Blog Writing", "Website Copy", "Article Writing"],
+    "Editing & Proofreading": ["Copy Editing", "Proofreading", "Manuscript Critique"],
+    "Business Writing": ["Resume Writing", "Cover Letters", "Business Proposals"],
+    "Creative Writing": ["Ghostwriting", "Scriptwriting", "Book Writing"],
+    Translation: ["Document Translation", "Localization", "Transcription"],
+  },
+  "Music & Audio": {
+    Production: ["Music Production", "Beat Making", "Mixing & Mastering"],
+    Voice: ["Voice Over", "Audiobook Narration", "Dubbing"],
+    "Audio Post-Production": ["Sound Design", "Podcast Editing", "Audio Restoration"],
+    Composition: ["Jingle Writing", "Film Scoring", "Session Musicians"],
+    Lessons: ["Music Lessons", "Music Transcription"],
+  },
+  Business: {
+    Finance: ["Bookkeeping", "Financial Modeling", "Tax Advisory"],
+    Legal: ["Contract Drafting", "Trademark Filing", "Legal Consulting"],
+    Operations: ["Business Planning", "Process Documentation", "Virtual Assistance"],
+    "Sales & Support": ["Sales Strategy", "Customer Support Setup", "CRM Management"],
+    "E-Commerce": ["Store Setup", "Inventory Management", "Marketplace Management"],
+  },
+  Consulting: {
+    Strategy: ["Business Strategy", "Market Research", "Growth Consulting"],
+    Technology: ["Tech Stack Consulting", "Digital Transformation"],
+    Coaching: ["Career Coaching", "Startup Mentorship", "Leadership Coaching"],
+    Data: ["Data Strategy Consulting", "BI Dashboard Consulting"],
+  },
+  "AI Services": {
+    Development: ["Custom AI Model Building", "Chatbot Development", "AI Integration"],
+    Content: ["AI Art Generation", "AI Copywriting", "AI Video Generation"],
+    Data: ["AI Data Labeling", "Prompt Engineering"],
+    "Business Use": ["AI Workflow Automation", "AI for Customer Support"],
+  },
+  "Personal Growth": {
+    Wellness: ["Fitness Coaching", "Nutrition Planning", "Meditation Coaching"],
+    Style: ["Personal Styling", "Wardrobe Consulting"],
+    Learning: ["Life Coaching", "Skill Tutoring"],
+    Leisure: ["Gaming Coaching", "Hobby Classes"],
+  },
+  Photography: {
+    Commercial: ["Product Photography", "Real Estate Photography", "Event Photography"],
+    Portrait: ["Portrait Photography", "Fashion Photography"],
+    Editing: ["Photo Retouching", "Photo Editing"],
+    Specialty: ["Drone Photography", "Food Photography"],
+  },
+  Data: {
+    Analysis: ["Data Analysis", "Statistical Analysis", "Reporting Dashboards"],
+    Engineering: ["Data Pipeline Engineering", "Database Design"],
+    Collection: ["Web Scraping", "Data Entry", "Data Cleaning"],
+    Visualization: ["Data Visualization", "Dashboard Design"],
+  },
 };
 
 export const SERVICE_CATEGORY_NAMES = Object.keys(SERVICE_CATEGORIES);
+
+// Flat category -> [skill] list, derived from SERVICE_CATEGORIES — every
+// existing filter/form (freelancer profile, gig create/edit, list filters)
+// only ever needed the leaf values, not the section groupings, so they keep
+// working against this flattened view instead of the nested one above.
+export const SERVICE_SUBCATEGORIES: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SERVICE_CATEGORIES).map(([category, sections]) => [category, Object.values(sections).flat()])
+);
+
+// Influencer niche taxonomy — simpler two-level (Category -> specific niches)
+// than the freelancer one above, since influencer content categories don't
+// need a middle grouping tier. Powers both the edit-profile Category/Niche
+// selects and the /influencers directory filter pills.
+export const INFLUENCER_CATEGORIES: Record<string, string[]> = {
+  Education: ["Academic Tutoring", "Competitive Exams", "Skill Development"],
+  "Food & Cooking": ["Home Cooking", "Baking", "Restaurant Reviews"],
+  Technology: ["Gadget Reviews", "Software & Apps", "Gaming"],
+  "Fashion & Beauty": ["Sustainable Fashion", "Makeup", "Styling"],
+  "Fitness & Health": ["Workout", "Nutrition", "Mental Health"],
+  Automobile: ["Car Reviews", "Bike Modifications", "DIY Repair"],
+  "Electronics & Electrical": ["Circuit DIY", "Home Automation", "Appliance Reviews"],
+  Finance: ["Personal Finance", "Investing", "Business"],
+  Travel: ["Budget Travel", "Luxury Travel", "Local Guides"],
+};
+
+export const INFLUENCER_CATEGORY_NAMES = Object.keys(INFLUENCER_CATEGORIES);
 
 // Startup industry/sector taxonomy — kept separate from CATEGORIES (used for
 // freelancer service categories) since the two lists serve different purposes.
@@ -195,85 +196,57 @@ export const CATEGORY_GRID = [
   { label: "More", icon: "more" as const },
 ];
 
-export const FEATURED_STARTUPS_FALLBACK = [
+export const FAQS = [
   {
-    _id: "demo-1",
-    name: "StreamLine",
-    tagline: "Streamlining logistics for a better tomorrow.",
-    industry: "Logistics",
-    stage: "series_a" as const,
-    fundingCr: 5.2,
-    tags: ["Logistics", "Series A"],
-    verified: true,
+    question: "Is MahaHub free to use?",
+    answer:
+      "Yes — creating an account, listing a startup, browsing freelancers, and applying to jobs are all free. Paid plans add things like priority visibility, featured placement, and advanced analytics.",
   },
   {
-    _id: "demo-2",
-    name: "MedEzy",
-    tagline: "Making healthcare accessible for all.",
-    industry: "HealthTech",
-    stage: "seed" as const,
-    fundingCr: 3.1,
-    tags: ["HealthTech", "Seed"],
-    verified: true,
+    question: "How do I list my startup on MahaHub?",
+    answer:
+      "Sign up as a Founder, then go to your dashboard and select \"Post Startup.\" You'll walk through a guided form covering your story, team, funding needs, and product — it adapts to whichever stage you're at, from Idea to Series A.",
   },
   {
-    _id: "demo-3",
-    name: "FinMate",
-    tagline: "Smart finance management for everyone.",
-    industry: "FinTech",
-    stage: "pre_seed" as const,
-    fundingCr: 1.8,
-    tags: ["FinTech", "Pre-Seed"],
-    verified: true,
+    question: "How does profile and startup verification work?",
+    answer:
+      "Founders and freelancers can submit KYC documents from their dashboard. Once reviewed by our team, verified profiles get a badge that's shown across the platform, which builds trust with investors and clients.",
   },
   {
-    _id: "demo-4",
-    name: "EcoKart",
-    tagline: "Sustainable shopping for a greener planet.",
-    industry: "E-Commerce",
-    stage: "seed" as const,
-    fundingCr: 4.6,
-    tags: ["E-Commerce", "Seed"],
-    verified: true,
+    question: "Can I hire freelancers directly through the platform?",
+    answer:
+      "Yes. You can message freelancers directly, invite them to a project, or post a job/project and receive proposals. Payments and contracts are handled within MahaHub for a clear paper trail.",
+  },
+  {
+    question: "What's the difference between Projects, Gigs, and Contests?",
+    answer:
+      "Projects are open briefs you post and collect proposals for. Gigs (Services) are fixed-scope packages freelancers sell directly. Contests let you crowdsource entries (like a logo or tagline) and pick a winner.",
+  },
+  {
+    question: "How do I upgrade or cancel my plan?",
+    answer:
+      "Head to the Pricing page and choose a plan — payment is handled securely via Razorpay or Stripe. You can downgrade back to the Free plan at any time from your account settings.",
   },
 ];
 
-export const TOP_FREELANCERS_PREVIEW = [
-  { name: "Rohit Sharma", role: "Full Stack Developer", rating: 4.9, reviews: 128, rate: "₹1500/hr" },
-  { name: "Anjali Verma", role: "UI/UX Designer", rating: 4.8, reviews: 96, rate: "₹1200/hr" },
-  { name: "Aman Khan", role: "Graphic Designer", rating: 4.7, reviews: 88, rate: "₹1000/hr" },
-];
+// Generic, role-agnostic teaser shown on the homepage before anyone's picked
+// a role — real, role-specific plans (fetched from the backend, editable by
+// admins) only show up once a role is known, on the Pricing page itself. Not
+// tied to the `Plan` type in @/types because that one always has a role.
+export interface PricingTeaser {
+  id: string;
+  name: string;
+  priceInInr: number;
+  features: string[];
+}
 
-export const LATEST_JOBS_PREVIEW = [
-  { title: "Frontend Developer", company: "TechNova Pvt. Ltd.", location: "Bangalore", type: "Full Time" },
-  { title: "Digital Marketing Executive", company: "Growthify", location: "Mumbai", type: "Remote" },
-  { title: "Data Analyst", company: "Insight Analytics", location: "Pune", type: "Full Time" },
-];
-
-export const TOP_PEOPLE_PREVIEW = [
-  { name: "Vikas Bansal", role: "Angel Investor", rating: 4.9 },
-  { name: "Neha Singh", role: "Growth Mentor", rating: 4.8 },
-  { name: "Arjun Mehta", role: "Venture Capitalist", rating: 4.9 },
-];
-
-export const TESTIMONIALS = [
+export const HOME_PRICING_TEASER: PricingTeaser[] = [
+  { id: "free", name: "Free", priceInInr: 0, features: ["Basic listings", "Basic profile", "Community access"] },
+  { id: "pro", name: "Pro", priceInInr: 299, features: ["Priority visibility", "Featured placement", "Basic analytics"] },
   {
-    name: "Aditya Shelke",
-    role: "Founder, EcoBin",
-    quote:
-      "MahaHub connected us with our lead investor within three weeks of listing our startup. The platform genuinely understands what early founders need.",
-  },
-  {
-    name: "Priya Deshmukh",
-    role: "Freelance Product Designer",
-    quote:
-      "I've booked more consistent design work through MahaHub than any other platform — the client quality is noticeably higher.",
-  },
-  {
-    name: "Rohit Singh",
-    role: "Investor, BlueLeaf Capital",
-    quote: "The deal flow here is curated and founder profiles are detailed enough to make first-pass decisions fast.",
+    id: "enterprise",
+    name: "Enterprise",
+    priceInInr: 999,
+    features: ["Unlimited listings", "Top placement", "Advanced analytics", "Priority support"],
   },
 ];
-
-export const PARTNER_LOGOS = ["Startup India", "NASSCOM", "T-Hub", "AWS Activate", "Google for Startups", "YCombinator SUp"];

@@ -1,68 +1,74 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
-import { Loader2, Plus, Trash2, ExternalLink, FileText, X, ShieldCheck, ShieldAlert, Clock, BadgeCheck, Sparkles } from "lucide-react";
+import { ExternalLink, ArrowLeft, User, Briefcase, Image, Wallet, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import type { DashboardRole } from "@/components/layout/DashboardSidebar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FileUpload } from "@/components/shared/FileUpload";
 import { FormGuidelines } from "@/components/shared/FormGuidelines";
-import { FieldLabel } from "@/components/shared/FieldInfo";
 import { userApi } from "@/api/users";
+import { authApi } from "@/api/auth";
 import { paymentApi } from "@/api/payments";
 import { useAuth } from "@/context/AuthContext";
-import { initialsFromName, formatCurrency } from "@/lib/utils";
-import type { PartnerType, ExperienceEntry, EducationEntry, AchievementEntry, PortfolioItem, WithdrawalMethod, AvailabilityStatus } from "@/types";
-import { COUNTRIES, STATES_BY_COUNTRY } from "@/lib/geo";
-import { SERVICE_CATEGORIES, SERVICE_CATEGORY_NAMES } from "@/lib/mockData";
+import { useScrollToHash } from "@/hooks/useScrollToHash";
+import { domToBioText, renderBioHtml } from "@/lib/richText";
+import type {
+  PartnerType,
+  ExperienceEntry,
+  EducationEntry,
+  AchievementEntry,
+  PortfolioItem,
+  WithdrawalMethod,
+  AvailabilityStatus,
+  FounderStage,
+  InfluencerPlatform,
+  InfluencerRate,
+  InfluencerCollaboration,
+  InfluencerContentSample,
+  StartupStage,
+  MentorSessionFormat,
+  CompanySize,
+} from "@/types";
+import { dashboardPathForRole, publicProfilePathForRole } from "@/lib/roles";
+import { motion } from "framer-motion";
+import { to24Hour, splitList } from "@/components/dashboard/edit-profile/shared";
+import { BasicInfoSection } from "@/components/dashboard/edit-profile/BasicInfoSection";
+import { FounderDetailsSection } from "@/components/dashboard/edit-profile/FounderDetailsSection";
+import { PersonalInfoSection } from "@/components/dashboard/edit-profile/PersonalInfoSection";
+import { ExperienceEducationSection } from "@/components/dashboard/edit-profile/ExperienceEducationSection";
+import { FreelancerDetailsSection } from "@/components/dashboard/edit-profile/FreelancerDetailsSection";
+import { PortfolioSection } from "@/components/dashboard/edit-profile/PortfolioSection";
+import { PayoutKycSection } from "@/components/dashboard/edit-profile/PayoutKycSection";
+import { InvestorDetailsSection } from "@/components/dashboard/edit-profile/InvestorDetailsSection";
+import { MentorDetailsSection } from "@/components/dashboard/edit-profile/MentorDetailsSection";
+import { PartnerDetailsSection } from "@/components/dashboard/edit-profile/PartnerDetailsSection";
+import { CompanyDetailsSection } from "@/components/dashboard/edit-profile/CompanyDetailsSection";
+import { JobSeekerDetailsSection } from "@/components/dashboard/edit-profile/JobSeekerDetailsSection";
+import { InfluencerDetailsSection } from "@/components/dashboard/edit-profile/InfluencerDetailsSection";
 
 const EMPTY_EXPERIENCE: ExperienceEntry = { title: "", company: "", location: "", startLabel: "", endLabel: "Present", description: "" };
 const EMPTY_EDUCATION: EducationEntry = { degree: "", institution: "", startLabel: "", endLabel: "" };
 const EMPTY_ACHIEVEMENT: AchievementEntry = { title: "", description: "", dateLabel: "" };
-const EMPTY_PORTFOLIO_ITEM: PortfolioItem = { title: "", description: "", image: "", link: "", tags: [], clientName: "", projectRole: "" };
-const TYPE_LABELS: Record<string, string> = { gig_order: "Gig Order", job_hire: "Job / Project", contest_prize: "Contest Prize" };
-const WORKING_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-// "9:00 AM - 6:00 PM" (display string, what's actually saved) <-> "09:00"/"18:00"
-// (24h values <input type="time"> needs) — converts between the two so the
-// picker can be pre-filled from an existing profile and still save the same
-// human-readable format shown elsewhere.
-function to24Hour(label: string): string {
-  const match = label.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-  if (!match) return "";
-  let [, h, m, ampm] = match;
-  let hour = Number(h);
-  if (ampm.toUpperCase() === "PM" && hour !== 12) hour += 12;
-  if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
-  return `${String(hour).padStart(2, "0")}:${m}`;
-}
-
-function to12Hour(value: string): string {
-  if (!value) return "";
-  const [h, m] = value.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
-}
-
-// 30-minute-increment options for the Working Hours dropdowns — { value:
-// "09:00" (24h, used internally) label: "9:00 AM" (shown in the list) }.
-const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const value = `${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 === 0 ? "00" : "30"}`;
-  return { value, label: to12Hour(value) };
-});
+const EMPTY_PORTFOLIO_ITEM: PortfolioItem = {
+  title: "",
+  description: "",
+  images: [],
+  video: "",
+  pdf: "",
+  websiteLink: "",
+  githubLink: "",
+  liveDemoLink: "",
+  tags: [],
+  clientName: "",
+  projectRole: "",
+};
 
 const DASHBOARD_ROLES: DashboardRole[] = [
   "founder",
   "freelancer",
+  "job_seeker",
+  "influencer",
   "employer",
   "super_admin",
   "investor",
@@ -71,17 +77,41 @@ const DASHBOARD_ROLES: DashboardRole[] = [
   "client",
 ];
 
-const PARTNER_TYPES: { value: PartnerType; label: string }[] = [
-  { value: "accelerator", label: "Accelerator" },
-  { value: "incubator", label: "Incubator" },
-  { value: "government", label: "Government" },
-  { value: "ngo", label: "NGO" },
-  { value: "service_provider", label: "Service Provider" },
-];
+// The freelancer form is long enough (Basic Info, Professional Details,
+// Portfolio, Payout & Verification) that showing it all on one scrolling
+// page felt overwhelming — split into tabs for that role only. Sidebar
+// anchors (#skills, #portfolio, #kyc) still work: they just pick the tab
+// that contains that section instead of scrolling to it directly.
+type FreelancerTab = "basic" | "professional" | "portfolio" | "payout";
+
+function hashToFreelancerTab(hash: string): FreelancerTab {
+  if (hash === "#portfolio") return "portfolio";
+  if (hash === "#kyc") return "payout";
+  if (hash === "#skills") return "professional";
+  return "basic";
+}
+
+const FREELANCER_TAB_ORDER: FreelancerTab[] = ["basic", "professional", "portfolio", "payout"];
+
+function nextFreelancerTab(tab: FreelancerTab): FreelancerTab {
+  const i = FREELANCER_TAB_ORDER.indexOf(tab);
+  return FREELANCER_TAB_ORDER[Math.min(i + 1, FREELANCER_TAB_ORDER.length - 1)];
+}
 
 export default function EditProfile() {
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const sidebarRole: DashboardRole = DASHBOARD_ROLES.includes(user?.role as DashboardRole) ? (user!.role as DashboardRole) : "founder";
+  useScrollToHash();
+
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<FreelancerTab>(() => hashToFreelancerTab(location.hash));
+  useEffect(() => {
+    setActiveTab(hashToFreelancerTab(location.hash));
+  }, [location.hash]);
+  // Only freelancer sees the tabbed layout below — every other role keeps
+  // rendering its cards inline, so this always resolves true for them.
+  const showForFreelancerTab = (tab: FreelancerTab) => user?.role !== "freelancer" || activeTab === tab;
 
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
   const [coverImage, setCoverImage] = useState(user?.coverImage ?? "");
@@ -91,6 +121,26 @@ export default function EditProfile() {
   const [state, setState] = useState(locationParts[1] ?? "");
   const [country, setCountry] = useState(locationParts[2] || "India");
   const [bio, setBio] = useState(user?.bio ?? "");
+  const bioRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Sets the contentEditable box's starting content exactly once. React must
+    // never touch its children again after this — re-supplying HTML on every
+    // keystroke's re-render (e.g. via dangerouslySetInnerHTML in the JSX) wipes
+    // whatever the user just typed, since React reconciles it back to the same
+    // "initial" value on every render.
+    if (bioRef.current) bioRef.current.innerHTML = renderBioHtml(user?.bio ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const syncBioFromDom = () => {
+    if (bioRef.current) setBio(domToBioText(bioRef.current));
+  };
+  const applyBioMarker = (command: "bold" | "italic") => {
+    const el = bioRef.current;
+    if (!el) return;
+    el.focus();
+    document.execCommand(command);
+    syncBioFromDom();
+  };
 
   // Freelancer
   const [category, setCategory] = useState(user?.category ?? "");
@@ -100,6 +150,7 @@ export default function EditProfile() {
   const [yearsOfExperience, setYearsOfExperience] = useState(user?.yearsOfExperience ?? 0);
   const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityStatus>(user?.availabilityStatus ?? "available");
   const [workingDays, setWorkingDays] = useState<string[]>(user?.workingDays ?? []);
+  const [hoursPerWeekAvailable, setHoursPerWeekAvailable] = useState(user?.hoursPerWeekAvailable ?? 0);
   const [workingHours, setWorkingHours] = useState(user?.workingHours ?? "");
   const [workingHoursStart, setWorkingHoursStart] = useState(() => to24Hour(user?.workingHours?.split("-")[0] ?? ""));
   const [workingHoursEnd, setWorkingHoursEnd] = useState(() => to24Hour(user?.workingHours?.split("-")[1] ?? ""));
@@ -114,23 +165,82 @@ export default function EditProfile() {
   const [payoutBankIfsc, setPayoutBankIfsc] = useState(user?.payoutDetails?.bankIfsc ?? "");
   const [payoutBankAccountHolder, setPayoutBankAccountHolder] = useState(user?.payoutDetails?.bankAccountHolder ?? "");
   const [kycDocuments, setKycDocuments] = useState<{ url: string; name: string }[]>([]);
+  const [faceSelfie, setFaceSelfie] = useState("");
+  const [addressDocuments, setAddressDocuments] = useState<{ url: string; name: string }[]>([]);
+  const [bankVerificationDocuments, setBankVerificationDocuments] = useState<{ url: string; name: string }[]>([]);
 
   // Investor
   const [focusInput, setFocusInput] = useState(user?.investmentFocus?.join(", ") ?? "");
   const [ticketSizeMin, setTicketSizeMin] = useState(user?.ticketSizeMin ?? 0);
   const [ticketSizeMax, setTicketSizeMax] = useState(user?.ticketSizeMax ?? 0);
   const [portfolioCompanyCount, setPortfolioCompanyCount] = useState(user?.portfolioCompanyCount ?? 0);
+  const [fundName, setFundName] = useState(user?.fundName ?? "");
+  const [fundSize, setFundSize] = useState(user?.fundSize ?? 0);
+  const [preferredStages, setPreferredStages] = useState<StartupStage[]>(user?.preferredStages ?? []);
 
-  // Mentor
+  // Mentor — availability reuses the freelancer working-hours state below
+  // (hoursPerWeekAvailable/workingDays/workingHours), same underlying fields.
   const [expertiseInput, setExpertiseInput] = useState(user?.expertise?.join(", ") ?? "");
   const [sessionRate, setSessionRate] = useState(user?.sessionRate ?? 0);
+  const [sessionFormat, setSessionFormat] = useState<MentorSessionFormat>(user?.sessionFormat ?? "video");
 
   // Partner
   const [organizationName, setOrganizationName] = useState(user?.organizationName ?? "");
   const [partnerType, setPartnerType] = useState<PartnerType>(user?.partnerType ?? "service_provider");
+  const [programDetails, setProgramDetails] = useState(user?.programDetails ?? "");
+  const [startupsSupportedCount, setStartupsSupportedCount] = useState(user?.startupsSupportedCount ?? 0);
+  const [applicationLink, setApplicationLink] = useState(user?.applicationLink ?? "");
 
   // Client
   const [companyName, setCompanyName] = useState(user?.companyName ?? "");
+  const [companySize, setCompanySize] = useState<CompanySize>(user?.companySize ?? "");
+  const [companyRegistrationNumber, setCompanyRegistrationNumber] = useState(user?.companyRegistrationNumber ?? "");
+
+  // Job Seeker
+  const [desiredRole, setDesiredRole] = useState(user?.jobSeekerProfile?.desiredRole ?? "");
+  const [expectedSalary, setExpectedSalary] = useState(user?.jobSeekerProfile?.expectedSalary ?? 0);
+  const [noticePeriodDays, setNoticePeriodDays] = useState(user?.jobSeekerProfile?.noticePeriodDays ?? 0);
+  const [preferredLocationsInput, setPreferredLocationsInput] = useState(user?.jobSeekerProfile?.preferredLocations?.join(", ") ?? "");
+  const [willingToRelocate, setWillingToRelocate] = useState(user?.jobSeekerProfile?.willingToRelocate ?? false);
+
+  // Influencer
+  const [influencerCategory, setInfluencerCategory] = useState(user?.influencerProfile?.category ?? "");
+  const [niche, setNiche] = useState(user?.influencerProfile?.niche ?? "");
+  const [mediaKitUrl, setMediaKitUrl] = useState(user?.influencerProfile?.mediaKitUrl ?? "");
+  const [avgEngagementRate, setAvgEngagementRate] = useState(user?.influencerProfile?.avgEngagementRate ?? 0);
+  const [platforms, setPlatforms] = useState<InfluencerPlatform[]>(user?.influencerProfile?.platforms ?? []);
+  const [rateCard, setRateCard] = useState<InfluencerRate[]>(user?.influencerProfile?.rateCard ?? []);
+  const [pastCollaborations, setPastCollaborations] = useState<InfluencerCollaboration[]>(user?.influencerProfile?.pastCollaborations ?? []);
+  const [contentSamples, setContentSamples] = useState<InfluencerContentSample[]>(user?.influencerProfile?.contentSamples ?? []);
+
+  // Founder — verification stage (see backend/src/utils/roleCategories.js:
+  // idea-stage founders can freely look for co-founders/team, but paid job
+  // posts and investor pitches need isVerified regardless of stage)
+  const [founderStage, setFounderStage] = useState<FounderStage>(user?.founderStage ?? "idea");
+
+  const updatePlatform = (index: number, patch: Partial<InfluencerPlatform>) => {
+    setPlatforms((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  };
+  const addPlatform = () => setPlatforms((prev) => [...prev, { platform: "", handle: "", followers: 0, url: "" }]);
+  const removePlatform = (index: number) => setPlatforms((prev) => prev.filter((_, i) => i !== index));
+
+  const updateRateCardItem = (index: number, patch: Partial<InfluencerRate>) => {
+    setRateCard((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  };
+  const addRateCardItem = () => setRateCard((prev) => [...prev, { platform: "", contentType: "", priceInInr: 0 }]);
+  const removeRateCardItem = (index: number) => setRateCard((prev) => prev.filter((_, i) => i !== index));
+
+  const updateCollaboration = (index: number, patch: Partial<InfluencerCollaboration>) => {
+    setPastCollaborations((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+  };
+  const addCollaboration = () => setPastCollaborations((prev) => [...prev, { brandName: "", description: "", resultMetric: "" }]);
+  const removeCollaboration = (index: number) => setPastCollaborations((prev) => prev.filter((_, i) => i !== index));
+
+  const updateContentSample = (index: number, patch: Partial<InfluencerContentSample>) => {
+    setContentSamples((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+  };
+  const addContentSample = () => setContentSamples((prev) => [...prev, { url: "", caption: "" }]);
+  const removeContentSample = (index: number) => setContentSamples((prev) => prev.filter((_, i) => i !== index));
 
   // Founder
   const [linkedIn, setLinkedIn] = useState(user?.linkedIn ?? "");
@@ -223,6 +333,7 @@ export default function EditProfile() {
         availabilityStatus,
         workingDays,
         workingHours,
+        hoursPerWeekAvailable,
         responseTimeLabel,
         phone,
         resumeUrl,
@@ -239,11 +350,38 @@ export default function EditProfile() {
         ticketSizeMin,
         ticketSizeMax,
         portfolioCompanyCount,
+        fundName,
+        fundSize,
+        preferredStages,
         expertise: splitList(expertiseInput),
         sessionRate,
+        sessionFormat,
         organizationName,
         partnerType,
+        programDetails,
+        startupsSupportedCount,
+        applicationLink,
         companyName,
+        companySize,
+        companyRegistrationNumber,
+        jobSeekerProfile: {
+          desiredRole,
+          expectedSalary,
+          noticePeriodDays,
+          preferredLocations: splitList(preferredLocationsInput),
+          willingToRelocate,
+        },
+        influencerProfile: {
+          category: influencerCategory,
+          niche,
+          mediaKitUrl,
+          avgEngagementRate,
+          platforms: platforms.filter((p) => p.platform.trim()),
+          rateCard: rateCard.filter((r) => r.platform.trim() && r.contentType.trim()),
+          pastCollaborations: pastCollaborations.filter((c) => c.brandName.trim()),
+          contentSamples: contentSamples.filter((s) => s.url.trim()),
+        },
+        founderStage,
         linkedIn,
         industries: splitList(industriesInput),
         pastStartupsCount,
@@ -269,6 +407,34 @@ export default function EditProfile() {
     },
   });
 
+  const resendEmailMutation = useMutation({
+    mutationFn: () => authApi.resendVerification(),
+  });
+
+  const faceVerificationMutation = useMutation({
+    mutationFn: () => userApi.submitFaceVerification(faceSelfie),
+    onSuccess: () => {
+      refreshUser();
+      setFaceSelfie("");
+    },
+  });
+
+  const addressVerificationMutation = useMutation({
+    mutationFn: () => userApi.submitAddressVerification(addressDocuments),
+    onSuccess: () => {
+      refreshUser();
+      setAddressDocuments([]);
+    },
+  });
+
+  const bankVerificationMutation = useMutation({
+    mutationFn: () => userApi.submitBankVerification(bankVerificationDocuments),
+    onSuccess: () => {
+      refreshUser();
+      setBankVerificationDocuments([]);
+    },
+  });
+
   if (!user) return null;
 
   return (
@@ -277,16 +443,21 @@ export default function EditProfile() {
       title="Edit Profile"
       subtitle="Keep your profile up to date to get better matches."
       actions={
-        user.role === "founder" ? (
-          <Button variant="outline" asChild>
-            <Link to={`/founders/${user.id}`}>
-              <ExternalLink className="h-4 w-4" /> View Public Profile
-            </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => navigate(dashboardPathForRole(user.role))}>
+            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
           </Button>
-        ) : undefined
+          {publicProfilePathForRole(user.role, user.id) && (
+            <Button variant="outline" asChild>
+              <Link to={publicProfilePathForRole(user.role, user.id)!}>
+                <ExternalLink className="h-4 w-4" /> View Public Profile
+              </Link>
+            </Button>
+          )}
+        </div>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         <FormGuidelines
           tips={[
             "Keep your headline and bio clear and concise",
@@ -295,886 +466,348 @@ export default function EditProfile() {
             "A complete profile builds trust and gets more matches",
           ]}
         />
-        <Card>
-          <CardContent className="space-y-5 p-6">
-            <h3 className="text-base font-semibold">Basic Info</h3>
-            <div className="flex items-start gap-4">
-              <Avatar className="h-16 w-16 border border-border">
-                <AvatarImage src={avatar} alt={user.name} />
-                <AvatarFallback className="text-lg">{initialsFromName(user.name)}</AvatarFallback>
-              </Avatar>
-              <div className="max-w-xs flex-1 space-y-1">
-                <FileUpload folder="avatar" value={avatar} onUploaded={(url) => setAvatar(url)} label="Upload profile photo" />
-                <p className="text-[11px] text-muted-foreground">Recommended: 400 × 400px (square), JPG/PNG/WebP, max 10MB.</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <FieldLabel info="A banner image at the top of your profile (optional).">Cover Photo</FieldLabel>
-              {coverImage && (
-                <img src={coverImage} alt="Cover preview" className="h-24 w-full rounded-lg object-cover" />
-              )}
-              <div className="max-w-xs space-y-1">
-                <FileUpload folder="profile_cover" value={coverImage} onUploaded={(url) => setCoverImage(url)} label="Upload cover photo" />
-                <p className="text-[11px] text-muted-foreground">Recommended: 1200 × 300px (4:1 ratio), JPG/PNG/WebP, max 10MB.</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <FieldLabel htmlFor="headline" info="A short line about who you are, shown under your name.">
-                Headline
-              </FieldLabel>
-              <Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Product Designer, Ex-Google" />
-            </div>
-            <div className="grid gap-5 sm:grid-cols-3">
-              <div className="space-y-2">
-                <FieldLabel info="The country you live in.">Country</FieldLabel>
-                <Select
-                  value={country}
-                  onValueChange={(v) => {
-                    setCountry(v);
-                    setState("");
-                  }}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <FieldLabel info="The state you live in.">State</FieldLabel>
-                <Select value={state} onValueChange={setState}>
-                  <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                  <SelectContent>
-                    {(STATES_BY_COUNTRY[country as (typeof COUNTRIES)[number]] ?? []).map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <FieldLabel htmlFor="city" info="The city you live in.">City</FieldLabel>
-                <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Enter city" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <FieldLabel htmlFor="bio" info="Write a little about yourself in simple words.">
-                Bio
-              </FieldLabel>
-              <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself..." />
-            </div>
-          </CardContent>
-        </Card>
 
-        {user.role === "founder" && (
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <h3 className="text-base font-semibold">Founder Details</h3>
-              <div className="space-y-2">
-                <Label>LinkedIn</Label>
-                <Input value={linkedIn} onChange={(e) => setLinkedIn(e.target.value)} placeholder="https://linkedin.com/in/..." />
-              </div>
-              <div className="grid gap-5 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>Twitter (X)</Label>
-                  <Input value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="https://x.com/..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>GitHub</Label>
-                  <Input value={github} onChange={(e) => setGithub(e.target.value)} placeholder="https://github.com/..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>Website</Label>
-                  <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yoursite.com" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Industries of Interest (comma separated)</Label>
-                <Input value={industriesInput} onChange={(e) => setIndustriesInput(e.target.value)} placeholder="FinTech, EdTech, SaaS" />
-              </div>
-              <div className="space-y-2">
-                <Label>Skills & Expertise (comma separated)</Label>
-                <Input value={skillsInput} onChange={(e) => setSkillsInput(e.target.value)} placeholder="Product Strategy, Fundraising, Leadership" />
-              </div>
-              <div className="space-y-2">
-                <Label>Role Tags (comma separated)</Label>
-                <Input value={roleTagsInput} onChange={(e) => setRoleTagsInput(e.target.value)} placeholder="Entrepreneur, Leader, Problem Solver" />
-              </div>
-              <div className="space-y-2">
-                <Label>Looking For (comma separated)</Label>
-                <Input value={lookingForInput} onChange={(e) => setLookingForInput(e.target.value)} placeholder="Co-Founder, Investor, Mentor, Advisor" />
-              </div>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Past Startups Founded</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={pastStartupsCount}
-                    onChange={(e) => setPastStartupsCount(Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Years of Experience</Label>
-                  <Input type="number" min={0} value={yearsOfExperience} onChange={(e) => setYearsOfExperience(Number(e.target.value))} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {user.role === "freelancer" && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FreelancerTab)}>
+            <TabsList className="h-auto flex-wrap gap-1.5 rounded-2xl border border-neutral-200 bg-neutral-50 p-1.5">
+              <TabsTrigger
+                value="basic"
+                className="gap-1.5 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                <User className="h-3.5 w-3.5" /> Basic Info
+              </TabsTrigger>
+              <TabsTrigger
+                value="professional"
+                className="gap-1.5 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                <Briefcase className="h-3.5 w-3.5" /> Professional Details
+              </TabsTrigger>
+              <TabsTrigger
+                value="portfolio"
+                className="gap-1.5 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                <Image className="h-3.5 w-3.5" /> Portfolio
+              </TabsTrigger>
+              <TabsTrigger
+                value="payout"
+                className="gap-1.5 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white data-[state=active]:shadow-md"
+              >
+                <Wallet className="h-3.5 w-3.5" /> Payout &amp; Verification
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        <motion.div
+          key={user.role === "freelancer" ? activeTab : "static"}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="space-y-4"
+        >
+
+        {showForFreelancerTab("basic") && (
+          <BasicInfoSection
+            avatar={avatar}
+            setAvatar={setAvatar}
+            coverImage={coverImage}
+            setCoverImage={setCoverImage}
+            headline={headline}
+            setHeadline={setHeadline}
+            country={country}
+            setCountry={setCountry}
+            state={state}
+            setState={setState}
+            city={city}
+            setCity={setCity}
+            bio={bio}
+            bioRef={bioRef}
+            syncBioFromDom={syncBioFromDom}
+            applyBioMarker={applyBioMarker}
+          />
         )}
 
         {user.role === "founder" && (
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <h3 className="text-base font-semibold">Personal Info</h3>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Date of Birth</Label>
-                  <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Nationality</Label>
-                  <Input value={nationality} onChange={(e) => setNationality(e.target.value)} placeholder="Indian" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Education Level</Label>
-                <Input value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} placeholder="Post Graduate" />
-              </div>
-              <div className="space-y-2">
-                <Label>Languages (comma separated)</Label>
-                <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="English, Marathi, Hindi" />
-              </div>
-            </CardContent>
-          </Card>
+          <FounderDetailsSection
+            founderStage={founderStage}
+            setFounderStage={setFounderStage}
+            linkedIn={linkedIn}
+            setLinkedIn={setLinkedIn}
+            twitter={twitter}
+            setTwitter={setTwitter}
+            github={github}
+            setGithub={setGithub}
+            website={website}
+            setWebsite={setWebsite}
+            industriesInput={industriesInput}
+            setIndustriesInput={setIndustriesInput}
+            skillsInput={skillsInput}
+            setSkillsInput={setSkillsInput}
+            roleTagsInput={roleTagsInput}
+            setRoleTagsInput={setRoleTagsInput}
+            lookingForInput={lookingForInput}
+            setLookingForInput={setLookingForInput}
+            pastStartupsCount={pastStartupsCount}
+            setPastStartupsCount={setPastStartupsCount}
+            yearsOfExperience={yearsOfExperience}
+            setYearsOfExperience={setYearsOfExperience}
+          />
         )}
 
-        {(user.role === "founder" || user.role === "freelancer") && (
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold">Experience Timeline</h3>
-                <Button variant="outline" size="sm" onClick={addExperience}>
-                  <Plus className="h-3.5 w-3.5" /> Add Experience
-                </Button>
-              </div>
-
-              {experience.length === 0 && <p className="text-sm text-muted-foreground">No experience added yet.</p>}
-
-              {experience.map((exp, i) => (
-                <div key={i} className="space-y-3 rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Entry {i + 1}</span>
-                    <button type="button" onClick={() => removeExperience(i)} className="text-danger hover:opacity-80">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Title</Label>
-                      <Input value={exp.title} onChange={(e) => updateExperience(i, { title: e.target.value })} placeholder="Founder & CEO" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Company / Startup</Label>
-                      <Input value={exp.company} onChange={(e) => updateExperience(i, { company: e.target.value })} placeholder="TechNova Solutions" />
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="space-y-1.5">
-                      <Label>Location</Label>
-                      <Input value={exp.location} onChange={(e) => updateExperience(i, { location: e.target.value })} placeholder="Pune, India" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Start</Label>
-                      <Input value={exp.startLabel} onChange={(e) => updateExperience(i, { startLabel: e.target.value })} placeholder="Jan 2021" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>End (or "Present")</Label>
-                      <Input value={exp.endLabel} onChange={(e) => updateExperience(i, { endLabel: e.target.value })} placeholder="Present" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Description</Label>
-                    <Textarea
-                      value={exp.description}
-                      onChange={(e) => updateExperience(i, { description: e.target.value })}
-                      placeholder="What did you build or achieve in this role?"
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        {user.role === "founder" && (
+          <PersonalInfoSection
+            dateOfBirth={dateOfBirth}
+            setDateOfBirth={setDateOfBirth}
+            nationality={nationality}
+            setNationality={setNationality}
+            educationLevel={educationLevel}
+            setEducationLevel={setEducationLevel}
+            languagesInput={languagesInput}
+            setLanguagesInput={setLanguagesInput}
+          />
         )}
 
-        {(user.role === "founder" || user.role === "freelancer") && (
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold">Education</h3>
-                <Button variant="outline" size="sm" onClick={addEducation}>
-                  <Plus className="h-3.5 w-3.5" /> Add Education
-                </Button>
-              </div>
-
-              {education.length === 0 && <p className="text-sm text-muted-foreground">No education added yet.</p>}
-
-              {education.map((edu, i) => (
-                <div key={i} className="space-y-3 rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Entry {i + 1}</span>
-                    <button type="button" onClick={() => removeEducation(i)} className="text-danger hover:opacity-80">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Degree</Label>
-                      <Input value={edu.degree} onChange={(e) => updateEducation(i, { degree: e.target.value })} placeholder="MBA in Marketing" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Institution</Label>
-                      <Input
-                        value={edu.institution}
-                        onChange={(e) => updateEducation(i, { institution: e.target.value })}
-                        placeholder="Savitribai Phule Pune University"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Start Year</Label>
-                      <Input value={edu.startLabel} onChange={(e) => updateEducation(i, { startLabel: e.target.value })} placeholder="2016" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>End Year</Label>
-                      <Input value={edu.endLabel} onChange={(e) => updateEducation(i, { endLabel: e.target.value })} placeholder="2018" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        {(user.role === "founder" || user.role === "freelancer") && showForFreelancerTab("professional") && (
+          <ExperienceEducationSection
+            role={user.role}
+            experience={experience}
+            addExperience={addExperience}
+            removeExperience={removeExperience}
+            updateExperience={updateExperience}
+            education={education}
+            addEducation={addEducation}
+            removeEducation={removeEducation}
+            updateEducation={updateEducation}
+            achievements={achievements}
+            addAchievement={addAchievement}
+            removeAchievement={removeAchievement}
+            updateAchievement={updateAchievement}
+          />
         )}
 
-        {(user.role === "founder" || user.role === "freelancer") && (
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold">{user.role === "freelancer" ? "Certificates" : "Achievements"}</h3>
-                <Button variant="outline" size="sm" onClick={addAchievement}>
-                  <Plus className="h-3.5 w-3.5" /> Add {user.role === "freelancer" ? "Certificate" : "Achievement"}
-                </Button>
-              </div>
-
-              {achievements.length === 0 && <p className="text-sm text-muted-foreground">No achievements added yet.</p>}
-
-              {achievements.map((a, i) => (
-                <div key={i} className="space-y-3 rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Entry {i + 1}</span>
-                    <button type="button" onClick={() => removeAchievement(i)} className="text-danger hover:opacity-80">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Title</Label>
-                      <Input
-                        value={a.title}
-                        onChange={(e) => updateAchievement(i, { title: e.target.value })}
-                        placeholder="Winner - Smart India Hackathon"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Year</Label>
-                      <Input value={a.dateLabel} onChange={(e) => updateAchievement(i, { dateLabel: e.target.value })} placeholder="2022" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Description (optional)</Label>
-                    <Input value={a.description} onChange={(e) => updateAchievement(i, { description: e.target.value })} />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        {user.role === "freelancer" && showForFreelancerTab("professional") && (
+          <FreelancerDetailsSection
+            user={user}
+            availabilityStatus={availabilityStatus}
+            setAvailabilityStatus={setAvailabilityStatus}
+            category={category}
+            setCategory={setCategory}
+            subCategory={subCategory}
+            setSubCategory={setSubCategory}
+            skillsInput={skillsInput}
+            setSkillsInput={setSkillsInput}
+            languagesInput={languagesInput}
+            setLanguagesInput={setLanguagesInput}
+            hourlyRate={hourlyRate}
+            setHourlyRate={setHourlyRate}
+            yearsOfExperience={yearsOfExperience}
+            setYearsOfExperience={setYearsOfExperience}
+            workingHoursStart={workingHoursStart}
+            setWorkingHoursStart={setWorkingHoursStart}
+            workingHoursEnd={workingHoursEnd}
+            setWorkingHoursEnd={setWorkingHoursEnd}
+            workingHours={workingHours}
+            setWorkingHours={setWorkingHours}
+            workingDays={workingDays}
+            setWorkingDays={setWorkingDays}
+            responseTimeLabel={responseTimeLabel}
+            setResponseTimeLabel={setResponseTimeLabel}
+            phone={phone}
+            setPhone={setPhone}
+            resumeUrl={resumeUrl}
+            setResumeUrl={setResumeUrl}
+            videoIntro={videoIntro}
+            setVideoIntro={setVideoIntro}
+          />
         )}
 
-        {user.role === "freelancer" && (
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold">Freelancer Details</h3>
-                <div className="flex items-center gap-2 rounded-full border border-border p-1">
-                  <button
-                    type="button"
-                    onClick={() => setAvailabilityStatus("available")}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      availabilityStatus === "available" ? "bg-success text-success-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    Available
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAvailabilityStatus("busy")}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      availabilityStatus === "busy" ? "bg-warning text-warning-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    Busy
-                  </button>
-                </div>
-              </div>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <FieldLabel info="The category your work falls under.">Category</FieldLabel>
-                  <Select
-                    value={category}
-                    onValueChange={(value) => {
-                      setCategory(value);
-                      setSubCategory("");
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SERVICE_CATEGORY_NAMES.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="A more specific type within your category.">Sub-Category</FieldLabel>
-                  {category && SERVICE_CATEGORIES[category]?.length ? (
-                    <Select value={subCategory} onValueChange={setSubCategory}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select sub-category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SERVICE_CATEGORIES[category].map((sub) => (
-                          <SelectItem key={sub} value={sub}>
-                            {sub}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="flex h-9 items-center text-xs text-muted-foreground">Select a category first.</p>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <FieldLabel info="Add skills separated by commas.">
-                  Skills (comma separated)
-                </FieldLabel>
-                <Input value={skillsInput} onChange={(e) => setSkillsInput(e.target.value)} placeholder="React, Node.js, UI Design" />
-              </div>
-              <div className="space-y-2">
-                <FieldLabel info="Languages you can communicate in — shown on your profile so clients know before reaching out.">
-                  Languages (comma separated)
-                </FieldLabel>
-                <Input value={languagesInput} onChange={(e) => setLanguagesInput(e.target.value)} placeholder="English, Marathi, Hindi" />
-              </div>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <FieldLabel info="Your usual rate per hour.">Hourly Rate (₹)</FieldLabel>
-                  <Input type="number" min={0} value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} />
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="How many years you've been working.">Years of Experience</FieldLabel>
-                  <Input type="number" min={0} value={yearsOfExperience} onChange={(e) => setYearsOfExperience(Number(e.target.value))} />
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="The hours you usually work each day.">
-                    Working Hours
-                  </FieldLabel>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={workingHoursStart}
-                      onValueChange={(v) => {
-                        setWorkingHoursStart(v);
-                        setWorkingHours([to12Hour(v), to12Hour(workingHoursEnd)].filter(Boolean).join(" - "));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Start time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TIME_OPTIONS.map((t) => (
-                          <SelectItem key={t.value} value={t.value}>
-                            {t.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <span className="text-sm text-muted-foreground">to</span>
-                    <Select
-                      value={workingHoursEnd}
-                      onValueChange={(v) => {
-                        setWorkingHoursEnd(v);
-                        setWorkingHours([to12Hour(workingHoursStart), to12Hour(v)].filter(Boolean).join(" - "));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="End time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TIME_OPTIONS.map((t) => (
-                          <SelectItem key={t.value} value={t.value}>
-                            {t.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {workingHours && <p className="text-[11px] text-muted-foreground">Shown on profile as: {workingHours}</p>}
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="The days you usually work.">Working Days</FieldLabel>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button type="button" variant="outline" className="w-full justify-start font-normal">
-                        {workingDays.length > 0 ? workingDays.join(", ") : "Select working days"}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                      {WORKING_DAYS.map((day) => (
-                        <DropdownMenuCheckboxItem
-                          key={day}
-                          checked={workingDays.includes(day)}
-                          onCheckedChange={(checked) =>
-                            setWorkingDays((prev) => (checked ? [...prev, day] : prev.filter((d) => d !== day)))
-                          }
-                        >
-                          {day}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="Shows how often you deliver work on time. This is calculated automatically.">
-                    On-Time Delivery (%)
-                  </FieldLabel>
-                  <Input type="number" value={user?.onTimeDeliveryPercent ?? 0} disabled />
-                  <p className="text-[11px] text-muted-foreground">Calculated automatically from your delivered orders — not editable.</p>
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="How fast you usually reply to messages.">
-                    Typical Response Time
-                  </FieldLabel>
-                  <Input value={responseTimeLabel} onChange={(e) => setResponseTimeLabel(e.target.value)} placeholder="1 Hour" />
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="Kept private — used only for verification and alerts.">Phone Number</FieldLabel>
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" />
-                </div>
-                <div className="space-y-2">
-                  <FieldLabel info="Your account's email — filled in automatically, not editable here.">Email ID</FieldLabel>
-                  <Input value={user?.email ?? ""} disabled />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">Working hours and response time are self-reported and shown as-is on your public profile.</p>
-            </CardContent>
-          </Card>
+        {((user.role === "freelancer" && showForFreelancerTab("portfolio")) || user.role === "influencer") && (
+          <PortfolioSection
+            portfolioItems={portfolioItems}
+            addPortfolioItem={addPortfolioItem}
+            removePortfolioItem={removePortfolioItem}
+            updatePortfolioItem={updatePortfolioItem}
+            portfolioItemTags={portfolioItemTags}
+            portfolioItemVerifiedPaymentId={portfolioItemVerifiedPaymentId}
+            suggestedPayments={suggestedPayments}
+            addPortfolioItemFromPayment={addPortfolioItemFromPayment}
+            verifiablePayments={verifiablePayments}
+          />
         )}
 
-        {user.role === "freelancer" && (
-          <Card>
-            <CardContent className="space-y-3 p-6">
-              <h3 className="text-base font-semibold">Resume</h3>
-              <p className="text-xs text-muted-foreground">Upload a PDF resume for clients to view on your profile.</p>
-              <FileUpload
-                folder="resume"
-                accept="application/pdf"
-                value={resumeUrl}
-                onUploaded={(url) => setResumeUrl(url)}
-                label="Click to upload your resume (PDF)"
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {user.role === "freelancer" && (
-          <Card>
-            <CardContent className="space-y-3 p-6">
-              <h3 className="text-base font-semibold">Video Introduction</h3>
-              <p className="text-xs text-muted-foreground">
-                A short video helps clients get a feel for you before they hire — max 50MB, 60 seconds.
-              </p>
-              <FileUpload
-                folder="profile_video"
-                accept="video/*"
-                value={videoIntro}
-                onUploaded={(url) => setVideoIntro(url)}
-                label="Click to upload your intro video"
-              />
-              {videoIntro && <video src={videoIntro} controls className="mt-2 max-h-64 w-full rounded-lg border border-border" />}
-            </CardContent>
-          </Card>
-        )}
-
-        {user.role === "freelancer" && (
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold">Portfolio</h3>
-                  <p className="text-xs text-muted-foreground">Showcase past work so clients can see proof before they hire you.</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={addPortfolioItem}>
-                  <Plus className="h-3.5 w-3.5" /> Add Item
-                </Button>
-              </div>
-
-              {suggestedPayments.length > 0 && (
-                <div className="space-y-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4">
-                  <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                    <Sparkles className="h-3.5 w-3.5" /> Add from your completed work
-                  </p>
-                  <div className="space-y-2">
-                    {suggestedPayments.map((p) => (
-                      <div key={p._id} className="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{p.note || TYPE_LABELS[p.type]}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatCurrency(p.netAmount || p.amount)} · {new Date(p.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addPortfolioItemFromPayment(p)}>
-                          <Plus className="h-3.5 w-3.5" /> Add to Portfolio
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {portfolioItems.length === 0 && <p className="text-sm text-muted-foreground">No portfolio items added yet.</p>}
-
-              {portfolioItems.map((item, i) => (
-                <div key={i} className="space-y-3 rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Item {i + 1}</span>
-                    <button type="button" onClick={() => removePortfolioItem(i)} className="text-danger hover:opacity-80">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
-                    {item.image ? (
-                      <img src={item.image} alt="" className="h-28 w-full rounded-lg object-cover sm:w-[140px]" />
-                    ) : (
-                      <FileUpload
-                        folder="service_cover"
-                        value={item.image}
-                        onUploaded={(url) => updatePortfolioItem(i, { image: url })}
-                        label="Upload image"
-                        className="h-28 sm:w-[140px]"
-                      />
-                    )}
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label>Title</Label>
-                        <Input value={item.title} onChange={(e) => updatePortfolioItem(i, { title: e.target.value })} placeholder="E-commerce Website Redesign" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Description</Label>
-                        <Textarea
-                          value={item.description}
-                          onChange={(e) => updatePortfolioItem(i, { description: e.target.value })}
-                          placeholder="What did you build, and what was the outcome?"
-                          className="min-h-[70px]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  {item.image && (
-                    <button type="button" onClick={() => updatePortfolioItem(i, { image: "" })} className="text-xs text-danger hover:underline">
-                      Remove image
-                    </button>
-                  )}
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Client (optional)</Label>
-                      <Input value={item.clientName ?? ""} onChange={(e) => updatePortfolioItem(i, { clientName: e.target.value })} placeholder="Acme Pvt Ltd" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Your Role (optional)</Label>
-                      <Input value={item.projectRole ?? ""} onChange={(e) => updatePortfolioItem(i, { projectRole: e.target.value })} placeholder="Lead Frontend Developer" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Tags (comma separated)</Label>
-                    <Input
-                      value={portfolioItemTags(i)}
-                      onChange={(e) => updatePortfolioItem(i, { tags: splitList(e.target.value) })}
-                      placeholder="React, Shopify, UI Design"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Link (optional)</Label>
-                    <Input value={item.link} onChange={(e) => updatePortfolioItem(i, { link: e.target.value })} placeholder="https://..." />
-                  </div>
-                  {verifiablePayments.length > 0 && (
-                    <div className="space-y-1.5">
-                      <Label className="flex items-center gap-1">
-                        <BadgeCheck className="h-3.5 w-3.5 text-success" /> Link to a completed payment (shows a Verified badge)
-                      </Label>
-                      <Select
-                        value={portfolioItemVerifiedPaymentId(item) || "none"}
-                        onValueChange={(v) => updatePortfolioItem(i, { verifiedPayment: v === "none" ? null : v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Not linked" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Not linked</SelectItem>
-                          {verifiablePayments.map((p) => (
-                            <SelectItem key={p._id} value={p._id}>
-                              {TYPE_LABELS[p.type]} · {formatCurrency(p.netAmount || p.amount)} · {new Date(p.createdAt).toLocaleDateString()}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {user.role === "freelancer" && (
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div>
-                <h3 className="text-base font-semibold">Payout Details</h3>
-                <p className="text-xs text-muted-foreground">Save your UPI ID or bank details so you don&apos;t need to re-enter them every time you withdraw.</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Preferred Method</Label>
-                <Select value={payoutMethod} onValueChange={(v) => setPayoutMethod(v as WithdrawalMethod)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="upi">UPI</SelectItem>
-                    <SelectItem value="bank">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {payoutMethod === "upi" ? (
-                <div className="space-y-2">
-                  <Label>UPI ID</Label>
-                  <Input value={payoutUpiId} onChange={(e) => setPayoutUpiId(e.target.value)} placeholder="yourname@upi" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Account Holder Name</Label>
-                    <Input value={payoutBankAccountHolder} onChange={(e) => setPayoutBankAccountHolder(e.target.value)} placeholder="As per bank records" />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Account Number</Label>
-                      <Input value={payoutBankAccountNumber} onChange={(e) => setPayoutBankAccountNumber(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>IFSC Code</Label>
-                      <Input value={payoutBankIfsc} onChange={(e) => setPayoutBankIfsc(e.target.value.toUpperCase())} placeholder="ABCD0123456" />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {user.role === "freelancer" && (
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold">Identity Verification (KYC)</h3>
-                  <p className="text-xs text-muted-foreground">Required before you can withdraw your earnings.</p>
-                </div>
-                {user.kycStatus === "verified" && (
-                  <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">
-                    <ShieldCheck className="h-3.5 w-3.5" /> Verified
-                  </span>
-                )}
-                {user.kycStatus === "pending" && (
-                  <span className="flex items-center gap-1 rounded-full bg-warning/10 px-3 py-1 text-xs font-medium text-warning">
-                    <Clock className="h-3.5 w-3.5" /> Under Review
-                  </span>
-                )}
-                {(user.kycStatus === "unverified" || !user.kycStatus) && (
-                  <span className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                    <ShieldAlert className="h-3.5 w-3.5" /> Not Verified
-                  </span>
-                )}
-                {user.kycStatus === "rejected" && (
-                  <span className="flex items-center gap-1 rounded-full bg-danger/10 px-3 py-1 text-xs font-medium text-danger">
-                    <ShieldAlert className="h-3.5 w-3.5" /> Rejected
-                  </span>
-                )}
-              </div>
-
-              {user.kycStatus === "rejected" && user.kycReviewNote && (
-                <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">Reason: {user.kycReviewNote}</p>
-              )}
-
-              {(user.kycStatus === "unverified" || user.kycStatus === "rejected" || !user.kycStatus) && (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    Upload a government-issued ID (Aadhaar, PAN, passport, or driving licence) as an image or PDF.
-                  </p>
-                  <div className="space-y-2">
-                    {kycDocuments.map((doc, i) => (
-                      <div key={i} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs">
-                        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span className="min-w-0 flex-1 truncate">{doc.name}</span>
-                        <button type="button" onClick={() => setKycDocuments((prev) => prev.filter((_, idx) => idx !== i))}>
-                          <X className="h-3.5 w-3.5 text-danger" />
-                        </button>
-                      </div>
-                    ))}
-                    <FileUpload
-                      folder="document"
-                      accept="image/png,image/jpeg,application/pdf"
-                      label="Upload ID document"
-                      onUploaded={(url, fileName) => setKycDocuments((prev) => [...prev, { url, name: fileName }])}
-                    />
-                  </div>
-                  {kycMutation.isError && (
-                    <p className="text-xs text-danger">
-                      {isAxiosError(kycMutation.error) ? kycMutation.error.response?.data?.message : "Something went wrong."}
-                    </p>
-                  )}
-                  {kycMutation.isSuccess && <p className="text-xs text-success">Submitted for review.</p>}
-                  <Button
-                    type="button"
-                    variant="gradient"
-                    size="sm"
-                    disabled={kycDocuments.length === 0 || kycMutation.isPending}
-                    onClick={() => kycMutation.mutate()}
-                  >
-                    {kycMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    Submit for Verification
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
+        {user.role === "freelancer" && showForFreelancerTab("payout") && (
+          <PayoutKycSection
+            user={user}
+            payoutMethod={payoutMethod}
+            setPayoutMethod={setPayoutMethod}
+            payoutUpiId={payoutUpiId}
+            setPayoutUpiId={setPayoutUpiId}
+            payoutBankAccountHolder={payoutBankAccountHolder}
+            setPayoutBankAccountHolder={setPayoutBankAccountHolder}
+            payoutBankAccountNumber={payoutBankAccountNumber}
+            setPayoutBankAccountNumber={setPayoutBankAccountNumber}
+            payoutBankIfsc={payoutBankIfsc}
+            setPayoutBankIfsc={setPayoutBankIfsc}
+            resendEmailMutation={resendEmailMutation}
+            kycDocuments={kycDocuments}
+            setKycDocuments={setKycDocuments}
+            kycMutation={kycMutation}
+            faceSelfie={faceSelfie}
+            setFaceSelfie={setFaceSelfie}
+            faceVerificationMutation={faceVerificationMutation}
+            addressDocuments={addressDocuments}
+            setAddressDocuments={setAddressDocuments}
+            addressVerificationMutation={addressVerificationMutation}
+            bankVerificationDocuments={bankVerificationDocuments}
+            setBankVerificationDocuments={setBankVerificationDocuments}
+            bankVerificationMutation={bankVerificationMutation}
+          />
         )}
 
         {user.role === "investor" && (
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <h3 className="text-base font-semibold">Investor Details</h3>
-              <div className="space-y-2">
-                <Label>Investment Focus (comma separated)</Label>
-                <Input value={focusInput} onChange={(e) => setFocusInput(e.target.value)} placeholder="SaaS, FinTech, AI" />
-              </div>
-              <div className="grid gap-5 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>Min Ticket Size (₹)</Label>
-                  <Input type="number" min={0} value={ticketSizeMin} onChange={(e) => setTicketSizeMin(Number(e.target.value))} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Max Ticket Size (₹)</Label>
-                  <Input type="number" min={0} value={ticketSizeMax} onChange={(e) => setTicketSizeMax(Number(e.target.value))} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Portfolio Companies</Label>
-                  <Input type="number" min={0} value={portfolioCompanyCount} onChange={(e) => setPortfolioCompanyCount(Number(e.target.value))} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <InvestorDetailsSection
+            focusInput={focusInput}
+            setFocusInput={setFocusInput}
+            fundName={fundName}
+            setFundName={setFundName}
+            fundSize={fundSize}
+            setFundSize={setFundSize}
+            ticketSizeMin={ticketSizeMin}
+            setTicketSizeMin={setTicketSizeMin}
+            ticketSizeMax={ticketSizeMax}
+            setTicketSizeMax={setTicketSizeMax}
+            portfolioCompanyCount={portfolioCompanyCount}
+            setPortfolioCompanyCount={setPortfolioCompanyCount}
+            preferredStages={preferredStages}
+            setPreferredStages={setPreferredStages}
+            linkedIn={linkedIn}
+            setLinkedIn={setLinkedIn}
+            website={website}
+            setWebsite={setWebsite}
+          />
         )}
 
         {user.role === "mentor" && (
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <h3 className="text-base font-semibold">Mentor Details</h3>
-              <div className="space-y-2">
-                <Label>Areas of Expertise (comma separated)</Label>
-                <Input value={expertiseInput} onChange={(e) => setExpertiseInput(e.target.value)} placeholder="Fundraising, Growth, Product" />
-              </div>
-              <div className="space-y-2 sm:max-w-xs">
-                <Label>Session Rate (₹, 0 for free)</Label>
-                <Input type="number" min={0} value={sessionRate} onChange={(e) => setSessionRate(Number(e.target.value))} />
-              </div>
-            </CardContent>
-          </Card>
+          <MentorDetailsSection
+            expertiseInput={expertiseInput}
+            setExpertiseInput={setExpertiseInput}
+            sessionRate={sessionRate}
+            setSessionRate={setSessionRate}
+            sessionFormat={sessionFormat}
+            setSessionFormat={setSessionFormat}
+            linkedIn={linkedIn}
+            setLinkedIn={setLinkedIn}
+            hoursPerWeekAvailable={hoursPerWeekAvailable}
+            setHoursPerWeekAvailable={setHoursPerWeekAvailable}
+            workingDays={workingDays}
+            setWorkingDays={setWorkingDays}
+          />
         )}
 
         {user.role === "partner" && (
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <h3 className="text-base font-semibold">Partner Details</h3>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Organization Name</Label>
-                  <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} placeholder="Your organization" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Partner Type</Label>
-                  <Select value={partnerType} onValueChange={(v) => setPartnerType(v as PartnerType)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PARTNER_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <PartnerDetailsSection
+            organizationName={organizationName}
+            setOrganizationName={setOrganizationName}
+            partnerType={partnerType}
+            setPartnerType={setPartnerType}
+            programDetails={programDetails}
+            setProgramDetails={setProgramDetails}
+            startupsSupportedCount={startupsSupportedCount}
+            setStartupsSupportedCount={setStartupsSupportedCount}
+            website={website}
+            setWebsite={setWebsite}
+            applicationLink={applicationLink}
+            setApplicationLink={setApplicationLink}
+          />
         )}
 
         {user.role === "client" && (
-          <Card>
-            <CardContent className="space-y-5 p-6">
-              <h3 className="text-base font-semibold">Company Details</h3>
-              <div className="space-y-2 sm:max-w-sm">
-                <Label>Company Name</Label>
-                <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Your company" />
-              </div>
-            </CardContent>
-          </Card>
+          <CompanyDetailsSection
+            companyName={companyName}
+            setCompanyName={setCompanyName}
+            companySize={companySize}
+            setCompanySize={setCompanySize}
+            industriesInput={industriesInput}
+            setIndustriesInput={setIndustriesInput}
+            website={website}
+            setWebsite={setWebsite}
+            companyRegistrationNumber={companyRegistrationNumber}
+            setCompanyRegistrationNumber={setCompanyRegistrationNumber}
+          />
+        )}
+
+        {user.role === "job_seeker" && (
+          <JobSeekerDetailsSection
+            desiredRole={desiredRole}
+            setDesiredRole={setDesiredRole}
+            skillsInput={skillsInput}
+            setSkillsInput={setSkillsInput}
+            yearsOfExperience={yearsOfExperience}
+            setYearsOfExperience={setYearsOfExperience}
+            expectedSalary={expectedSalary}
+            setExpectedSalary={setExpectedSalary}
+            noticePeriodDays={noticePeriodDays}
+            setNoticePeriodDays={setNoticePeriodDays}
+            preferredLocationsInput={preferredLocationsInput}
+            setPreferredLocationsInput={setPreferredLocationsInput}
+            willingToRelocate={willingToRelocate}
+            setWillingToRelocate={setWillingToRelocate}
+            resumeUrl={resumeUrl}
+            setResumeUrl={setResumeUrl}
+          />
+        )}
+
+        {user.role === "influencer" && (
+          <InfluencerDetailsSection
+            category={influencerCategory}
+            setCategory={setInfluencerCategory}
+            niche={niche}
+            setNiche={setNiche}
+            avgEngagementRate={avgEngagementRate}
+            setAvgEngagementRate={setAvgEngagementRate}
+            mediaKitUrl={mediaKitUrl}
+            setMediaKitUrl={setMediaKitUrl}
+            platforms={platforms}
+            addPlatform={addPlatform}
+            removePlatform={removePlatform}
+            updatePlatform={updatePlatform}
+            rateCard={rateCard}
+            addRateCardItem={addRateCardItem}
+            removeRateCardItem={removeRateCardItem}
+            updateRateCardItem={updateRateCardItem}
+            pastCollaborations={pastCollaborations}
+            addCollaboration={addCollaboration}
+            removeCollaboration={removeCollaboration}
+            updateCollaboration={updateCollaboration}
+            contentSamples={contentSamples}
+            addContentSample={addContentSample}
+            removeContentSample={removeContentSample}
+            updateContentSample={updateContentSample}
+          />
         )}
 
         {mutation.isSuccess && <p className="text-sm font-medium text-success">Profile updated successfully.</p>}
         {mutation.isError && <p className="text-sm text-danger">Something went wrong while saving your profile.</p>}
 
         <div className="flex justify-end">
-          <Button variant="gradient" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
-            {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save Profile
-          </Button>
+          {user.role === "freelancer" && activeTab !== "payout" ? (
+            <Button
+              variant="gradient"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate(undefined, { onSuccess: () => setActiveTab(nextFreelancerTab(activeTab)) })}
+            >
+              {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save &amp; Next
+            </Button>
+          ) : (
+            <Button variant="gradient" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
+              {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Profile
+            </Button>
+          )}
         </div>
+        </motion.div>
       </div>
     </DashboardLayout>
   );
-}
-
-function splitList(input: string): string[] {
-  return input
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
 }

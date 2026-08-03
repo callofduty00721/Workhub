@@ -16,6 +16,7 @@ import { ReviewsSection } from "@/components/shared/ReviewsSection";
 import { mentorApi } from "@/api/mentors";
 import { chatApi } from "@/api/chat";
 import { formatCurrency, initialsFromName } from "@/lib/utils";
+import { renderBioHtml } from "@/lib/richText";
 import { useAuth } from "@/context/AuthContext";
 
 export default function MentorProfile() {
@@ -95,6 +96,13 @@ export default function MentorProfile() {
                     </Badge>
                   ))}
                 </div>
+                {(mentor.hoursPerWeekAvailable || mentor.workingDays?.length) && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {!!mentor.hoursPerWeekAvailable && `${mentor.hoursPerWeekAvailable} hrs/week`}
+                    {!!mentor.hoursPerWeekAvailable && !!mentor.workingDays?.length && " · "}
+                    {!!mentor.workingDays?.length && mentor.workingDays.join(", ")}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -103,7 +111,7 @@ export default function MentorProfile() {
             <Card>
               <CardContent className="p-6">
                 <h3 className="mb-2 text-base font-semibold">About</h3>
-                <p className="text-sm leading-relaxed text-foreground/90">{mentor.bio}</p>
+                <p className="text-sm leading-relaxed text-foreground/90" dangerouslySetInnerHTML={{ __html: renderBioHtml(mentor.bio) }} />
               </CardContent>
             </Card>
           )}
@@ -118,6 +126,23 @@ export default function MentorProfile() {
                 <p className="text-xs text-muted-foreground">Session Rate</p>
                 <p className="text-lg font-bold text-success">{mentor.sessionRate > 0 ? `${formatCurrency(mentor.sessionRate)}/session` : "Free"}</p>
               </div>
+              {mentor.sessionFormat && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Session Format</p>
+                  <p className="text-sm font-medium capitalize">{mentor.sessionFormat.replace("_", " ")}</p>
+                </div>
+              )}
+              {!!mentor.completedSessionsCount && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Sessions Completed</p>
+                  <p className="text-sm font-medium">{mentor.completedSessionsCount}</p>
+                </div>
+              )}
+              {mentor.linkedIn && (
+                <a href={mentor.linkedIn} target="_blank" rel="noreferrer" className="block text-xs font-medium text-primary hover:underline">
+                  LinkedIn
+                </a>
+              )}
 
               {!user ? (
                 <Button className="w-full" variant="gradient" onClick={() => navigate("/login")}>

@@ -10,8 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { alertApi } from "@/api/alerts";
+import { useAuth } from "@/context/AuthContext";
 
 export default function FreelancerAlerts() {
+  const { user } = useAuth();
+  const sidebarRole = user?.role === "job_seeker" ? "job_seeker" : "freelancer";
   const [keywordsInput, setKeywordsInput] = useState("");
   const [remoteOnly, setRemoteOnly] = useState(false);
   const queryClient = useQueryClient();
@@ -37,7 +40,7 @@ export default function FreelancerAlerts() {
   });
 
   return (
-    <DashboardLayout role="freelancer" title="Job Alerts" subtitle="Get notified the moment a new job or project matches your skills.">
+    <DashboardLayout role={sidebarRole} title="Job Alerts" subtitle="Get notified the moment a new job or project matches your skills.">
       <Card className="mb-6">
         <CardContent className="space-y-4 p-6">
           <h3 className="text-base font-semibold">Create a New Alert</h3>

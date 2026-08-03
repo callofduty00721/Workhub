@@ -3,98 +3,130 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ContestCard } from "@/components/contests/ContestCard";
+import { Pagination } from "@/components/shared/Pagination";
 import { contestApi } from "@/api/contests";
 import { useAuth } from "@/context/AuthContext";
 
 export default function ContestList() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
   const [page, setPage] = useState(1);
 
+  const { data: categories } = useQuery({ queryKey: ["contests", "categories"], queryFn: contestApi.categories });
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["contests", { search, page }],
-    queryFn: () => contestApi.list({ search: search || undefined, page, limit: 12 }),
+    queryKey: ["contests", { search, category, page }],
+    queryFn: () => contestApi.list({ search: search || undefined, category: category === "all" ? undefined : category, page, limit: 12 }),
   });
 
   const canPost = user?.role === "employer" || user?.role === "client";
+  const total = data?.pagination.total ?? 0;
 
   return (
-    <div className="container py-10">
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Contests</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Submit your best work and win prizes from clients on MahaHub.</p>
+    <div>
+      {/* Header */}
+      <section className="border-b bg-gradient-to-b from-primary/5 via-white to-white">
+        <div className="container py-6">
+          <div className="mx-auto max-w-4xl text-center">
+            <h1 className="text-[26px] font-bold leading-tight tracking-tight text-neutral-900 sm:text-3xl">
+              Win <span className="text-primary">contests</span>, showcase your skill
+            </h1>
+            <p className="mt-1 text-[13px] text-neutral-500">Submit your best work and win prizes from clients on MahaHub.</p>
+
+            <div className="mt-4 flex flex-col gap-1.5 rounded-2xl border border-neutral-200 bg-white p-1.5 shadow-sm sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => {
+                    setPage(1);
+                    setSearch(e.target.value);
+                  }}
+                  placeholder="Search contests, categories, skills..."
+                  className="h-10 border-0 pl-9 text-[13px] shadow-none focus-visible:ring-0"
+                />
+              </div>
+              {categories && categories.length > 0 && (
+                <>
+                  <div className="hidden h-6 w-px bg-neutral-200 sm:block" />
+                  <Select
+                    value={category}
+                    onValueChange={(v) => {
+                      setPage(1);
+                      setCategory(v);
+                    }}
+                  >
+                    <SelectTrigger className="h-10 border-0 text-[13px] shadow-none focus:ring-0 sm:w-48">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
+              {canPost && (
+                <Link
+                  to={user?.role === "client" ? "/dashboard/client/post-contest" : "/dashboard/employer/post-contest"}
+                  className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-neutral-900 px-5 text-[13px] font-medium text-white transition-colors hover:bg-primary"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Post a Contest
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
-        {canPost && (
-          <Button variant="gradient" asChild>
-            <Link to={user?.role === "client" ? "/dashboard/client/post-contest" : "/dashboard/employer/post-contest"}>
-              <Plus className="h-4 w-4" /> Post a Contest
-            </Link>
-          </Button>
+      </section>
+
+      <div className="container py-6">
+        {!isLoading && (
+          <p className="mb-4 text-[12.5px] font-medium text-neutral-500">
+            {total.toLocaleString()} contest{total === 1 ? "" : "s"}
+          </p>
         )}
-      </div>
 
-      <div className="mb-6 relative max-w-lg">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => {
-            setPage(1);
-            setSearch(e.target.value);
-          }}
-          placeholder="Search contests, categories, skills..."
-          className="pl-9"
-        />
-      </div>
-
-      {isLoading && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-52 w-full rounded-xl" />
-          ))}
-        </div>
-      )}
-
-      {isError && (
-        <div className="rounded-lg border border-danger/30 bg-danger/10 px-5 py-8 text-center text-sm text-danger">
-          Couldn&apos;t load contests right now. Make sure the API server is running.
-        </div>
-      )}
-
-      {!isLoading && !isError && (data?.data.length ?? 0) === 0 && (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
-          <Trophy className="h-9 w-9 text-muted-foreground" />
-          <p className="font-medium">No contests found</p>
-          <p className="max-w-sm text-sm text-muted-foreground">Try a different search term, or check back later.</p>
-        </div>
-      )}
-
-      {!isLoading && !isError && (data?.data.length ?? 0) > 0 && (
-        <>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {data!.data.map((contest) => (
-              <ContestCard key={contest._id} contest={contest} />
+        {isLoading && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-72 w-full rounded-[22px]" />
             ))}
           </div>
+        )}
 
-          {data!.pagination.pages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {data!.pagination.page} of {data!.pagination.pages}
-              </span>
-              <Button variant="outline" size="sm" disabled={page >= data!.pagination.pages} onClick={() => setPage((p) => p + 1)}>
-                Next
-              </Button>
+        {isError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-8 text-center text-sm text-red-600">
+            Couldn&apos;t load contests right now. Make sure the API server is running.
+          </div>
+        )}
+
+        {!isLoading && !isError && (data?.data.length ?? 0) === 0 && (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-200 bg-white py-16 text-center">
+            <Trophy className="h-9 w-9 text-neutral-300" />
+            <p className="font-medium text-neutral-900">No contests found</p>
+            <p className="max-w-sm text-sm text-neutral-500">Try a different search term, or check back later.</p>
+          </div>
+        )}
+
+        {!isLoading && !isError && (data?.data.length ?? 0) > 0 && (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {data!.data.map((contest) => (
+                <ContestCard key={contest._id} contest={contest} />
+              ))}
             </div>
-          )}
-        </>
-      )}
+            <Pagination page={page} pages={data!.pagination.pages} onChange={setPage} />
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { skillTestApi, type SkillTestToTake, type SkillTestResult } from "@/api/skillTests";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SkillTests() {
+  const { user } = useAuth();
+  const sidebarRole = user?.role === "super_admin" ? "super_admin" : "job_seeker";
   const queryClient = useQueryClient();
   const [activeTest, setActiveTest] = useState<SkillTestToTake | null>(null);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
@@ -46,7 +49,7 @@ export default function SkillTests() {
 
   if (activeTest) {
     return (
-      <DashboardLayout role="freelancer" title={`${activeTest.skill} Skill Test`} subtitle={activeTest.description}>
+      <DashboardLayout role={sidebarRole} title={`${activeTest.skill} Skill Test`} subtitle={activeTest.description}>
         <Button variant="ghost" size="sm" className="mb-4" onClick={closeTest}>
           <ArrowLeft className="h-3.5 w-3.5" /> Back to tests
         </Button>
@@ -117,7 +120,7 @@ export default function SkillTests() {
   }
 
   return (
-    <DashboardLayout role="freelancer" title="Skill Tests" subtitle="Pass a test to earn a verified skill badge on your profile.">
+    <DashboardLayout role={sidebarRole} title="Skill Tests" subtitle="Pass a test to earn a verified skill badge on your profile.">
       {startError && <div className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{startError}</div>}
       {isLoading ? (
         <div className="space-y-3">

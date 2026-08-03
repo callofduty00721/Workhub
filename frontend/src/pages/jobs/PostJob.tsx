@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Loader2, Lock, Globe, FileText, X, Search, UserPlus, ShieldCheck } from "lucide-react";
+import { Loader2, Lock, Globe, FileText, X, Search, UserPlus, ShieldCheck, ShieldAlert } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { FormGuidelines } from "@/components/shared/FormGuidelines";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { FieldLabel } from "@/components/shared/FieldInfo";
+import { SkillsInput } from "@/components/shared/SkillsInput";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +22,7 @@ import { jobApi } from "@/api/jobs";
 import { uploadApi } from "@/api/uploads";
 import { freelancerApi } from "@/api/freelancers";
 import { initialsFromName } from "@/lib/utils";
+import { JOB_CATEGORIES } from "@/types";
 import type { JobAttachment, JobVisibility } from "@/types";
 
 // Traditional employment only — freelance/contract "Projects" have their own
@@ -34,7 +37,15 @@ const schema = z.object({
   responsibilities: z.string().optional(),
   requirements: z.string().optional(),
   type: z.enum(JOB_TYPES),
+  category: z.enum(JOB_CATEGORIES),
   experienceLevel: z.enum(EXPERIENCE_LEVELS),
+  role: z.string().optional(),
+  industryType: z.string().optional(),
+  department: z.string().optional(),
+  roleCategory: z.string().optional(),
+  educationUG: z.string().optional(),
+  educationPG: z.string().optional(),
+  openings: z.coerce.number().min(0).optional(),
   location: z.string().min(2, "Location is required"),
   isRemote: z.boolean(),
   salaryMin: z.coerce.number().min(0),
@@ -46,6 +57,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function PostJob() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { id } = useParams();
   const queryClient = useQueryClient();
   const isEdit = !!id;
@@ -61,7 +73,7 @@ export default function PostJob() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { type: "full_time", experienceLevel: "entry", isRemote: false, salaryMin: 0, salaryMax: 0 },
+    defaultValues: { type: "full_time", category: "Other", experienceLevel: "entry", isRemote: false, salaryMin: 0, salaryMax: 0 },
   });
 
   const [visibility, setVisibility] = useState<JobVisibility>("public");
@@ -83,7 +95,15 @@ export default function PostJob() {
         responsibilities: existing.responsibilities,
         requirements: existing.requirements,
         type: existing.type as (typeof JOB_TYPES)[number],
+        category: existing.category ?? "Other",
         experienceLevel: existing.experienceLevel,
+        role: existing.role ?? "",
+        industryType: existing.industryType ?? "",
+        department: existing.department ?? "",
+        roleCategory: existing.roleCategory ?? "",
+        educationUG: existing.educationUG ?? "",
+        educationPG: existing.educationPG ?? "",
+        openings: existing.openings ?? 0,
         location: existing.location,
         isRemote: existing.isRemote,
         salaryMin: existing.salaryMin,
@@ -154,6 +174,28 @@ export default function PostJob() {
     },
   });
 
+  // Posting is the one action gated for employers (backend/src/routes/jobRoutes.js
+  // POST /) — editing an already-posted job is left open, so this only blocks
+  // the create flow, not isEdit.
+  if (!isEdit && user?.role === "employer" && !user.isVerified) {
+    return (
+      <DashboardLayout role="employer" title="Post a Job" subtitle="Reach qualified candidates on MahaHub.">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <ShieldAlert className="h-8 w-8 text-muted-foreground" />
+            <p className="text-base font-semibold">Verification required</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Posting a paid job needs a verified account. Submit your documents and we'll review them within 1-2 business days.
+            </p>
+            <Button variant="gradient" asChild>
+              <Link to="/dashboard/verify-role">Get Verified</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout role="employer" title={isEdit ? "Edit Job" : "Post a Job"} subtitle="Reach qualified candidates on MahaHub.">
       <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="space-y-6" noValidate>
@@ -210,10 +252,16 @@ export default function PostJob() {
               <FieldLabel htmlFor="skillsInput" info="Add skills separated by commas, like React, Node.js.">
                 Skills (comma separated)
               </FieldLabel>
-              <Input id="skillsInput" placeholder="React, Node.js, MongoDB" {...register("skillsInput")} />
+              <Controller
+                control={control}
+                name="skillsInput"
+                render={({ field }) => (
+                  <SkillsInput id="skillsInput" value={field.value ?? ""} onChange={field.onChange} placeholder="React, Node.js, MongoDB" />
+                )}
+              />
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-3">
               <div className="space-y-2">
                 <FieldLabel info="Choose the type of job this is.">Job Type</FieldLabel>
                 <Controller
@@ -228,6 +276,27 @@ export default function PostJob() {
                         {JOB_TYPES.map((t) => (
                           <SelectItem key={t} value={t} className="capitalize">
                             {t.replace("_", " ")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel info="Which category this job falls under — powers job search and the popular-categories browse widget.">Category</FieldLabel>
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {JOB_CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -255,6 +324,41 @@ export default function PostJob() {
                     </Select>
                   )}
                 />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold">Role Overview (optional)</h3>
+              <p className="text-xs text-muted-foreground">Shown as a details grid on the job's public page — leave any of these blank if not relevant.</p>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div className="space-y-2">
+                <FieldLabel htmlFor="role" info="The functional role this job falls under, e.g. 'Full Stack Developer'.">Role</FieldLabel>
+                <Input id="role" placeholder="e.g. Full Stack Developer" {...register("role")} />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="industryType" info="Your company's industry, e.g. 'IT Services & Consulting'.">Industry Type</FieldLabel>
+                <Input id="industryType" placeholder="e.g. IT Services & Consulting" {...register("industryType")} />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="department" info="Which department this role sits in, e.g. 'Engineering - Software & QA'.">Department</FieldLabel>
+                <Input id="department" placeholder="e.g. Engineering - Software & QA" {...register("department")} />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="roleCategory" info="A more specific classification, e.g. 'Software Development'.">Role Category</FieldLabel>
+                <Input id="roleCategory" placeholder="e.g. Software Development" {...register("roleCategory")} />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="educationUG" info="Minimum undergraduate qualification, e.g. 'Any Graduate'.">Education (UG)</FieldLabel>
+                <Input id="educationUG" placeholder="e.g. Any Graduate" {...register("educationUG")} />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="educationPG" info="Postgraduate qualification, if relevant.">Education (PG)</FieldLabel>
+                <Input id="educationPG" placeholder="e.g. Any Postgraduate" {...register("educationPG")} />
+              </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="openings" info="How many people you're hiring for this role.">Number of Openings</FieldLabel>
+                <Input id="openings" type="number" min={0} placeholder="e.g. 1" {...register("openings")} />
               </div>
             </div>
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { MapPin, Wifi, Briefcase, Clock, CheckCircle2, Loader2, Lock, ShieldCheck, FileText, Download } from "lucide-react";
+import { MapPin, Wifi, Briefcase, Clock, CheckCircle2, Loader2, Lock, ShieldCheck, FileText, Download, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { jobApi } from "@/api/jobs";
 import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { FileUpload } from "@/components/shared/FileUpload";
+import { SaveButton } from "@/components/shared/SaveButton";
 
 const TYPE_LABELS: Record<string, string> = {
   full_time: "Full Time",
@@ -98,11 +99,14 @@ export default function JobDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg font-bold text-white">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg font-bold text-white">
                   {job.companyName[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-xl font-bold">{job.title}</h1>
+                  <div className="flex items-start justify-between gap-3">
+                    <h1 className="text-xl font-bold">{job.title}</h1>
+                    <SaveButton type="job" id={job._id} className="h-8 w-8 shrink-0 bg-muted text-muted-foreground hover:bg-muted hover:text-primary" />
+                  </div>
                   <p className="text-sm text-muted-foreground">{job.companyName}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="secondary">{TYPE_LABELS[job.type]}</Badge>
@@ -184,6 +188,21 @@ export default function JobDetails() {
                     </div>
                   </div>
                 )}
+                {(job.role || job.industryType || job.department || job.roleCategory || job.educationUG || job.educationPG) && (
+                  <div>
+                    <h3 className="mb-2 text-base font-semibold">Role Overview</h3>
+                    <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                      {job.role && <OverviewItem label="Role" value={job.role} />}
+                      {job.industryType && <OverviewItem label="Industry Type" value={job.industryType} />}
+                      {job.department && <OverviewItem label="Department" value={job.department} />}
+                      <OverviewItem label="Employment Type" value={TYPE_LABELS[job.type]} />
+                      {job.roleCategory && <OverviewItem label="Role Category" value={job.roleCategory} />}
+                      {(job.educationUG || job.educationPG) && (
+                        <OverviewItem label="Education" value={[job.educationUG && `UG: ${job.educationUG}`, job.educationPG && `PG: ${job.educationPG}`].filter(Boolean).join(" · ")} />
+                      )}
+                    </dl>
+                  </div>
+                )}
                 {!!job.attachments?.length && (
                   <div>
                     <h3 className="mb-2 text-base font-semibold">Confidential Attachments</h3>
@@ -229,6 +248,11 @@ export default function JobDetails() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Briefcase className="h-4 w-4" /> {job.applicationsCount} applicants so far
               </div>
+              {!!job.openings && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" /> {job.openings} opening{job.openings === 1 ? "" : "s"}
+                </div>
+              )}
 
               {!canApply ? (
                 <Button className="w-full" variant="outline" disabled={!user} onClick={() => !user && navigate("/login", { state: { from: `/jobs/${id}` } })}>
@@ -284,6 +308,15 @@ export default function JobDetails() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+function OverviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium text-foreground/90">{value}</dd>
     </div>
   );
 }

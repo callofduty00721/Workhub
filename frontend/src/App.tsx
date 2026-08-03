@@ -6,7 +6,11 @@ import { PageLoader } from "@/components/shared/PageLoader";
 import { ComingSoon } from "@/pages/ComingSoon";
 
 const Home = lazy(() => import("@/pages/Home"));
+const Explore = lazy(() => import("@/pages/dashboard/Explore"));
+const OverlapCardDemo = lazy(() => import("@/pages/demo/OverlapCardDemo"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
+const About = lazy(() => import("@/pages/About"));
+const Contact = lazy(() => import("@/pages/Contact"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const TermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
@@ -18,10 +22,13 @@ const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
 const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 
-const StartupList = lazy(() => import("@/pages/startups/StartupList"));
-const StartupDetails = lazy(() => import("@/pages/startups/StartupDetails"));
-const CreateStartup = lazy(() => import("@/pages/startups/CreateStartup"));
-const MyStartups = lazy(() => import("@/pages/startups/MyStartups"));
+const SelectCategory = lazy(() => import("@/pages/onboarding/SelectCategory"));
+const SelectRoles = lazy(() => import("@/pages/onboarding/SelectRoles"));
+
+const StartupList = lazy(() => import("@/roles/founder/pages/StartupList"));
+const StartupDetails = lazy(() => import("@/roles/founder/pages/StartupDetails"));
+const CreateStartup = lazy(() => import("@/roles/founder/pages/CreateStartup"));
+const MyStartups = lazy(() => import("@/roles/founder/pages/MyStartups"));
 
 const JobList = lazy(() => import("@/pages/jobs/JobList"));
 const JobDetails = lazy(() => import("@/pages/jobs/JobDetails"));
@@ -29,68 +36,87 @@ const ProjectDetails = lazy(() => import("@/pages/projects/ProjectDetails"));
 const PostJob = lazy(() => import("@/pages/jobs/PostJob"));
 const JobApplicants = lazy(() => import("@/pages/jobs/JobApplicants"));
 const PostProject = lazy(() => import("@/pages/projects/PostProject"));
-const ClientProjectApplicants = lazy(() => import("@/pages/projects/ClientProjectApplicants"));
+const ClientProjectApplicants = lazy(() => import("@/roles/client/pages/ClientProjectApplicants"));
+const CampaignList = lazy(() => import("@/pages/campaigns/CampaignList"));
+const CampaignDetails = lazy(() => import("@/pages/campaigns/CampaignDetails"));
+const PostCampaign = lazy(() => import("@/pages/campaigns/PostCampaign"));
+const MyCampaigns = lazy(() => import("@/pages/campaigns/MyCampaigns"));
+const CampaignApplicants = lazy(() => import("@/pages/campaigns/CampaignApplicants"));
 const ContestList = lazy(() => import("@/pages/contests/ContestList"));
 const SearchResults = lazy(() => import("@/pages/SearchResults"));
 const ContestDetails = lazy(() => import("@/pages/contests/ContestDetails"));
 const PostContest = lazy(() => import("@/pages/contests/PostContest"));
 const MyContests = lazy(() => import("@/pages/contests/MyContests"));
 const ContestEntriesReview = lazy(() => import("@/pages/contests/ContestEntriesReview"));
-const ClientPostContest = lazy(() => import("@/pages/contests/ClientPostContest"));
-const ClientMyContests = lazy(() => import("@/pages/contests/ClientMyContests"));
-const ClientContestEntries = lazy(() => import("@/pages/contests/ClientContestEntries"));
+const ClientPostContest = lazy(() => import("@/roles/client/pages/ClientPostContest"));
+const ClientMyContests = lazy(() => import("@/roles/client/pages/ClientMyContests"));
+const ClientContestEntries = lazy(() => import("@/roles/client/pages/ClientContestEntries"));
 const MyContestEntries = lazy(() => import("@/pages/contests/MyContestEntries"));
 
-const FreelancerList = lazy(() => import("@/pages/freelancers/FreelancerList"));
-const FreelancerProfile = lazy(() => import("@/pages/freelancers/FreelancerProfile"));
+const FreelancerList = lazy(() => import("@/roles/freelancer/pages/FreelancerList"));
+const FreelancerProfile = lazy(() => import("@/roles/freelancer/pages/FreelancerProfile"));
 const GigProfile = lazy(() => import("@/pages/gigs/GigProfile"));
 const MyGigs = lazy(() => import("@/pages/gigs/MyGigs"));
 const CreateGig = lazy(() => import("@/pages/gigs/CreateGig"));
 
-const InvestorList = lazy(() => import("@/pages/investors/InvestorList"));
-const InvestorProfile = lazy(() => import("@/pages/investors/InvestorProfile"));
+const InvestorList = lazy(() => import("@/roles/investor/pages/InvestorList"));
+const InvestorProfile = lazy(() => import("@/roles/investor/pages/InvestorProfile"));
 const MentorList = lazy(() => import("@/pages/mentors/MentorList"));
 const MentorProfile = lazy(() => import("@/pages/mentors/MentorProfile"));
 const PartnerList = lazy(() => import("@/pages/partners/PartnerList"));
 const PartnerProfile = lazy(() => import("@/pages/partners/PartnerProfile"));
-const FounderProfile = lazy(() => import("@/pages/founders/FounderProfile"));
+const FounderProfile = lazy(() => import("@/roles/founder/pages/FounderProfile"));
+const JobSeekerList = lazy(() => import("@/roles/job-seeker/pages/JobSeekerList"));
+const JobSeekerProfile = lazy(() => import("@/roles/job-seeker/pages/JobSeekerProfile"));
+const InfluencerList = lazy(() => import("@/pages/influencers/InfluencerList"));
+const InfluencerProfile = lazy(() => import("@/pages/influencers/InfluencerProfile"));
 
 const Messages = lazy(() => import("@/pages/chat/Messages"));
 const Referrals = lazy(() => import("@/pages/dashboard/Referrals"));
 const Invoice = lazy(() => import("@/pages/payments/Invoice"));
 
-const FounderDashboard = lazy(() => import("@/pages/dashboard/FounderDashboard"));
-const FounderApplications = lazy(() => import("@/pages/dashboard/FounderApplications"));
-const FounderInvestors = lazy(() => import("@/pages/dashboard/FounderInvestors"));
-const FreelancerDashboard = lazy(() => import("@/pages/dashboard/FreelancerDashboard"));
-const FreelancerApplications = lazy(() => import("@/pages/dashboard/FreelancerApplications"));
-const FreelancerProjects = lazy(() => import("@/pages/dashboard/FreelancerProjects"));
-const FreelancerReviews = lazy(() => import("@/pages/dashboard/FreelancerReviews"));
-const FreelancerEarnings = lazy(() => import("@/pages/dashboard/FreelancerEarnings"));
-const FreelancerOrders = lazy(() => import("@/pages/dashboard/FreelancerOrders"));
+const FounderDashboard = lazy(() => import("@/roles/founder/pages/dashboard/FounderDashboard"));
+const FounderApplications = lazy(() => import("@/roles/founder/pages/dashboard/FounderApplications"));
+const FounderInvestors = lazy(() => import("@/roles/founder/pages/dashboard/FounderInvestors"));
+const FreelancerDashboard = lazy(() => import("@/roles/freelancer/pages/dashboard/FreelancerDashboard"));
+const FreelancerAnalytics = lazy(() => import("@/roles/freelancer/pages/dashboard/FreelancerAnalytics"));
+const NotificationsPage = lazy(() => import("@/pages/dashboard/NotificationsPage"));
+const JobSeekerDashboard = lazy(() => import("@/roles/job-seeker/pages/dashboard/JobSeekerDashboard"));
+const JobSeekerInterviews = lazy(() => import("@/roles/job-seeker/pages/dashboard/JobSeekerInterviews"));
+const InfluencerDashboard = lazy(() => import("@/pages/dashboard/InfluencerDashboard"));
+const FreelancerApplications = lazy(() => import("@/roles/freelancer/pages/dashboard/FreelancerApplications"));
+const FreelancerProjects = lazy(() => import("@/roles/freelancer/pages/dashboard/FreelancerProjects"));
+const FreelancerReviews = lazy(() => import("@/roles/freelancer/pages/dashboard/FreelancerReviews"));
+const FreelancerEarnings = lazy(() => import("@/roles/freelancer/pages/dashboard/FreelancerEarnings"));
+const FreelancerOrders = lazy(() => import("@/roles/freelancer/pages/dashboard/FreelancerOrders"));
 const SavedItems = lazy(() => import("@/pages/dashboard/SavedItems"));
 const SkillTests = lazy(() => import("@/pages/dashboard/SkillTests"));
 const FreelancerAlerts = lazy(() => import("@/pages/dashboard/FreelancerAlerts"));
 const MyPayments = lazy(() => import("@/pages/dashboard/MyPayments"));
 const EmployerDashboard = lazy(() => import("@/pages/dashboard/EmployerDashboard"));
-const ClientDashboard = lazy(() => import("@/pages/dashboard/ClientDashboard"));
-const InvestorDashboard = lazy(() => import("@/pages/dashboard/InvestorDashboard"));
+const ClientDashboard = lazy(() => import("@/roles/client/pages/dashboard/ClientDashboard"));
+const InvestorDashboard = lazy(() => import("@/roles/investor/pages/dashboard/InvestorDashboard"));
+const PartnerDashboard = lazy(() => import("@/pages/dashboard/PartnerDashboard"));
 const MentorDashboard = lazy(() => import("@/pages/dashboard/MentorDashboard"));
 const EditProfile = lazy(() => import("@/pages/dashboard/EditProfile"));
+const VerifyRole = lazy(() => import("@/pages/dashboard/VerifyRole"));
 const Settings = lazy(() => import("@/pages/dashboard/Settings"));
-const AdminOverview = lazy(() => import("@/pages/admin/AdminOverview"));
-const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
-const AdminFlaggedStartups = lazy(() => import("@/pages/admin/AdminFlaggedStartups"));
-const AdminStartups = lazy(() => import("@/pages/admin/AdminStartups"));
-const AdminGigs = lazy(() => import("@/pages/admin/AdminGigs"));
-const AdminContests = lazy(() => import("@/pages/admin/AdminContests"));
-const AdminPayments = lazy(() => import("@/pages/admin/AdminPayments"));
-const AdminWithdrawals = lazy(() => import("@/pages/admin/AdminWithdrawals"));
-const AdminKyc = lazy(() => import("@/pages/admin/AdminKyc"));
-const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
-const AdminSkillTests = lazy(() => import("@/pages/admin/AdminSkillTests"));
+const AdminOverview = lazy(() => import("@/roles/admin/pages/AdminOverview"));
+const AdminUsers = lazy(() => import("@/roles/admin/pages/AdminUsers"));
+const AdminFlaggedStartups = lazy(() => import("@/roles/admin/pages/AdminFlaggedStartups"));
+const AdminStartups = lazy(() => import("@/roles/admin/pages/AdminStartups"));
+const AdminGigs = lazy(() => import("@/roles/admin/pages/AdminGigs"));
+const AdminContests = lazy(() => import("@/roles/admin/pages/AdminContests"));
+const AdminPayments = lazy(() => import("@/roles/admin/pages/AdminPayments"));
+const AdminWithdrawals = lazy(() => import("@/roles/admin/pages/AdminWithdrawals"));
+const AdminKyc = lazy(() => import("@/roles/admin/pages/AdminKyc"));
+const AdminProfileVerifications = lazy(() => import("@/roles/admin/pages/AdminProfileVerifications"));
+const AdminRoleVerifications = lazy(() => import("@/roles/admin/pages/AdminRoleVerifications"));
+const AdminSettings = lazy(() => import("@/roles/admin/pages/AdminSettings"));
+const AdminPlans = lazy(() => import("@/roles/admin/pages/AdminPlans"));
+const AdminSkillTests = lazy(() => import("@/roles/admin/pages/AdminSkillTests"));
 const CompanyTeam = lazy(() => import("@/pages/dashboard/CompanyTeam"));
-const AdminJobs = lazy(() => import("@/pages/admin/AdminJobs"));
+const AdminJobs = lazy(() => import("@/roles/admin/pages/AdminJobs"));
 
 const withMarketingLayout = (node: React.ReactNode) => <MarketingLayout>{node}</MarketingLayout>;
 
@@ -99,12 +125,15 @@ export default function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={withMarketingLayout(<Home />)} />
+        <Route path="/demo/overlap-card" element={withMarketingLayout(<OverlapCardDemo />)} />
 
         <Route path="/startups" element={withMarketingLayout(<StartupList />)} />
         <Route path="/startups/:id" element={withMarketingLayout(<StartupDetails />)} />
 
         <Route path="/jobs" element={withMarketingLayout(<JobList />)} />
         <Route path="/jobs/:id" element={withMarketingLayout(<JobDetails />)} />
+        <Route path="/campaigns" element={withMarketingLayout(<CampaignList />)} />
+        <Route path="/campaigns/:id" element={withMarketingLayout(<CampaignDetails />)} />
         <Route path="/projects/:id" element={withMarketingLayout(<ProjectDetails />)} />
 
         <Route path="/contests" element={withMarketingLayout(<ContestList />)} />
@@ -123,12 +152,16 @@ export default function App() {
         <Route path="/partners" element={withMarketingLayout(<PartnerList />)} />
         <Route path="/partners/:id" element={withMarketingLayout(<PartnerProfile />)} />
         <Route path="/founders/:id" element={withMarketingLayout(<FounderProfile />)} />
+        <Route path="/job-seekers" element={withMarketingLayout(<JobSeekerList />)} />
+        <Route path="/job-seekers/:id" element={withMarketingLayout(<JobSeekerProfile />)} />
+        <Route path="/influencers" element={withMarketingLayout(<InfluencerList />)} />
+        <Route path="/influencers/:id" element={withMarketingLayout(<InfluencerProfile />)} />
 
         <Route path="/pricing" element={withMarketingLayout(<Pricing />)} />
 
         <Route path="/community" element={withMarketingLayout(<ComingSoon title="Community" />)} />
-        <Route path="/about" element={withMarketingLayout(<ComingSoon title="About MahaHub" />)} />
-        <Route path="/contact" element={withMarketingLayout(<ComingSoon title="Contact Us" />)} />
+        <Route path="/about" element={withMarketingLayout(<About />)} />
+        <Route path="/contact" element={withMarketingLayout(<Contact />)} />
         <Route
           path="/settings"
           element={
@@ -148,10 +181,43 @@ export default function App() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route
+          path="/onboarding/category"
+          element={
+            <ProtectedRoute>
+              <SelectCategory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/roles"
+          element={
+            <ProtectedRoute>
+              <SelectRoles />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/explore"
+          element={
+            <ProtectedRoute>
+              {withMarketingLayout(<Explore />)}
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/messages"
           element={
             <ProtectedRoute>
               <Messages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
             </ProtectedRoute>
           }
         />
@@ -176,6 +242,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <EditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/verify-role"
+          element={
+            <ProtectedRoute>
+              <VerifyRole />
             </ProtectedRoute>
           }
         />
@@ -236,6 +310,14 @@ export default function App() {
           element={
             <ProtectedRoute allow={["freelancer", "super_admin"]}>
               <FreelancerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/freelancer/analytics"
+          element={
+            <ProtectedRoute allow={["freelancer", "super_admin"]}>
+              <FreelancerAnalytics />
             </ProtectedRoute>
           }
         />
@@ -322,7 +404,7 @@ export default function App() {
         <Route
           path="/dashboard/freelancer/saved"
           element={
-            <ProtectedRoute allow={["freelancer", "super_admin"]}>
+            <ProtectedRoute allow={["freelancer", "job_seeker", "super_admin"]}>
               <SavedItems />
             </ProtectedRoute>
           }
@@ -330,7 +412,7 @@ export default function App() {
         <Route
           path="/dashboard/freelancer/skill-tests"
           element={
-            <ProtectedRoute allow={["freelancer", "super_admin"]}>
+            <ProtectedRoute allow={["job_seeker", "super_admin"]}>
               <SkillTests />
             </ProtectedRoute>
           }
@@ -338,8 +420,36 @@ export default function App() {
         <Route
           path="/dashboard/freelancer/alerts"
           element={
-            <ProtectedRoute allow={["freelancer", "super_admin"]}>
+            <ProtectedRoute allow={["freelancer", "job_seeker", "super_admin"]}>
               <FreelancerAlerts />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Job Seeker */}
+        <Route
+          path="/dashboard/job-seeker"
+          element={
+            <ProtectedRoute allow={["job_seeker", "super_admin"]}>
+              <JobSeekerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/job-seeker/interviews"
+          element={
+            <ProtectedRoute allow={["job_seeker", "super_admin"]}>
+              <JobSeekerInterviews />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Influencer */}
+        <Route
+          path="/dashboard/influencer"
+          element={
+            <ProtectedRoute allow={["influencer", "super_admin"]}>
+              <InfluencerDashboard />
             </ProtectedRoute>
           }
         />
@@ -374,6 +484,38 @@ export default function App() {
           element={
             <ProtectedRoute allow={["employer", "super_admin"]}>
               <JobApplicants />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/campaigns"
+          element={
+            <ProtectedRoute allow={["employer", "super_admin"]}>
+              <MyCampaigns />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/post-campaign"
+          element={
+            <ProtectedRoute allow={["employer", "super_admin"]}>
+              <PostCampaign />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/campaigns/:id/edit"
+          element={
+            <ProtectedRoute allow={["employer", "super_admin"]}>
+              <PostCampaign />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/campaigns/:id/applicants"
+          element={
+            <ProtectedRoute allow={["employer", "super_admin"]}>
+              <CampaignApplicants />
             </ProtectedRoute>
           }
         />
@@ -528,6 +670,16 @@ export default function App() {
           }
         />
 
+        {/* Partner */}
+        <Route
+          path="/dashboard/partner"
+          element={
+            <ProtectedRoute allow={["partner", "super_admin"]}>
+              <PartnerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Admin */}
         <Route
           path="/dashboard/admin"
@@ -610,10 +762,34 @@ export default function App() {
           }
         />
         <Route
+          path="/dashboard/admin/profile-verifications"
+          element={
+            <ProtectedRoute allow={["super_admin"]}>
+              <AdminProfileVerifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/role-verifications"
+          element={
+            <ProtectedRoute allow={["super_admin"]}>
+              <AdminRoleVerifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/admin/settings"
           element={
             <ProtectedRoute allow={["super_admin"]}>
               <AdminSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/plans"
+          element={
+            <ProtectedRoute allow={["super_admin"]}>
+              <AdminPlans />
             </ProtectedRoute>
           }
         />

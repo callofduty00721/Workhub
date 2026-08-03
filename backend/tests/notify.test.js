@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const createMock = vi.fn();
 
-vi.mock("../src/models/Notification.js", () => ({
+vi.mock("../src/modules/shared/notification.model.js", () => ({
   default: { create: (...args) => createMock(...args) },
 }));
 

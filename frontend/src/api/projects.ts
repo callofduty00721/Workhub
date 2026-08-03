@@ -4,6 +4,8 @@ import type { Application, ApplicationStatus, Project, JobAccessLogEntry, Pagina
 export interface ProjectFilters {
   search?: string;
   type?: string;
+  category?: string;
+  subCategory?: string;
   isRemote?: boolean;
   page?: number;
   limit?: number;

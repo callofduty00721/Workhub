@@ -1,11 +1,28 @@
 import { api } from "./axios";
-import type { User, Job, Project, Service } from "@/types";
+import type { User, Job, Project, Service, FreelancerSummary, Contest } from "@/types";
 
 export const userApi = {
   updateMe: (payload: Partial<User>) => api.put<{ success: boolean; user: User }>("/users/me", payload).then((r) => r.data.user),
 
   submitKyc: (documents: { url: string; name: string }[]) =>
     api.post<{ success: boolean; user: User }>("/users/me/kyc", { documents }).then((r) => r.data.user),
+
+  sendPhoneOtp: () => api.post<{ success: boolean; message: string }>("/users/me/phone-otp").then((r) => r.data),
+
+  verifyPhoneOtp: (otp: string) =>
+    api.post<{ success: boolean; user: User }>("/users/me/phone-otp/verify", { otp }).then((r) => r.data.user),
+
+  verifyPhoneFirebaseToken: (idToken: string) =>
+    api.post<{ success: boolean; user: User }>("/users/me/phone-otp/verify-firebase", { idToken }).then((r) => r.data.user),
+
+  submitFaceVerification: (selfieUrl: string) =>
+    api.post<{ success: boolean; user: User }>("/users/me/face-verification", { selfieUrl }).then((r) => r.data.user),
+
+  submitAddressVerification: (documents: { url: string; name: string }[]) =>
+    api.post<{ success: boolean; user: User }>("/users/me/address-verification", { documents }).then((r) => r.data.user),
+
+  submitBankVerification: (documents: { url: string; name: string }[]) =>
+    api.post<{ success: boolean; user: User }>("/users/me/bank-verification", { documents }).then((r) => r.data.user),
 
   toggleSavedJob: (jobId: string) =>
     api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-jobs/${jobId}`).then((r) => r.data.data),
@@ -16,8 +33,19 @@ export const userApi = {
   toggleSavedService: (serviceId: string) =>
     api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-services/${serviceId}`).then((r) => r.data.data),
 
+  toggleSavedFreelancer: (freelancerId: string) =>
+    api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-freelancers/${freelancerId}`).then((r) => r.data.data),
+
+  toggleSavedContest: (contestId: string) =>
+    api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-contests/${contestId}`).then((r) => r.data.data),
+
   getSavedItems: () =>
-    api.get<{ success: boolean; data: { jobs: Job[]; projects: Project[]; services: Service[] } }>("/users/me/saved").then((r) => r.data.data),
+    api
+      .get<{
+        success: boolean;
+        data: { jobs: Job[]; projects: Project[]; services: Service[]; freelancers: FreelancerSummary[]; contests: Contest[] };
+      }>("/users/me/saved")
+      .then((r) => r.data.data),
 
   getMyReferrals: () =>
     api.get<{ success: boolean; data: ReferralsResponse }>("/users/me/referrals").then((r) => r.data.data),

@@ -1,5 +1,5 @@
-import User from "../models/User.js";
-import Payment from "../models/Payment.js";
+import User from "../modules/shared/user.model.js";
+import Payment from "../modules/shared/payment.model.js";
 import { notify } from "./notify.js";
 
 export const REFERRAL_BONUS_INR = 100;

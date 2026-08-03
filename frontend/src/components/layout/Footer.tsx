@@ -22,7 +22,7 @@ const COLUMNS = [
       { label: "Blog", to: "#" },
       { label: "Careers", to: "#" },
       { label: "Contact Us", to: "/contact" },
-      { label: "FAQs", to: "#" },
+      { label: "FAQs", to: "/#faq" },
     ],
   },
   {

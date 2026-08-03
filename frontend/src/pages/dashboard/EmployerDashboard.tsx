@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
+import { VerificationBanner } from "@/components/shared/VerificationBanner";
 import { jobApi } from "@/api/jobs";
 import { projectApi } from "@/api/projects";
 import type { ApplicationStatus, Job, Project } from "@/types";
@@ -58,6 +59,7 @@ export default function EmployerDashboard({
         </Button>
       }
     >
+      <VerificationBanner />
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-5">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">

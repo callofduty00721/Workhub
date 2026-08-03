@@ -1,11 +1,11 @@
-import { NavLink } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Rocket,
   Handshake,
   ClipboardList,
   MessageSquare,
-  CheckSquare,
   Wallet,
   Star,
   Briefcase,
@@ -16,18 +16,25 @@ import {
   Building2,
   FolderKanban,
   ShieldAlert,
-  UserRound,
   Trophy,
   ArrowDownToLine,
   Bell,
-  Truck,
   Bookmark,
   Gift,
+  Search,
+  Megaphone,
+  Image,
+  ShieldCheck,
+  Calendar,
+  Receipt,
+  Crown,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFounderTeamApplications } from "@/hooks/useFounderTeamApplications";
 import { useFounderInvestments } from "@/hooks/useFounderInvestments";
 import { useAuth } from "@/context/AuthContext";
+import { notificationApi } from "@/api/notifications";
 import type { UserRole } from "@/types";
 
 interface SidebarItem {
@@ -47,27 +54,35 @@ const FOUNDER_ITEMS: SidebarItem[] = [
   { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
 ];
 
+// Deliberately flat, in this exact order — matches the reference dashboard
+// layout the user pinned down. Company Team/My Orders/Saved/Job Alerts/
+// Referrals still exist as real pages (linked from Settings/notifications/
+// EditProfile) but are intentionally left out of this list; AI Assistant is
+// left out entirely since there's no real destination for it yet.
 const FREELANCER_ITEMS: SidebarItem[] = [
   { label: "Dashboard", to: "/dashboard/freelancer", icon: LayoutDashboard },
-  { label: "Find Jobs & Projects", to: "/freelancers?tab=projects", icon: Briefcase },
-  { label: "My Applications", to: "/dashboard/freelancer/applications", icon: ClipboardList },
-  { label: "My Contest Entries", to: "/dashboard/freelancer/contests", icon: Trophy },
-  { label: "My Projects", to: "/dashboard/freelancer/projects", icon: CheckSquare },
+  { label: "Analytics", to: "/dashboard/freelancer/analytics", icon: TrendingUp },
   { label: "My Gigs", to: "/dashboard/freelancer/gigs", icon: Rocket },
-  { label: "Company Team", to: "/dashboard/freelancer/company", icon: Building2 },
-  { label: "My Orders", to: "/dashboard/freelancer/orders", icon: Truck },
-  { label: "Saved", to: "/dashboard/freelancer/saved", icon: Bookmark },
-  { label: "Skill Tests", to: "/dashboard/freelancer/skill-tests", icon: GraduationCap },
-  { label: "Earnings", to: "/dashboard/freelancer/earnings", icon: Wallet },
-  { label: "Job Alerts", to: "/dashboard/freelancer/alerts", icon: Bell },
+  { label: "Projects", to: "/dashboard/freelancer/projects", icon: FolderKanban },
+  { label: "Proposals", to: "/dashboard/freelancer/applications", icon: ClipboardList },
+  { label: "Contest Entries", to: "/dashboard/freelancer/contests", icon: Trophy },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
-  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
+  { label: "Calendar", to: "/dashboard/freelancer#calendar", icon: Calendar },
+  { label: "Wallet", to: "/dashboard/freelancer/earnings", icon: Wallet },
+  { label: "Earnings", to: "/dashboard/freelancer/analytics#earnings-breakdown", icon: Receipt },
   { label: "Reviews", to: "/dashboard/freelancer/reviews", icon: Star },
+  { label: "Portfolio", to: "/dashboard/profile#portfolio", icon: Image },
+  { label: "Skills", to: "/dashboard/profile#skills", icon: GraduationCap },
+  { label: "Verification", to: "/dashboard/profile#kyc", icon: ShieldCheck },
+  { label: "Membership", to: "/pricing", icon: Crown },
+  { label: "Notifications", to: "/dashboard/notifications", icon: Bell },
+  { label: "Settings", to: "/settings", icon: Settings },
 ];
 
 const EMPLOYER_ITEMS: SidebarItem[] = [
   { label: "Dashboard & My Jobs", to: "/dashboard/employer", icon: LayoutDashboard },
   { label: "Post a Job", to: "/dashboard/employer/post-job", icon: Rocket },
+  { label: "My Campaigns", to: "/dashboard/employer/campaigns", icon: Megaphone },
   { label: "Company Team", to: "/dashboard/employer/company", icon: Building2 },
   { label: "My Contests", to: "/dashboard/employer/contests", icon: Trophy },
   { label: "My Payments", to: "/dashboard/employer/payments", icon: Wallet },
@@ -86,6 +101,9 @@ const ADMIN_ITEMS: SidebarItem[] = [
   { label: "Payment Disputes", to: "/dashboard/admin/payments", icon: Wallet },
   { label: "Withdrawals", to: "/dashboard/admin/withdrawals", icon: ArrowDownToLine },
   { label: "KYC Requests", to: "/dashboard/admin/kyc", icon: ShieldAlert },
+  { label: "Profile Verifications", to: "/dashboard/admin/profile-verifications", icon: ShieldAlert },
+  { label: "Role Verifications", to: "/dashboard/admin/role-verifications", icon: ShieldAlert },
+  { label: "Plans", to: "/dashboard/admin/plans", icon: Crown },
   { label: "Platform Settings", to: "/dashboard/admin/settings", icon: Settings },
   { label: "Skill Tests", to: "/dashboard/admin/skill-tests", icon: GraduationCap },
 ];
@@ -104,10 +122,36 @@ const MENTOR_ITEMS: SidebarItem[] = [
 ];
 
 const PARTNER_ITEMS: SidebarItem[] = [
+  { label: "Dashboard", to: "/dashboard/partner", icon: LayoutDashboard },
   { label: "My Profile", to: "/dashboard/profile", icon: Building2 },
   { label: "Browse Startups", to: "/startups", icon: Rocket },
   { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
   { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
+];
+
+const JOB_SEEKER_ITEMS: SidebarItem[] = [
+  { label: "Dashboard", to: "/dashboard/job-seeker", icon: LayoutDashboard },
+  { label: "Find Jobs", to: "/jobs", icon: Briefcase },
+  { label: "Recommended Jobs", to: "/dashboard/job-seeker#recommended-jobs", icon: TrendingUp },
+  { label: "My Applications", to: "/dashboard/job-seeker#applications", icon: ClipboardList },
+  { label: "Saved Jobs", to: "/dashboard/freelancer/saved", icon: Bookmark },
+  { label: "Job Alerts", to: "/dashboard/freelancer/alerts", icon: Bell },
+  { label: "Resume & Profile", to: "/dashboard/profile", icon: Search },
+  { label: "Skill Assessment", to: "/dashboard/freelancer/skill-tests", icon: GraduationCap },
+  { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Interview Calls", to: "/dashboard/job-seeker/interviews", icon: Calendar },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
+  { label: "Upgrade to Premium", to: "/pricing", icon: Crown },
+];
+
+const INFLUENCER_ITEMS: SidebarItem[] = [
+  { label: "Dashboard", to: "/dashboard/influencer", icon: LayoutDashboard },
+  { label: "Campaigns", to: "/campaigns", icon: Megaphone },
+  { label: "Portfolio", to: "/dashboard/profile#portfolio", icon: Image },
+  { label: "Profile", to: "/dashboard/profile", icon: Search },
+  { label: "Messages", to: "/dashboard/messages", icon: MessageSquare },
+  { label: "Referrals", to: "/dashboard/referrals", icon: Gift },
+  { label: "Upgrade to Premium", to: "/pricing", icon: Crown },
 ];
 
 const CLIENT_ITEMS: SidebarItem[] = [
@@ -122,12 +166,23 @@ const CLIENT_ITEMS: SidebarItem[] = [
 
 export type DashboardRole = Extract<
   UserRole,
-  "founder" | "freelancer" | "employer" | "super_admin" | "investor" | "mentor" | "partner" | "client"
+  | "founder"
+  | "freelancer"
+  | "job_seeker"
+  | "influencer"
+  | "employer"
+  | "super_admin"
+  | "investor"
+  | "mentor"
+  | "partner"
+  | "client"
 >;
 
 const ITEMS_BY_ROLE: Record<DashboardRole, SidebarItem[]> = {
   founder: FOUNDER_ITEMS,
   freelancer: FREELANCER_ITEMS,
+  job_seeker: JOB_SEEKER_ITEMS,
+  influencer: INFLUENCER_ITEMS,
   employer: EMPLOYER_ITEMS,
   super_admin: ADMIN_ITEMS,
   investor: INVESTOR_ITEMS,
@@ -138,84 +193,88 @@ const ITEMS_BY_ROLE: Record<DashboardRole, SidebarItem[]> = {
 
 export function DashboardSidebar({
   role,
-  extraLinks,
   onNavigate,
 }: {
   role: DashboardRole;
-  // Only passed for the mobile drawer instance — folds the marketing site
-  // links (Startups/Jobs/...) into this same panel, since the Dashboard
-  // hides Navbar's own mobile menu to avoid showing two hamburger icons.
-  extraLinks?: { label: string; to: string }[];
   onNavigate?: () => void;
 }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { pendingCount: pendingApplications } = useFounderTeamApplications({ enabled: role === "founder" });
   const { pendingCount: pendingInvestments } = useFounderInvestments({ enabled: role === "founder" });
+  // Same query key NotificationBell uses — already fetched and cached on every
+  // page it's mounted on, so this reads that cache instead of firing its own.
+  const { data: notifications } = useQuery({ queryKey: ["notifications"], queryFn: notificationApi.list, enabled: !!user });
+
   let items = ITEMS_BY_ROLE[role].map((item) => {
-    if (role !== "founder") return item;
-    if (item.to === "/dashboard/founder/applications" && pendingApplications > 0) return { ...item, badge: pendingApplications };
-    if (item.to === "/dashboard/founder/investors" && pendingInvestments > 0) return { ...item, badge: pendingInvestments };
+    if (role === "founder") {
+      if (item.to === "/dashboard/founder/applications" && pendingApplications > 0) return { ...item, badge: pendingApplications };
+      if (item.to === "/dashboard/founder/investors" && pendingInvestments > 0) return { ...item, badge: pendingInvestments };
+    }
+    if (role === "freelancer" && item.to === "/dashboard/notifications" && notifications?.unreadCount) {
+      return { ...item, badge: notifications.unreadCount };
+    }
     return item;
   });
-  if (role === "founder" && user?.id) {
-    items = [...items, { label: "My Public Profile", to: `/founders/${user.id}`, icon: UserRound }];
-  }
-  if (role === "freelancer" && user?.id) {
-    items = [...items, { label: "My Public Profile", to: `/freelancers/${user.id}`, icon: UserRound }];
-  }
+  const handleLogout = async () => {
+    await logout();
+    onNavigate?.();
+    navigate("/");
+  };
+
+  const renderNavItem = (item: SidebarItem) => {
+    // Plain Link with hand-rolled active detection instead of NavLink's
+    // built-in isActive — NavLink only compares pathname, so Projects/
+    // Proposals (same pathname, different ?tab=) both lit up together, and
+    // Calendar (/dashboard/freelancer#calendar, no `end`) prefix-matched
+    // every /dashboard/freelancer/* sub-route. Exact pathname+search+hash
+    // comparison fixes both — hash matters too, since Portfolio/Skills/
+    // Verification are all /dashboard/profile#<anchor> and would otherwise
+    // all light up together just like Projects/Proposals did.
+    const [toPath, toSearch] = item.to.split("?");
+    const [toPathname, toHash] = toPath.split("#");
+    const isActive =
+      location.pathname === toPathname &&
+      location.search === (toSearch ? `?${toSearch}` : "") &&
+      location.hash === (toHash ? `#${toHash}` : "");
+    return (
+      <Link
+        key={item.to}
+        to={item.to}
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+          isActive && "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
+        )}
+      >
+        <span className="flex items-center gap-3">
+          <item.icon className="h-4.5 w-4.5" />
+          {item.label}
+        </span>
+        {item.badge ? (
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
+            {item.badge}
+          </span>
+        ) : null}
+      </Link>
+    );
+  };
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-card">
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5 scrollbar-thin">
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === items[0].to}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
-                isActive && "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
-              )
-            }
-          >
-            <span className="flex items-center gap-3">
-              <item.icon className="h-4.5 w-4.5" />
-              {item.label}
-            </span>
-            {item.badge ? (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
-                {item.badge}
-              </span>
-            ) : null}
-          </NavLink>
-        ))}
-
-        {extraLinks && extraLinks.length > 0 && (
-          <>
-            <p className="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Explore MahaHub</p>
-            {extraLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={onNavigate}
-                className="flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </>
-        )}
+        {items.map(renderNavItem)}
       </nav>
       <div className="border-t border-border p-4">
-        <NavLink
-          to="/dashboard/profile"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
         >
-          <Settings className="h-4.5 w-4.5" />
-          Edit Profile
-        </NavLink>
+          <LogOut className="h-4.5 w-4.5" />
+          Logout
+        </button>
       </div>
     </aside>
   );

@@ -6,14 +6,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { JobCard } from "@/components/jobs/JobCard";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { ServiceCard } from "@/components/gigs/ServiceCard";
-import { StartupCard } from "@/components/startup/StartupCard";
+import { StartupCard } from "@/roles/founder/components/StartupCard";
 import { userApi } from "@/api/users";
 import { startupApi } from "@/api/startups";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 type Tab = "jobs" | "projects" | "gigs" | "startups";
 
 export default function SavedItems() {
+  const { user } = useAuth();
+  const sidebarRole = user?.role === "job_seeker" ? "job_seeker" : "freelancer";
   const [tab, setTab] = useState<Tab>("jobs");
   const { data, isLoading } = useQuery({ queryKey: ["users", "me", "saved"], queryFn: userApi.getSavedItems });
   const { data: startups, isLoading: loadingStartups } = useQuery({
@@ -27,7 +30,7 @@ export default function SavedItems() {
   const followedStartups = startups ?? [];
 
   return (
-    <DashboardLayout role="freelancer" title="Saved" subtitle="Jobs, projects, gigs and startups you've bookmarked or followed.">
+    <DashboardLayout role={sidebarRole} title="Saved" subtitle="Jobs, projects, gigs and startups you've bookmarked or followed.">
       <div className="mb-5 flex gap-1 border-b border-border">
         {[
           { key: "jobs" as Tab, label: `Jobs (${jobs.length})`, icon: Briefcase },

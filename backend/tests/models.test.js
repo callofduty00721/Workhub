@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
 import mongoose from "mongoose";
-import Contest from "../src/models/Contest.js";
-import ContestEntry from "../src/models/ContestEntry.js";
-import Payment from "../src/models/Payment.js";
-import Withdrawal from "../src/models/Withdrawal.js";
-import Alert from "../src/models/Alert.js";
-import Milestone from "../src/models/Milestone.js";
+import Contest from "../src/modules/contest/contest.model.js";
+import ContestEntry from "../src/modules/contest/contestEntry.model.js";
+import Payment from "../src/modules/shared/payment.model.js";
+import Withdrawal from "../src/modules/finance/withdrawal.model.js";
+import Alert from "../src/modules/productivity/alert.model.js";
+import Milestone from "../src/modules/jobs/milestone.model.js";
+import Job, { JOB_TYPE_VALUES, EXPERIENCE_LEVEL_VALUES } from "../src/modules/jobs/job.model.js";
+import Application from "../src/modules/shared/application.model.js";
+import User, { ROLE_VALUES } from "../src/modules/shared/user.model.js";
 
 // validateSync() runs Mongoose's schema validation in-process without needing
 // a live database connection, so these tests exercise real schema rules.
@@ -186,5 +189,118 @@ describe("Milestone model validation", () => {
     const milestone = new Milestone({ application: new mongoose.Types.ObjectId(), title: "Design phase", amount: 5000 });
     expect(milestone.validateSync()).toBeUndefined();
     expect(milestone.status).toBe("pending");
+  });
+});
+
+describe("Job model validation", () => {
+  it("requires title, companyName, description, and location", () => {
+    const err = new Job({}).validateSync();
+    expect(err.errors.title).toBeDefined();
+    expect(err.errors.companyName).toBeDefined();
+    expect(err.errors.description).toBeDefined();
+    expect(err.errors.location).toBeDefined();
+  });
+
+  it("defaults type to full_time and status to open", () => {
+    const job = new Job({
+      employer: new mongoose.Types.ObjectId(),
+      title: "Frontend Engineer",
+      companyName: "MahaHub",
+      description: "Build things",
+      location: "Remote",
+    });
+    expect(job.validateSync()).toBeUndefined();
+    expect(job.type).toBe("full_time");
+    expect(job.status).toBe("open");
+  });
+
+  it("exposes every job type and experience level as valid enum values", () => {
+    for (const type of JOB_TYPE_VALUES) {
+      const job = new Job({
+        employer: new mongoose.Types.ObjectId(),
+        title: "t",
+        companyName: "c",
+        description: "d",
+        location: "l",
+        type,
+      });
+      expect(job.validateSync()).toBeUndefined();
+    }
+    for (const level of EXPERIENCE_LEVEL_VALUES) {
+      const job = new Job({
+        employer: new mongoose.Types.ObjectId(),
+        title: "t",
+        companyName: "c",
+        description: "d",
+        location: "l",
+        experienceLevel: level,
+      });
+      expect(job.validateSync()).toBeUndefined();
+    }
+  });
+
+  it("rejects a job type outside the known enum", () => {
+    const job = new Job({
+      employer: new mongoose.Types.ObjectId(),
+      title: "t",
+      companyName: "c",
+      description: "d",
+      location: "l",
+      type: "gig_economy_thing",
+    });
+    expect(job.validateSync().errors.type).toBeDefined();
+  });
+});
+
+describe("Application model validation", () => {
+  it("requires job and applicant", () => {
+    const err = new Application({}).validateSync();
+    expect(err.errors.job).toBeDefined();
+    expect(err.errors.applicant).toBeDefined();
+  });
+
+  it("defaults status to applied and proposedRate/deliveryDays to 0", () => {
+    const application = new Application({
+      job: new mongoose.Types.ObjectId(),
+      applicant: new mongoose.Types.ObjectId(),
+    });
+    expect(application.validateSync()).toBeUndefined();
+    expect(application.status).toBe("applied");
+    expect(application.proposedRate).toBe(0);
+    expect(application.deliveryDays).toBe(0);
+  });
+
+  it("accepts withdrawn as a valid status (freelancer proposal withdrawal)", () => {
+    const application = new Application({
+      job: new mongoose.Types.ObjectId(),
+      applicant: new mongoose.Types.ObjectId(),
+      status: "withdrawn",
+    });
+    expect(application.validateSync()).toBeUndefined();
+  });
+});
+
+describe("User model validation", () => {
+  it("requires name and email", () => {
+    const err = new User({}).validateSync();
+    expect(err.errors.name).toBeDefined();
+    expect(err.errors.email).toBeDefined();
+  });
+
+  it("defaults role to freelancer", () => {
+    const user = new User({ name: "Test User", email: "test@mahahub.demo" });
+    expect(user.validateSync()).toBeUndefined();
+    expect(user.role).toBe("freelancer");
+  });
+
+  it("includes job_seeker and influencer as distinct talent-category roles", () => {
+    expect(ROLE_VALUES).toContain("job_seeker");
+    expect(ROLE_VALUES).toContain("influencer");
+    expect(ROLE_VALUES).toContain("freelancer");
+  });
+
+  it("rejects a role outside the known enum", () => {
+    const user = new User({ name: "Test User", email: "test@mahahub.demo", role: "not_a_role" });
+    expect(user.validateSync().errors.role).toBeDefined();
   });
 });

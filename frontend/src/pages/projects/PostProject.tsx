@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { FieldLabel } from "@/components/shared/FieldInfo";
+import { SkillsInput } from "@/components/shared/SkillsInput";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +21,7 @@ import { projectApi } from "@/api/projects";
 import { uploadApi } from "@/api/uploads";
 import { freelancerApi } from "@/api/freelancers";
 import { initialsFromName } from "@/lib/utils";
+import { SERVICE_CATEGORY_NAMES, SERVICE_SUBCATEGORIES } from "@/lib/mockData";
 import type { JobAttachment, JobVisibility } from "@/types";
 
 // Projects are always bid-based — freelancers propose their own rate and
@@ -33,6 +35,8 @@ const schema = z.object({
   description: z.string().min(20, "Scope should be at least 20 characters"),
   requirements: z.string().optional(),
   type: z.enum(PROJECT_TYPES),
+  category: z.string().min(1, "Select a category"),
+  subCategory: z.string().optional(),
   location: z.string().min(2, "Location is required"),
   isRemote: z.boolean(),
   budgetMin: z.coerce.number().min(0),
@@ -57,6 +61,8 @@ export default function PostProject() {
     handleSubmit,
     control,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -81,6 +87,8 @@ export default function PostProject() {
         description: existing.description,
         requirements: existing.requirements,
         type: existing.type as (typeof PROJECT_TYPES)[number],
+        category: existing.category ?? "",
+        subCategory: existing.subCategory ?? "",
         location: existing.location,
         isRemote: existing.isRemote,
         budgetMin: existing.budgetMin,
@@ -201,7 +209,13 @@ export default function PostProject() {
               <FieldLabel htmlFor="skillsInput" info="Add skills separated by commas, like React, Figma.">
                 Skills (comma separated)
               </FieldLabel>
-              <Input id="skillsInput" placeholder="React, Figma, SEO" {...register("skillsInput")} />
+              <Controller
+                control={control}
+                name="skillsInput"
+                render={({ field }) => (
+                  <SkillsInput id="skillsInput" value={field.value ?? ""} onChange={field.onChange} placeholder="React, Figma, SEO" />
+                )}
+              />
             </div>
 
             <div className="space-y-2">
@@ -221,6 +235,41 @@ export default function PostProject() {
                   </Select>
                 )}
               />
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <FieldLabel info="What kind of work this project needs.">Category</FieldLabel>
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setValue("subCategory", "");
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SERVICE_CATEGORY_NAMES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.category && <p className="text-xs text-danger">{errors.category.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <FieldLabel info="A more specific type within the category.">Sub-Category</FieldLabel>
+                <ProjectSubCategorySelect control={control} category={watch("category")} />
+              </div>
             </div>
 
             <div className="grid gap-5 sm:grid-cols-3">
@@ -429,5 +478,32 @@ export default function PostProject() {
         </div>
       </form>
     </DashboardLayout>
+  );
+}
+
+function ProjectSubCategorySelect({ control, category }: { control: Control<FormValues>; category?: string }) {
+  const options = category ? SERVICE_SUBCATEGORIES[category] ?? [] : [];
+  if (options.length === 0) {
+    return <p className="flex h-9 items-center text-xs text-muted-foreground">Select a category first.</p>;
+  }
+  return (
+    <Controller
+      control={control}
+      name="subCategory"
+      render={({ field }) => (
+        <Select value={field.value} onValueChange={field.onChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select sub-category" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((sub) => (
+              <SelectItem key={sub} value={sub}>
+                {sub}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    />
   );
 }

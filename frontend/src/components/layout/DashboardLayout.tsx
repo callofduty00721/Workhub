@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import { DashboardSidebar, type DashboardRole } from "./DashboardSidebar";
-import { Navbar, NAV_LINKS } from "./Navbar";
+import { Navbar } from "./Navbar";
 
 export function DashboardLayout({
   role,
@@ -31,7 +31,7 @@ export function DashboardLayout({
           <div className="fixed inset-0 z-50 flex lg:hidden">
             <div className="absolute inset-0 bg-slate-950/40" onClick={() => setMobileOpen(false)} />
             <div className="relative">
-              <DashboardSidebar role={role} extraLinks={NAV_LINKS} onNavigate={() => setMobileOpen(false)} />
+              <DashboardSidebar role={role} onNavigate={() => setMobileOpen(false)} />
             </div>
             <button
               className="absolute right-4 top-4 rounded-md bg-card p-2 text-foreground shadow-soft"

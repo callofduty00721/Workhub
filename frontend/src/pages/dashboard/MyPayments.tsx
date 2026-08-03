@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Wallet, Briefcase, FolderKanban, Trophy, Flag, Lock, Unlock, Loader2, Receipt } from "lucide-react";
+import { Wallet, Briefcase, FolderKanban, Trophy, Megaphone, Flag, Lock, Unlock, Loader2, Receipt } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,12 +19,14 @@ const TYPE_LABELS: Record<PaymentType, string> = {
   gig_order: "Gig Order",
   job_hire: "Job / Project",
   contest_prize: "Contest Prize",
+  campaign: "Influencer Campaign",
 };
 
 const TYPE_ICONS: Record<PaymentType, typeof Briefcase> = {
   gig_order: Briefcase,
   job_hire: FolderKanban,
   contest_prize: Trophy,
+  campaign: Megaphone,
 };
 
 export default function MyPayments({ role = "client" }: { role?: "client" | "employer" }) {

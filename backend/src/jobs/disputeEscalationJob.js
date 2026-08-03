@@ -1,5 +1,5 @@
-import Payment from "../models/Payment.js";
-import User from "../models/User.js";
+import Payment from "../modules/shared/payment.model.js";
+import User from "../modules/shared/user.model.js";
 import { notify } from "../utils/notify.js";
 
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // every 6 hours

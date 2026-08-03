@@ -6,26 +6,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { notificationApi } from "@/api/notifications";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
 import { useAuth } from "@/context/AuthContext";
+import { timeAgoRelative as timeAgo } from "@/lib/utils";
 import { useEffect } from "react";
 import type { AppNotification } from "@/types";
-
-const TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 31536000],
-  ["month", 2592000],
-  ["day", 86400],
-  ["hour", 3600],
-  ["minute", 60],
-];
-const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-function timeAgo(dateStr: string) {
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  for (const [unit, secondsInUnit] of TIME_UNITS) {
-    const value = Math.floor(seconds / secondsInUnit);
-    if (value >= 1) return rtf.format(-value, unit);
-  }
-  return "just now";
-}
 
 export function NotificationBell() {
   const { user } = useAuth();

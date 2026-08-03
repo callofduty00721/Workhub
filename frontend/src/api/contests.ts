@@ -11,6 +11,8 @@ export interface ContestFilters {
 export const contestApi = {
   list: (filters: ContestFilters = {}) => api.get<Paginated<Contest>>("/contests", { params: filters }).then((r) => r.data),
 
+  categories: () => api.get<{ success: boolean; data: string[] }>("/contests/categories").then((r) => r.data.data),
+
   mine: () => api.get<{ success: boolean; data: Contest[] }>("/contests/mine").then((r) => r.data.data),
 
   getById: (id: string) => api.get<{ success: boolean; data: Contest }>(`/contests/${id}`).then((r) => r.data.data),

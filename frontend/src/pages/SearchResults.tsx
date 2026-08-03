@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FreelancerCard } from "@/components/freelancers/FreelancerCard";
+import { FreelancerCard } from "@/roles/freelancer/components/FreelancerCard";
 import { ServiceCard } from "@/components/gigs/ServiceCard";
 import { JobCard } from "@/components/jobs/JobCard";
 import { ContestCard } from "@/components/contests/ContestCard";

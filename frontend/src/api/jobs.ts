@@ -1,12 +1,18 @@
 import { api } from "./axios";
-import type { Application, ApplicationStatus, Job, JobAccessLogEntry, Paginated } from "@/types";
+import type { Application, ApplicationStatus, Job, JobAccessLogEntry, JobCategory, Paginated } from "@/types";
 
 export interface JobFilters {
   search?: string;
   type?: string;
+  category?: string;
   isRemote?: boolean;
   page?: number;
   limit?: number;
+}
+
+export interface JobCategoryCount {
+  category: JobCategory;
+  count: number;
 }
 
 export interface JobAnalytics {
@@ -18,6 +24,8 @@ export interface JobAnalytics {
 
 export const jobApi = {
   list: (filters: JobFilters = {}) => api.get<Paginated<Job>>("/jobs", { params: filters }).then((r) => r.data),
+
+  categoryCounts: () => api.get<{ success: boolean; data: JobCategoryCount[] }>("/jobs/category-counts").then((r) => r.data.data),
 
   mine: () => api.get<{ success: boolean; data: Job[] }>("/jobs/mine").then((r) => r.data.data),
 
@@ -40,6 +48,14 @@ export const jobApi = {
 
   updateApplicationStatus: (applicationId: string, status: Application["status"]) =>
     api.put<{ success: boolean; data: Application }>(`/jobs/applications/${applicationId}/status`, { status }).then((r) => r.data.data),
+
+  scheduleInterview: (
+    applicationId: string,
+    payload: { scheduledAt: string; mode?: "video" | "in_person" | "phone"; meetingLink?: string; location?: string; note?: string }
+  ) => api.put<{ success: boolean; data: Application }>(`/jobs/applications/${applicationId}/schedule-interview`, payload).then((r) => r.data.data),
+
+  confirmInterview: (applicationId: string) =>
+    api.put<{ success: boolean; data: Application }>(`/jobs/applications/${applicationId}/confirm-interview`).then((r) => r.data.data),
 
   myApplications: () => api.get<{ success: boolean; data: Application[] }>("/applications/mine").then((r) => r.data.data),
 

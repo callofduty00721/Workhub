@@ -13,6 +13,7 @@ const baseJob: Job = {
   companyName: "MahaHub Ventures",
   description: "Build and maintain our React frontend.",
   type: "full_time",
+  category: "IT & Software",
   experienceLevel: "mid",
   skills: ["React", "TypeScript", "Tailwind"],
   location: "Pune, India",

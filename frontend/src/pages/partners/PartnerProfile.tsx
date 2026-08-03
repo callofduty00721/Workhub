@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { partnerApi } from "@/api/partners";
 import { chatApi } from "@/api/chat";
 import { initialsFromName } from "@/lib/utils";
+import { renderBioHtml } from "@/lib/richText";
 import { useAuth } from "@/context/AuthContext";
 
 const PARTNER_TYPE_LABELS: Record<string, string> = {
@@ -79,7 +80,16 @@ export default function PartnerProfile() {
             <Card>
               <CardContent className="p-6">
                 <h3 className="mb-2 text-base font-semibold">About</h3>
-                <p className="text-sm leading-relaxed text-foreground/90">{partner.bio}</p>
+                <p className="text-sm leading-relaxed text-foreground/90" dangerouslySetInnerHTML={{ __html: renderBioHtml(partner.bio) }} />
+              </CardContent>
+            </Card>
+          )}
+
+          {partner.programDetails && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="mb-2 text-base font-semibold">Program Details</h3>
+                <p className="text-sm leading-relaxed text-foreground/90">{partner.programDetails}</p>
               </CardContent>
             </Card>
           )}
@@ -87,7 +97,27 @@ export default function PartnerProfile() {
 
         <div className="space-y-6">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="space-y-4 p-6">
+              {!!partner.startupsSupportedCount && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Startups Supported</p>
+                  <p className="text-lg font-bold">{partner.startupsSupportedCount}</p>
+                </div>
+              )}
+              {(partner.socialLinks?.website || partner.applicationLink) && (
+                <div className="flex flex-wrap gap-3 text-xs">
+                  {partner.socialLinks?.website && (
+                    <a href={partner.socialLinks.website} target="_blank" rel="noreferrer" className="font-medium text-primary hover:underline">
+                      Website
+                    </a>
+                  )}
+                  {partner.applicationLink && (
+                    <a href={partner.applicationLink} target="_blank" rel="noreferrer" className="font-medium text-primary hover:underline">
+                      Apply
+                    </a>
+                  )}
+                </div>
+              )}
               <Button
                 className="w-full"
                 variant="gradient"

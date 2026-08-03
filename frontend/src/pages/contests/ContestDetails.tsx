@@ -15,6 +15,7 @@ import { contestApi } from "@/api/contests";
 import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { FileUpload } from "@/components/shared/FileUpload";
+import { SaveButton } from "@/components/shared/SaveButton";
 
 export default function ContestDetails() {
   const { id = "" } = useParams();
@@ -74,7 +75,10 @@ export default function ContestDetails() {
         <div className="space-y-6">
           <Card>
             <CardContent className="p-6">
-              <h1 className="text-xl font-bold">{contest.title}</h1>
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-xl font-bold">{contest.title}</h1>
+                <SaveButton type="contest" id={contest._id} className="h-8 w-8 shrink-0 bg-muted text-muted-foreground hover:bg-muted hover:text-primary" />
+              </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant="secondary">{contest.category}</Badge>
                 <Badge variant="outline" className="capitalize">

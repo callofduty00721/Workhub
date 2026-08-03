@@ -13,6 +13,7 @@ const TYPE_LABELS: Record<PaymentType, string> = {
   gig_order: "Gig Order",
   job_hire: "Job / Project Hire",
   contest_prize: "Contest Prize",
+  campaign: "Influencer Campaign",
 };
 
 export default function Invoice() {

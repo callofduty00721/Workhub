@@ -32,6 +32,7 @@ export default defineConfig({
           "vendor-ui": ["@radix-ui/react-avatar", "@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-label", "@radix-ui/react-select", "@radix-ui/react-slot", "@radix-ui/react-tabs", "framer-motion", "lucide-react"],
           "vendor-forms": ["react-hook-form", "@hookform/resolvers", "zod"],
           "vendor-socket": ["socket.io-client"],
+          "vendor-charts": ["recharts"],
         },
       },
     },

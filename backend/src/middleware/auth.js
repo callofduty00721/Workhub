@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import User from "../modules/shared/user.model.js";
 import { verifyAccessToken } from "../utils/tokens.js";
 import { ApiError } from "./errorHandler.js";
 import { asyncHandler } from "./asyncHandler.js";

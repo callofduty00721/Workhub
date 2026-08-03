@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { authApi } from "@/api/auth";
+import { rolesApi } from "@/api/roles";
 import { setAccessToken } from "@/api/axios";
 import type { User, UserRole } from "@/types";
 
@@ -11,6 +12,7 @@ interface AuthContextValue {
   register: (name: string, email: string, password: string, phone?: string, role?: UserRole, referralCode?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  switchRole: (role: UserRole) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -71,9 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  // The backend only returns a small role/verification slice here (not a full
+  // User), so merge it onto the existing user in state rather than replacing.
+  const switchRole = useCallback(async (role: UserRole) => {
+    const res = await rolesApi.switchRole(role);
+    setUser((prev) => (prev ? { ...prev, ...res.user } : prev));
+  }, []);
+
   const value = useMemo(
-    () => ({ user, isLoading, login, loginWithGoogle, register, logout, refreshUser }),
-    [user, isLoading, login, loginWithGoogle, register, logout, refreshUser]
+    () => ({ user, isLoading, login, loginWithGoogle, register, logout, refreshUser, switchRole }),
+    [user, isLoading, login, loginWithGoogle, register, logout, refreshUser, switchRole]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

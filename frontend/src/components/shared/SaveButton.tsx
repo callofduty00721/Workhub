@@ -4,18 +4,48 @@ import { userApi } from "@/api/users";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
-export function SaveButton({ type, id, className }: { type: "job" | "project" | "service"; id: string; className?: string }) {
+export function SaveButton({
+  type,
+  id,
+  className,
+}: {
+  type: "job" | "project" | "service" | "freelancer" | "contest";
+  id: string;
+  className?: string;
+}) {
   const { user, refreshUser } = useAuth();
   const isSaved =
-    type === "job" ? user?.savedJobs?.includes(id) : type === "project" ? user?.savedProjects?.includes(id) : user?.savedServices?.includes(id);
+    type === "job"
+      ? user?.savedJobs?.includes(id)
+      : type === "project"
+        ? user?.savedProjects?.includes(id)
+        : type === "service"
+          ? user?.savedServices?.includes(id)
+          : type === "contest"
+            ? user?.savedContests?.includes(id)
+            : user?.savedFreelancers?.includes(id);
 
   const mutation = useMutation({
     mutationFn: () =>
-      type === "job" ? userApi.toggleSavedJob(id) : type === "project" ? userApi.toggleSavedProject(id) : userApi.toggleSavedService(id),
+      type === "job"
+        ? userApi.toggleSavedJob(id)
+        : type === "project"
+          ? userApi.toggleSavedProject(id)
+          : type === "service"
+            ? userApi.toggleSavedService(id)
+            : type === "contest"
+              ? userApi.toggleSavedContest(id)
+              : userApi.toggleSavedFreelancer(id),
     onSuccess: () => refreshUser(),
   });
 
-  if (!user || user.role !== "freelancer") return null;
+  // Saving jobs/projects/gigs is a freelancer-only action (they're the ones
+  // browsing work to do later); saving a freelancer profile is the opposite
+  // direction — relevant to whoever might hire them — so it's open to any
+  // logged-in non-freelancer... except a freelancer's own profile, which
+  // simply never renders this button (see FreelancerCard/FreelancerProfile).
+  if (!user) return null;
+  if (type !== "freelancer" && user.role !== "freelancer") return null;
 
   return (
     <button

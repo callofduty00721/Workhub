@@ -20,7 +20,7 @@ export function ProtectedRoute({ children, allow }: { children: ReactNode; allow
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (allow && !allow.includes(user.role)) {
+  if (allow && (!user.role || !allow.includes(user.role))) {
     return <Navigate to="/" replace />;
   }
 

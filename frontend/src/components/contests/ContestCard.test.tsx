@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ContestCard } from "./ContestCard";
+import { AuthProvider } from "@/context/AuthContext";
 import type { Contest } from "@/types";
 
 const baseContest: Contest = {
@@ -20,10 +22,15 @@ const baseContest: Contest = {
 };
 
 function renderCard(contest: Contest) {
+  const queryClient = new QueryClient();
   return render(
-    <MemoryRouter>
-      <ContestCard contest={contest} />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <AuthProvider>
+          <ContestCard contest={contest} />
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 
@@ -32,10 +39,11 @@ describe("ContestCard", () => {
     renderCard(baseContest);
     expect(screen.getByText("Design a Logo")).toBeInTheDocument();
     expect(screen.getByText("₹5,000")).toBeInTheDocument();
-    expect(screen.getByText(/entries/)).toHaveTextContent("3 entries");
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("Entries")).toBeInTheDocument();
   });
 
-  it("only shows up to 3 skill badges", () => {
+  it("shows up to 4 skill badges", () => {
     renderCard(baseContest);
     expect(screen.getByText("Logo Design")).toBeInTheDocument();
     expect(screen.getByText("Branding")).toBeInTheDocument();

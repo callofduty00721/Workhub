@@ -16,6 +16,7 @@ import { jobApi } from "@/api/jobs";
 import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { FileUpload } from "@/components/shared/FileUpload";
+import { SaveButton } from "@/components/shared/SaveButton";
 
 const TYPE_LABELS: Record<string, string> = {
   freelance: "One-off Project",
@@ -104,10 +105,15 @@ export default function ProjectDetails() {
                   {project.companyName[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-xl font-bold">{project.title}</h1>
+                  <div className="flex items-start justify-between gap-3">
+                    <h1 className="text-xl font-bold">{project.title}</h1>
+                    <SaveButton type="project" id={project._id} className="h-8 w-8 shrink-0 bg-muted text-muted-foreground hover:bg-muted hover:text-primary" />
+                  </div>
                   <p className="text-sm text-muted-foreground">{project.companyName}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="secondary">{TYPE_LABELS[project.type]}</Badge>
+                    {project.category && <Badge variant="outline">{project.category}</Badge>}
+                    {project.subCategory && <Badge variant="outline">{project.subCategory}</Badge>}
                     <Badge variant="outline" className="flex items-center gap-1">
                       {project.isRemote ? <Wifi className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
                       {project.isRemote ? "Remote" : project.location}

@@ -1,9 +1,12 @@
 import { api } from "./axios";
-import type { AdminStats, AdminVerificationRequest, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job, Project, Withdrawal, PlatformSettings } from "@/types";
+import type { AdminStats, AdminVerificationRequest, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job, Project, Withdrawal, PlatformSettings, PhoneAuthProvider, Plan } from "@/types";
+
+export type AdminUserStatus = "active" | "banned" | "deactivated";
 
 export interface AdminUserFilters {
   search?: string;
   role?: string;
+  status?: AdminUserStatus;
   page?: number;
   limit?: number;
 }
@@ -28,6 +31,12 @@ export const adminApi = {
 
   toggleBan: (userId: string) =>
     api.put<{ success: boolean; isBanned: boolean }>(`/admin/users/${userId}/ban`).then((r) => r.data),
+
+  deleteUser: (userId: string) =>
+    api.put<{ success: boolean; message: string }>(`/admin/users/${userId}/delete`).then((r) => r.data),
+
+  reactivateUser: (userId: string) =>
+    api.put<{ success: boolean; isDeactivated: boolean }>(`/admin/users/${userId}/reactivate`).then((r) => r.data),
 
   updateRole: (userId: string, role: string) =>
     api.put<{ success: boolean; data: User }>(`/admin/users/${userId}/role`, { role }).then((r) => r.data.data),
@@ -106,10 +115,37 @@ export const adminApi = {
   reviewKyc: (userId: string, action: "approve" | "reject", note?: string) =>
     api.put<{ success: boolean; data: User }>(`/admin/kyc-requests/${userId}/review`, { action, note }).then((r) => r.data.data),
 
+  profileVerificationRequests: (type: ProfileVerificationType) =>
+    api
+      .get<{ success: boolean; data: AdminProfileVerificationRequest[] }>(`/admin/profile-verification-requests/${type}`)
+      .then((r) => r.data.data),
+
+  reviewProfileVerification: (type: ProfileVerificationType, userId: string, action: "approve" | "reject", note?: string) =>
+    api
+      .put<{ success: boolean; data: User }>(`/admin/profile-verification-requests/${type}/${userId}/review`, { action, note })
+      .then((r) => r.data.data),
+
+  plans: () => api.get<{ success: boolean; data: Plan[] }>("/admin/plans").then((r) => r.data.data),
+
+  updatePlan: (planId: string, payload: { name?: string; priceInInr?: number; features?: string[]; maxListings?: number }) =>
+    api.put<{ success: boolean; data: Plan }>(`/admin/plans/${planId}`, payload).then((r) => r.data.data),
+
   getSettings: () => api.get<{ success: boolean; data: PlatformSettings }>("/admin/settings").then((r) => r.data.data),
 
-  updateSettings: (commissionPercent: number) =>
-    api.put<{ success: boolean; data: PlatformSettings }>("/admin/settings", { commissionPercent }).then((r) => r.data.data),
+  updateSettings: (commissionPercent: number, phoneAuthProvider?: PhoneAuthProvider) =>
+    api
+      .put<{ success: boolean; data: PlatformSettings }>("/admin/settings", { commissionPercent, phoneAuthProvider })
+      .then((r) => r.data.data),
+
+  // Role verification lives under /roles (see backend/src/routes/roleRoutes.js),
+  // not /admin — kept here anyway so every admin-only call reads from one file.
+  roleVerificationRequests: () =>
+    api.get<{ success: boolean; data: AdminRoleVerificationRequest[] }>("/roles/verification-requests").then((r) => r.data.data),
+
+  reviewRoleVerification: (userId: string, action: "approve" | "reject", note?: string) =>
+    api
+      .put<{ success: boolean; data: unknown }>(`/roles/verification-requests/${userId}/review`, { approve: action === "approve", note })
+      .then((r) => r.data),
 };
 
 export interface AdminKycRequest {
@@ -119,4 +155,32 @@ export interface AdminKycRequest {
   avatar?: string;
   kycDocuments: { url: string; name: string }[];
   kycSubmittedAt: string;
+}
+
+export type ProfileVerificationType = "face" | "address" | "bank";
+
+// One shape covers all three types — only the relevant selfie/documents field
+// is populated per type (the backend selects just that field).
+export interface AdminProfileVerificationRequest {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  faceVerificationSelfie?: string;
+  faceVerificationSubmittedAt?: string;
+  addressVerificationDocuments?: { url: string; name: string }[];
+  addressVerificationSubmittedAt?: string;
+  bankVerificationDocuments?: { url: string; name: string }[];
+  bankVerificationSubmittedAt?: string;
+}
+
+export interface AdminRoleVerificationRequest {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  roles: string[];
+  selectedCategory: string | null;
+  verificationDocuments: { url: string; name: string }[];
+  verificationSubmittedAt: string;
 }
