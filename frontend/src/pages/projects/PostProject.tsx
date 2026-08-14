@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm, Controller, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Loader2, Lock, Globe, FileText, X, Search, UserPlus, ShieldCheck } from "lucide-react";
+import { Loader2, Lock, Globe, FileText, X, Search, UserPlus, ShieldCheck, ShieldAlert } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { FormGuidelines } from "@/components/shared/FormGuidelines";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { projectApi } from "@/api/projects";
 import { uploadApi } from "@/api/uploads";
 import { freelancerApi } from "@/api/freelancers";
+import { useAuth } from "@/context/AuthContext";
 import { initialsFromName } from "@/lib/utils";
 import { SERVICE_CATEGORY_NAMES, SERVICE_SUBCATEGORIES } from "@/lib/mockData";
 import type { JobAttachment, JobVisibility } from "@/types";
@@ -51,6 +52,7 @@ export default function PostProject() {
   const navigate = useNavigate();
   const { id } = useParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isEdit = !!id;
   const basePath = "/dashboard/client";
 
@@ -159,6 +161,28 @@ export default function PostProject() {
       navigate(basePath);
     },
   });
+
+  // Posting is the one action gated for clients (backend/src/modules/jobs/
+  // project.routes.js POST /) — editing an already-posted project is left
+  // open, so this only blocks the create flow, not isEdit.
+  if (!isEdit && user?.role === "client" && !user.isVerified) {
+    return (
+      <DashboardLayout role="client" title="Post a Project" subtitle="Describe the work and get bids from freelancers.">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
+            <ShieldAlert className="h-8 w-8 text-muted-foreground" />
+            <p className="text-base font-semibold">Verification required</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Posting a project needs a verified account. Submit your documents and we'll review them within 1-2 business days.
+            </p>
+            <Button variant="gradient" asChild>
+              <Link to="/dashboard/verify-role">Get Verified</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="client" title={isEdit ? "Edit Project" : "Post a Project"} subtitle="Describe the work and get bids from freelancers.">
@@ -355,8 +379,8 @@ export default function PostProject() {
             </label>
             {requiresNda && (
               <div className="space-y-2">
-                <FieldLabel info="Write your own NDA, or leave blank to use MahaHub's default one.">
-                  NDA Text (optional — leave blank to use the standard MahaHub NDA)
+                <FieldLabel info="Write your own NDA, or leave blank to use GrowHive's default one.">
+                  NDA Text (optional — leave blank to use the standard GrowHive NDA)
                 </FieldLabel>
                 <Textarea
                   value={ndaText}
@@ -432,7 +456,7 @@ export default function PostProject() {
                       return (
                         <div key={f._id} className="flex items-center justify-between gap-2 px-1.5 py-1 text-sm">
                           <span className="flex items-center gap-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-[10px] font-semibold text-white">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">
                               {initialsFromName(f.name)}
                             </span>
                             {f.name}

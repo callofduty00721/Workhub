@@ -6,12 +6,27 @@ export interface JobFilters {
   type?: string;
   category?: string;
   isRemote?: boolean;
+  employer?: string;
+  excludeId?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  industryType?: string;
+  subIndustry?: string;
+  qualification?: string;
+  companyType?: string;
   page?: number;
   limit?: number;
 }
 
 export interface JobCategoryCount {
   category: JobCategory;
+  count: number;
+}
+
+export interface JobSalaryRangeCount {
+  min: number;
+  max: number;
+  label: string;
   count: number;
 }
 
@@ -26,6 +41,9 @@ export const jobApi = {
   list: (filters: JobFilters = {}) => api.get<Paginated<Job>>("/jobs", { params: filters }).then((r) => r.data),
 
   categoryCounts: () => api.get<{ success: boolean; data: JobCategoryCount[] }>("/jobs/category-counts").then((r) => r.data.data),
+
+  salaryRangeCounts: () =>
+    api.get<{ success: boolean; data: JobSalaryRangeCount[] }>("/jobs/salary-range-counts").then((r) => r.data.data),
 
   mine: () => api.get<{ success: boolean; data: Job[] }>("/jobs/mine").then((r) => r.data.data),
 
@@ -42,6 +60,12 @@ export const jobApi = {
 
   withdraw: (applicationId: string) =>
     api.put<{ success: boolean; data: Application }>(`/applications/${applicationId}/withdraw`).then((r) => r.data.data),
+
+  editApplication: (applicationId: string, payload: { coverLetter?: string; proposedRate?: number; deliveryDays?: number }) =>
+    api.put<{ success: boolean; data: Application }>(`/applications/${applicationId}`, payload).then((r) => r.data.data),
+
+  requestRateChange: (applicationId: string, payload: { message?: string; suggestedRate?: number }) =>
+    api.put<{ success: boolean; data: Application }>(`/applications/${applicationId}/request-rate-change`, payload).then((r) => r.data.data),
 
   applications: (id: string) =>
     api.get<{ success: boolean; data: Application[] }>(`/jobs/${id}/applications`).then((r) => r.data.data),
@@ -78,4 +102,6 @@ export const jobApi = {
     api.get<{ success: boolean; data: { url: string; name: string } }>(`/jobs/${id}/attachments/${index}/signed-url`).then((r) => r.data.data),
 
   accessLog: (id: string) => api.get<{ success: boolean; data: JobAccessLogEntry[] }>(`/jobs/${id}/access-log`).then((r) => r.data.data),
+
+  report: (id: string, reason: string) => api.post<{ success: boolean; message: string }>(`/jobs/${id}/report`, { reason }).then((r) => r.data),
 };

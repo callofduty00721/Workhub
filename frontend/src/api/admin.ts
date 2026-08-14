@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { AdminStats, AdminVerificationRequest, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job, Project, Withdrawal, PlatformSettings, PhoneAuthProvider, Plan } from "@/types";
+import type { AdminStats, AdminVerificationRequest, AdminActivityEntry, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job, Project, Withdrawal, Grievance, PlatformSettings, PhoneAuthProvider, Plan, AdminPermission } from "@/types";
 
 export type AdminUserStatus = "active" | "banned" | "deactivated";
 
@@ -107,6 +107,22 @@ export const adminApi = {
       .put<{ success: boolean; data: Withdrawal }>(`/admin/withdrawals/${withdrawalId}/resolve`, { action, note })
       .then((r) => r.data.data),
 
+  staff: () => api.get<{ success: boolean; data: User[] }>("/admin/staff").then((r) => r.data.data),
+
+  createStaff: (payload: { name: string; email: string; password: string; permissions: AdminPermission[] }) =>
+    api.post<{ success: boolean; data: User }>("/admin/staff", payload).then((r) => r.data.data),
+
+  updateStaffPermissions: (staffId: string, permissions: AdminPermission[]) =>
+    api.put<{ success: boolean; data: User }>(`/admin/staff/${staffId}/permissions`, { permissions }).then((r) => r.data.data),
+
+  activity: () => api.get<{ success: boolean; data: AdminActivityEntry[] }>("/admin/activity").then((r) => r.data.data),
+
+  grievances: (filters: { status?: string; page?: number; limit?: number } = {}) =>
+    api.get<Paginated<Grievance>>("/admin/grievances", { params: filters }).then((r) => r.data),
+
+  updateGrievance: (grievanceId: string, action: "acknowledge" | "resolve", note?: string) =>
+    api.put<{ success: boolean; data: Grievance }>(`/admin/grievances/${grievanceId}`, { action, note }).then((r) => r.data.data),
+
   kycRequests: () =>
     api
       .get<{ success: boolean; data: AdminKycRequest[] }>("/admin/kyc-requests")
@@ -127,14 +143,26 @@ export const adminApi = {
 
   plans: () => api.get<{ success: boolean; data: Plan[] }>("/admin/plans").then((r) => r.data.data),
 
-  updatePlan: (planId: string, payload: { name?: string; priceInInr?: number; features?: string[]; maxListings?: number }) =>
-    api.put<{ success: boolean; data: Plan }>(`/admin/plans/${planId}`, payload).then((r) => r.data.data),
+  updatePlan: (
+    planId: string,
+    payload: { name?: string; priceInInr?: number; priceInInrYearly?: number; features?: string[]; maxListings?: number }
+  ) => api.put<{ success: boolean; data: Plan }>(`/admin/plans/${planId}`, payload).then((r) => r.data.data),
 
   getSettings: () => api.get<{ success: boolean; data: PlatformSettings }>("/admin/settings").then((r) => r.data.data),
 
-  updateSettings: (commissionPercent: number, phoneAuthProvider?: PhoneAuthProvider) =>
+  updateSettings: (
+    commissionPercent: number,
+    phoneAuthProvider?: PhoneAuthProvider,
+    allowedEmailDomains?: string[],
+    jobsEnabled?: boolean
+  ) =>
     api
-      .put<{ success: boolean; data: PlatformSettings }>("/admin/settings", { commissionPercent, phoneAuthProvider })
+      .put<{ success: boolean; data: PlatformSettings }>("/admin/settings", {
+        commissionPercent,
+        phoneAuthProvider,
+        allowedEmailDomains,
+        jobsEnabled,
+      })
       .then((r) => r.data.data),
 
   // Role verification lives under /roles (see backend/src/routes/roleRoutes.js),

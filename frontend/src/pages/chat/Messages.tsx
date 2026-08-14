@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { Send, MessageSquare, ArrowLeft, Paperclip, FileText, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import type { DashboardRole } from "@/components/layout/DashboardSidebar";
+import { resolveDashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,23 +14,30 @@ import { uploadApi } from "@/api/uploads";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { useAuth } from "@/context/AuthContext";
 import { cn, initialsFromName } from "@/lib/utils";
-import type { MessageAttachment } from "@/types";
+import type { MessageAttachment, UserRole } from "@/types";
+
+// Real role off the conversation participant record — not guessed from
+// name/avatar. Shown next to the name so it's clear who you're talking to
+// (a founder vs. a freelancer vs. an influencer, etc.).
+const ROLE_LABELS: Record<UserRole, string> = {
+  super_admin: "Admin",
+  staff: "Staff",
+  founder: "Founder",
+  freelancer: "Freelancer",
+  job_seeker: "Job Seeker",
+  influencer: "Influencer",
+  employer: "Employer",
+  investor: "Investor",
+  mentor: "Mentor",
+  partner: "Partner",
+  client: "Client",
+  brand: "Brand",
+  agency: "Agency",
+  talent_partner: "Talent Partner",
+};
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 5;
 const MAX_COMBINED_ATTACHMENT_MB = 256;
-
-const DASHBOARD_ROLES: DashboardRole[] = [
-  "founder",
-  "freelancer",
-  "job_seeker",
-  "influencer",
-  "employer",
-  "super_admin",
-  "investor",
-  "mentor",
-  "partner",
-  "client",
-];
 
 export default function Messages() {
   const { user } = useAuth();
@@ -43,7 +50,7 @@ export default function Messages() {
   const [isAttaching, setIsAttaching] = useState(false);
   const [attachError, setAttachError] = useState<string | null>(null);
 
-  const sidebarRole: DashboardRole = DASHBOARD_ROLES.includes(user?.role as DashboardRole) ? (user!.role as DashboardRole) : "founder";
+  const sidebarRole = resolveDashboardRole(user?.role);
 
   const { data: conversations, isLoading: loadingConversations } = useQuery({
     queryKey: ["chat", "conversations"],
@@ -178,7 +185,14 @@ export default function Messages() {
                       <AvatarFallback>{other ? initialsFromName(other.name) : "?"}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{other?.name ?? "Unknown"}</p>
+                      <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+                        <span className="truncate">{other?.name ?? "Unknown"}</span>
+                        {other?.role && (
+                          <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {ROLE_LABELS[other.role]}
+                          </span>
+                        )}
+                      </p>
                       <p className="truncate text-xs text-muted-foreground">{c.lastMessage || "No messages yet"}</p>
                     </div>
                   </button>
@@ -205,7 +219,12 @@ export default function Messages() {
                   <AvatarImage src={otherParticipant(activeConversation)?.avatar} />
                   <AvatarFallback>{initialsFromName(otherParticipant(activeConversation)?.name ?? "?")}</AvatarFallback>
                 </Avatar>
-                <p className="text-sm font-semibold">{otherParticipant(activeConversation)?.name}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{otherParticipant(activeConversation)?.name}</p>
+                  {otherParticipant(activeConversation)?.role && (
+                    <p className="text-xs text-muted-foreground">{ROLE_LABELS[otherParticipant(activeConversation)!.role]}</p>
+                  )}
+                </div>
               </div>
 
               <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4 scrollbar-thin">

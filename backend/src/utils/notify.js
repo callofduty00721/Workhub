@@ -2,11 +2,23 @@ import Notification from "../modules/shared/notification.model.js";
 import User from "../modules/shared/user.model.js";
 import { sendEmail, isEmailConfigured } from "./email.js";
 
-// Low-signal, high-volume social notifications (follows/interest toggles) are
-// deliberately excluded from email — everything else (messages, application
-// status, delivery/escrow events, reviews, sessions) is important enough to
-// land in the user's inbox, not just the in-app bell.
-const EMAIL_EXCLUDED_TYPES = new Set(["startup_follow", "startup_interest"]);
+// Only genuinely time-sensitive or money-related events warrant an email —
+// everything else still lands in the in-app bell (and the socket push),
+// just not the inbox too. "system" stays email-eligible since it's the
+// catch-all for payments/KYC/disputes/withdrawals — the highest-stakes
+// events in the app. new_message is excluded specifically because it's by
+// far the highest-volume type; emailing every single chat message is the
+// fastest way to make someone turn email notifications off entirely.
+const EMAIL_EXCLUDED_TYPES = new Set([
+  "startup_follow",
+  "startup_interest",
+  "startup_pitch",
+  "job_application",
+  "new_message",
+  "session_request",
+  "roster_invite",
+  "review_received",
+]);
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
@@ -36,7 +48,7 @@ async function sendNotificationEmail(userId, title, message, link) {
   if (!recipient?.email || !recipient.emailNotificationsEnabled) return;
 
   const url = link ? `${FRONTEND_URL}${link.startsWith("/") ? "" : "/"}${link}` : FRONTEND_URL;
-  const html = `<p>Hi ${recipient.name},</p><p>${title}</p>${message ? `<p>${message}</p>` : ""}<p><a href="${url}">View on MahaHub</a></p>`;
+  const html = `<p>Hi ${recipient.name},</p><p>${title}</p>${message ? `<p>${message}</p>` : ""}<p><a href="${url}">View on GrowHive</a></p>`;
 
   await sendEmail({ to: recipient.email, subject: title, html });
 }

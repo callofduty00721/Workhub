@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Gift, Copy, Check, Users2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import type { DashboardRole } from "@/components/layout/DashboardSidebar";
+import { resolveDashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,11 +11,9 @@ import { userApi } from "@/api/users";
 import { useAuth } from "@/context/AuthContext";
 import { initialsFromName, formatCurrency } from "@/lib/utils";
 
-const DASHBOARD_ROLES: DashboardRole[] = ["founder", "freelancer", "employer", "super_admin", "investor", "mentor", "partner", "client"];
-
 export default function Referrals() {
   const { user } = useAuth();
-  const sidebarRole: DashboardRole = DASHBOARD_ROLES.includes(user?.role as DashboardRole) ? (user!.role as DashboardRole) : "freelancer";
+  const sidebarRole = resolveDashboardRole(user?.role);
   const [copied, setCopied] = useState(false);
 
   const { data, isLoading } = useQuery({ queryKey: ["users", "me", "referrals"], queryFn: userApi.getMyReferrals });
@@ -33,7 +31,7 @@ export default function Referrals() {
     <DashboardLayout
       role={sidebarRole}
       title="Referrals"
-      subtitle="Invite people to MahaHub — earn a bonus when they complete their first paid job."
+      subtitle="Invite people to GrowHive — earn a bonus when they complete their first paid job."
     >
       {isLoading ? (
         <Skeleton className="h-56 w-full rounded-xl" />

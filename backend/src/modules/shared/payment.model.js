@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 
-const PAYMENT_TYPES = ["gig_order", "job_hire", "contest_prize", "campaign"];
+// campaign_facilitation: the brand and influencer settle the actual deal
+// amount between themselves, outside the platform — this Payment is only
+// the facilitation fee, never the deal itself. commissionPercent is 100 for
+// this type (the whole fee IS platform revenue) and netAmount is always 0,
+// since nothing here is ever released to the payee's wallet — see
+// finalizeMarketplacePayment's type-specific branch in webhooks.controller.js.
+const PAYMENT_TYPES = ["gig_order", "job_hire", "contest_prize", "campaign", "campaign_facilitation"];
 // Work-delivery lifecycle, tracked only for non-milestone gig_order/job_hire
 // payments (contest prizes and milestone-linked payments release on their own
 // terms and stay "not_applicable" here).
@@ -39,6 +45,7 @@ const paymentSchema = new mongoose.Schema(
     // Set by the daily escalation job once a dispute has sat unresolved past
     // the response window — surfaces it to admins as urgent, doesn't auto-refund.
     disputeEscalated: { type: Boolean, default: false },
+    disputeResolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     service: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
     // Snapshotted from the chosen Service.packages entry at order time (if the
     // gig has tiers) — keeps the order's price/delivery/revisions fixed even

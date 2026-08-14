@@ -52,3 +52,16 @@ export const authorize =
     }
     next();
   };
+
+// For admin-panel routes a super_admin-created "staff" account can be scoped
+// into (see user.model.js's PERMISSIONS list). super_admin always passes —
+// its access was never meant to depend on the staffPermissions array, only a
+// staff account's is. Mount after authorize("super_admin", "staff") so
+// req.user.role is already known to be one of those two.
+export const requirePermission =
+  (permission) =>
+  (req, res, next) => {
+    if (req.user.role === "super_admin") return next();
+    if (req.user.role === "staff" && req.user.staffPermissions?.includes(permission)) return next();
+    throw new ApiError(403, "You do not have permission to perform this action");
+  };

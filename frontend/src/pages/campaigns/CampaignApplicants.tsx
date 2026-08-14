@@ -2,17 +2,23 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { ArrowLeft, Mail, MapPin, MessageSquare, CreditCard, CheckCircle2, Lock, Unlock, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, MessageSquare, CreditCard, CheckCircle2, Lock, Unlock, Loader2, HandCoins, TriangleAlert, IndianRupee, Clock } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import type { DashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { campaignApi } from "@/api/campaigns";
 import { jobApi } from "@/api/jobs";
 import { chatApi } from "@/api/chat";
 import { paymentApi } from "@/api/payments";
+import { publicSettingsApi } from "@/api/settings";
 import { payWithRazorpay } from "@/lib/razorpay";
 import { useAuth } from "@/context/AuthContext";
 import { initialsFromName, formatCurrency } from "@/lib/utils";
@@ -35,6 +41,11 @@ export default function CampaignApplicants() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [payError, setPayError] = useState<string | null>(null);
+  const [offPlatformTarget, setOffPlatformTarget] = useState<{ applicationId: string; applicantName: string; rate: number } | null>(null);
+  const [negotiationTarget, setNegotiationTarget] = useState<{ applicationId: string; applicantName: string; currentRate: number } | null>(null);
+  const [negotiationMessage, setNegotiationMessage] = useState("");
+  const [negotiationSuggestedRate, setNegotiationSuggestedRate] = useState(0);
+  const dashboardRole = (user?.role ?? "employer") as DashboardRole;
 
   const { data: campaign } = useQuery({ queryKey: ["campaigns", id], queryFn: () => campaignApi.getById(id), enabled: !!id });
   const { data: applications, isLoading } = useQuery({
@@ -46,10 +57,26 @@ export default function CampaignApplicants() {
   const { data: myPayments } = useQuery({ queryKey: ["payments", "mine", "all"], queryFn: () => paymentApi.myPayments({ limit: 200 }) });
   const paymentByApplication = new Map((myPayments?.data ?? []).filter((p) => p.type === "campaign" && p.status === "paid").map((p) => [p.application, p]));
 
+  const { data: commissionPercent } = useQuery({ queryKey: ["settings", "commission-percent"], queryFn: publicSettingsApi.commissionPercent });
+
   const statusMutation = useMutation({
     mutationFn: ({ applicationId, status }: { applicationId: string; status: ApplicationStatus }) =>
       jobApi.updateApplicationStatus(applicationId, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["campaigns", id, "applications"] }),
+  });
+
+  const negotiationMutation = useMutation({
+    mutationFn: () =>
+      jobApi.requestRateChange(negotiationTarget!.applicationId, {
+        message: negotiationMessage,
+        suggestedRate: negotiationSuggestedRate || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns", id, "applications"] });
+      setNegotiationTarget(null);
+      setNegotiationMessage("");
+      setNegotiationSuggestedRate(0);
+    },
   });
 
   const messageMutation = useMutation({
@@ -70,6 +97,22 @@ export default function CampaignApplicants() {
     onError: (err) => setPayError(isAxiosError(err) ? err.response?.data?.message || "Payment failed" : "Payment gateway unavailable"),
   });
 
+  const offPlatformMutation = useMutation({
+    mutationFn: async ({ applicationId, applicantName }: { applicationId: string; applicantName: string }) => {
+      await payWithRazorpay({
+        createOrder: () => paymentApi.createOffPlatformFacilitationPayment(applicationId),
+        verify: (payload) => paymentApi.verifyMarketplacePayment(payload),
+        description: `Off-platform facilitation fee — ${applicantName}`,
+        prefill: { name: user!.name, email: user!.email },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["campaigns", id, "applications"] });
+          setOffPlatformTarget(null);
+        },
+      });
+    },
+    onError: (err) => setPayError(isAxiosError(err) ? err.response?.data?.message || "Payment failed" : "Payment gateway unavailable"),
+  });
+
   const releaseMutation = useMutation({
     mutationFn: (paymentId: string) => paymentApi.releasePayment(paymentId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments", "mine"] }),
@@ -78,7 +121,7 @@ export default function CampaignApplicants() {
 
   return (
     <DashboardLayout
-      role="employer"
+      role={dashboardRole}
       title={campaign ? `Applicants for ${campaign.title}` : "Applicants"}
       subtitle="Review influencers who applied to this campaign."
     >
@@ -111,7 +154,7 @@ export default function CampaignApplicants() {
               <Card key={app._id}>
                 <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-white">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
                       {applicant ? initialsFromName(applicant.name) : "?"}
                     </div>
                     <div className="min-w-0">
@@ -136,6 +179,11 @@ export default function CampaignApplicants() {
                           {!!app.deliveryDays && <>{app.deliveryDays} day delivery</>}
                         </p>
                       )}
+                      {!!app.negotiationRequest?.requestedAt && (
+                        <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-warning">
+                          <Clock className="h-3 w-3" /> Rate change requested — waiting for a revised proposal
+                        </p>
+                      )}
                       {app.coverLetter && <p className="mt-2 line-clamp-2 max-w-md text-xs text-foreground/80">{app.coverLetter}</p>}
                     </div>
                   </div>
@@ -148,21 +196,53 @@ export default function CampaignApplicants() {
                       </Button>
                     )}
                     {applicant &&
+                      !!app.proposedRate &&
+                      !app.negotiationRequest?.requestedAt &&
+                      ["applied", "shortlisted"].includes(app.status) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setNegotiationTarget({ applicationId: app._id, applicantName: applicant.name, currentRate: app.proposedRate! });
+                            setNegotiationSuggestedRate(0);
+                            setNegotiationMessage("");
+                          }}
+                        >
+                          <IndianRupee className="h-3.5 w-3.5" /> Request Rate Change
+                        </Button>
+                      )}
+                    {applicant &&
                       app.status === "hired" &&
                       !!app.proposedRate &&
                       (() => {
+                        if (app.offPlatformSettledAt) {
+                          return (
+                            <Badge variant="outline" className="flex items-center gap-1 text-[10px]">
+                              <HandCoins className="h-3 w-3" /> Settled Off-Platform
+                            </Badge>
+                          );
+                        }
                         const payment = paymentByApplication.get(app._id);
                         if (!payment) {
                           return (
-                            <Button
-                              variant="gradient"
-                              size="sm"
-                              disabled={payMutation.isPending}
-                              onClick={() => payMutation.mutate({ applicationId: app._id, applicantName: applicant.name })}
-                            >
-                              {payMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
-                              Pay {formatCurrency(app.proposedRate)}
-                            </Button>
+                            <>
+                              <Button
+                                variant="gradient"
+                                size="sm"
+                                disabled={payMutation.isPending}
+                                onClick={() => payMutation.mutate({ applicationId: app._id, applicantName: applicant.name })}
+                              >
+                                {payMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
+                                Pay {formatCurrency(app.proposedRate)}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setOffPlatformTarget({ applicationId: app._id, applicantName: applicant.name, rate: app.proposedRate! })}
+                              >
+                                <HandCoins className="h-3.5 w-3.5" /> Settle Off-Platform
+                              </Button>
+                            </>
                           );
                         }
                         if (payment.escrowStatus === "held") {
@@ -210,6 +290,96 @@ export default function CampaignApplicants() {
           })}
         </div>
       )}
+
+      <Dialog open={!!offPlatformTarget} onOpenChange={(open) => !open && setOffPlatformTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TriangleAlert className="h-4 w-4 text-warning" /> Settle Off-Platform
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 pt-2 text-left text-sm text-foreground">
+                <p>
+                  You&apos;re confirming that you&apos;ll pay <strong>{offPlatformTarget && formatCurrency(offPlatformTarget.rate)}</strong> directly to{" "}
+                  <strong>{offPlatformTarget?.applicantName}</strong>, outside GrowHive.
+                </p>
+                <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-foreground/90">
+                  <p className="font-semibold">GrowHive will not hold or protect this payment.</p>
+                  <p className="mt-1">
+                    No escrow, no delivery tracking, and no dispute resolution — if something goes wrong with the off-platform payment, GrowHive can&apos;t
+                    help recover it.
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A facilitation fee{commissionPercent ? ` (${commissionPercent}% of the rate)` : ""} is charged to GrowHive to mark this hire settled.
+                  {offPlatformTarget && commissionPercent
+                    ? ` That's approximately ${formatCurrency(Math.round((offPlatformTarget.rate * commissionPercent) / 100))}.`
+                    : ""}
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOffPlatformTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="gradient"
+              size="sm"
+              disabled={offPlatformMutation.isPending}
+              onClick={() => offPlatformTarget && offPlatformMutation.mutate(offPlatformTarget)}
+            >
+              {offPlatformMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <HandCoins className="h-3.5 w-3.5" />}
+              Confirm & Pay Facilitation Fee
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!negotiationTarget} onOpenChange={(open) => !open && setNegotiationTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request a Rate Change</DialogTitle>
+            <DialogDescription>
+              Ask <strong>{negotiationTarget?.applicantName}</strong> to revise their proposal
+              {negotiationTarget && <> (currently {formatCurrency(negotiationTarget.currentRate)})</>}. This reopens their proposal for editing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label>Suggested Rate (₹, optional)</Label>
+            <Input
+              type="number"
+              min={0}
+              value={negotiationSuggestedRate || ""}
+              onChange={(e) => setNegotiationSuggestedRate(Number(e.target.value))}
+              placeholder="e.g. 7000"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Message (optional)</Label>
+            <Textarea
+              value={negotiationMessage}
+              onChange={(e) => setNegotiationMessage(e.target.value)}
+              placeholder="Can you do this a bit lower given our budget?"
+              className="min-h-[100px]"
+            />
+          </div>
+          {negotiationMutation.isError && (
+            <p className="text-xs text-danger">
+              {isAxiosError(negotiationMutation.error) ? negotiationMutation.error.response?.data?.message : "Something went wrong."}
+            </p>
+          )}
+          <div className="mt-2 flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setNegotiationTarget(null)}>
+              Cancel
+            </Button>
+            <Button variant="gradient" size="sm" disabled={negotiationMutation.isPending} onClick={() => negotiationMutation.mutate()}>
+              {negotiationMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Send Request
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

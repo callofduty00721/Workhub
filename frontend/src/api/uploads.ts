@@ -10,9 +10,14 @@ export type UploadFolder =
   | "resume"
   | "service_cover"
   | "service_video"
+  | "campaign_cover"
+  | "content_thumbnail"
+  | "collab_logo"
+  | "brand_product"
   | "profile_video"
   | "chat_attachment"
-  | "job_attachment";
+  | "job_attachment"
+  | "deliverable";
 
 export const uploadApi = {
   upload: (file: File, folder: UploadFolder) => {

@@ -6,6 +6,7 @@ import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 import { refreshFreelancerLevel } from "../../utils/freelancerLevel.js";
 import { creditReferralBonusOnFirstEarning } from "../../utils/referral.js";
+import { earningsLinkForPaymentType } from "../../utils/earningsLink.js";
 
 export const releasePayment = asyncHandler(async (req, res) => {
   const payment = await Payment.findById(req.params.id);
@@ -31,7 +32,7 @@ export const releasePayment = asyncHandler(async (req, res) => {
     type: "system",
     title: "Payment released to your wallet",
     message: `₹${payment.amount}${payment.note ? ` for "${payment.note}"` : ""} was approved and is now available in your wallet.`,
-    link: "/dashboard/freelancer/earnings",
+    link: earningsLinkForPaymentType(payment.type),
   });
 
   res.json({ success: true, data: payment });
@@ -100,7 +101,7 @@ export const acceptDelivery = asyncHandler(async (req, res) => {
     type: "system",
     title: "Delivery accepted — payment released",
     message: `₹${payment.amount}${payment.note ? ` for "${payment.note}"` : ""} was accepted and is now available in your wallet.`,
-    link: "/dashboard/freelancer/earnings",
+    link: earningsLinkForPaymentType(payment.type),
   });
 
   res.json({ success: true, data: payment });

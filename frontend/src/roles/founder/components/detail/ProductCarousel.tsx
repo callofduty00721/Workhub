@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { StartupProduct } from "@/types";
 
 const PRODUCT_STATUS_META: Record<string, { label: string; bg: string; fg: string }> = {
-  live: { label: "Live", bg: "#ffece5", fg: "#FF5722" },
+  live: { label: "Live", bg: "#F5F5F5", fg: "#171717" },
   beta: { label: "Beta", bg: "#fdf1de", fg: "#d97706" },
   coming_soon: { label: "Coming Soon", bg: "#f1f5f9", fg: "#64748b" },
 };
@@ -29,7 +29,7 @@ export function ProductCarousel({ products, onSelect }: { products: StartupProdu
           <button
             type="button"
             onClick={() => scrollByCard(-1)}
-            className="absolute -left-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#0f172a] shadow-md hover:bg-[#f8fafc] sm:flex"
+            className="absolute -left-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md hover:bg-muted sm:flex"
             aria-label="Scroll left"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -37,7 +37,7 @@ export function ProductCarousel({ products, onSelect }: { products: StartupProdu
           <button
             type="button"
             onClick={() => scrollByCard(1)}
-            className="absolute -right-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#0f172a] shadow-md hover:bg-[#f8fafc] sm:flex"
+            className="absolute -right-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md hover:bg-muted sm:flex"
             aria-label="Scroll right"
           >
             <ChevronRight className="h-4 w-4" />
@@ -54,13 +54,13 @@ export function ProductCarousel({ products, onSelect }: { products: StartupProdu
               key={i}
               type="button"
               onClick={() => onSelect(p)}
-              className="w-44 shrink-0 snap-start overflow-hidden rounded-xl border border-[#e2e8f0] text-left transition-shadow hover:shadow-md sm:w-52"
+              className="w-44 shrink-0 snap-start overflow-hidden rounded-xl border border-border text-left transition-shadow hover:shadow-md sm:w-52"
             >
               <div className="relative">
                 {cover ? (
-                  <img src={cover} alt={p.name} className="h-32 w-full object-cover" />
+                  <img src={cover} alt={p.name} loading="lazy" className="h-32 w-full object-cover" />
                 ) : (
-                  <div className="flex h-32 w-full items-center justify-center bg-[#ffece5] text-[#FF5722]">
+                  <div className="flex h-32 w-full items-center justify-center bg-muted text-muted-foreground">
                     <Package className="h-7 w-7" />
                   </div>
                 )}
@@ -75,12 +75,12 @@ export function ProductCarousel({ products, onSelect }: { products: StartupProdu
               </div>
               <div className="p-3">
                 <p className="text-[13px] font-bold">{p.name}</p>
-                {p.description && <p className="mt-0.5 line-clamp-2 text-[11px] text-[#64748b]">{p.description}</p>}
-                {p.price && <p className="mt-1 text-[11.5px] font-bold text-[#FF5722]">{p.price}</p>}
+                {p.description && <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{p.description}</p>}
+                {p.price && <p className="mt-1 text-[11.5px] font-bold text-foreground">{p.price}</p>}
                 {tags.length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {tags.map((t, ti) => (
-                      <span key={ti} className="inline-block rounded-full bg-[#ffece5] px-2 py-0.5 text-[9.5px] font-bold text-[#FF5722]">
+                      <span key={ti} className="inline-block rounded-full bg-muted px-2 py-0.5 text-[9.5px] font-bold text-foreground">
                         {t}
                       </span>
                     ))}
@@ -115,7 +115,7 @@ export function ProductDetailModal({ product, onOpenChange }: { product: Startup
 
             {images.length > 0 ? (
               <div className="space-y-2">
-                <div className="overflow-hidden rounded-xl bg-[#f1f5f9]">
+                <div className="overflow-hidden rounded-xl bg-muted">
                   <img src={images[activeImage]} alt={product.name} className="h-64 w-full object-cover" />
                 </div>
                 {images.length > 1 && (
@@ -127,17 +127,17 @@ export function ProductDetailModal({ product, onOpenChange }: { product: Startup
                         onClick={() => setActiveImage(i)}
                         className={cn(
                           "h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2",
-                          activeImage === i ? "border-[#FF5722]" : "border-transparent"
+                          activeImage === i ? "border-brand" : "border-transparent"
                         )}
                       >
-                        <img src={img} alt="" className="h-full w-full object-cover" />
+                        <img src={img} alt="" loading="lazy" className="h-full w-full object-cover" />
                       </button>
                     ))}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex h-40 items-center justify-center rounded-xl bg-[#ffece5] text-[#FF5722]">
+              <div className="flex h-40 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <Package className="h-8 w-8" />
               </div>
             )}
@@ -153,22 +153,22 @@ export function ProductDetailModal({ product, onOpenChange }: { product: Startup
                 </span>
               )}
               {productTags(product).map((t, i) => (
-                <span key={i} className="rounded-full bg-[#ffece5] px-2.5 py-1 text-[11px] font-bold text-[#FF5722]">
+                <span key={i} className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-foreground">
                   {t}
                 </span>
               ))}
-              {product.price && <span className="rounded-full bg-[#ffece5] px-2.5 py-1 text-[11px] font-bold text-[#FF5722]">{product.price}</span>}
+              {product.price && <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-foreground">{product.price}</span>}
             </div>
 
-            {product.description && <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#374151]">{product.description}</p>}
+            {product.description && <p className="whitespace-pre-line text-[13px] leading-relaxed text-foreground/80">{product.description}</p>}
 
             {(product.features?.length ?? 0) > 0 && (
               <div>
-                <p className="mb-1.5 text-[12px] font-bold text-[#0f172a]">Key Features</p>
+                <p className="mb-1.5 text-[12px] font-bold text-foreground">Key Features</p>
                 <ul className="space-y-1.5">
                   {product.features!.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[12.5px] text-[#334155]">
-                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FF5722]" /> {f}
+                    <li key={i} className="flex items-start gap-2 text-[12.5px] text-foreground/80">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" /> {f}
                     </li>
                   ))}
                 </ul>
@@ -180,7 +180,7 @@ export function ProductDetailModal({ product, onOpenChange }: { product: Startup
                 href={product.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex w-fit items-center gap-1.5 rounded-lg bg-[#FF5722] px-3.5 py-2 text-[12.5px] font-bold text-white hover:opacity-90"
+                className="flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-foreground hover:opacity-90"
               >
                 <ExternalLink className="h-3.5 w-3.5" /> Visit Product
               </a>

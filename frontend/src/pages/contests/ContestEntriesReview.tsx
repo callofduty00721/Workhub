@@ -96,7 +96,7 @@ export default function ContestEntriesReview({
               <Card key={entry._id} className={entry.isWinner ? "border-success" : undefined}>
                 <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-white">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
                       {freelancer ? initialsFromName(freelancer.name) : "?"}
                     </div>
                     <div className="min-w-0">

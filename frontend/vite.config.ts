@@ -11,6 +11,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Binds to 0.0.0.0 instead of just localhost — lets a phone on the same
+    // WiFi reach the dev server via this machine's LAN IP, not just this
+    // machine itself. No effect on the production build (Docker/nginx setup
+    // already listens on all interfaces there).
+    host: true,
     proxy: {
       "/api": {
         target: "http://localhost:5000",

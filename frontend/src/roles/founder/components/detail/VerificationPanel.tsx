@@ -44,16 +44,16 @@ export function VerificationPanel({
     const request = latestRequest(type);
 
     return (
-      <div className="flex-1 rounded-xl border border-[#e2e8f0] p-4">
+      <div className="flex-1 rounded-xl border border-border p-4">
         <div className="flex items-center gap-2">
-          <ShieldCheck className={cn("h-4.5 w-4.5", verified ? "text-success" : "text-[#94a3b8]")} />
-          <p className="text-[13px] font-bold text-[#0f172a]">{label}</p>
+          <ShieldCheck className={cn("h-4.5 w-4.5", verified ? "text-success" : "text-muted-foreground/70")} />
+          <p className="text-[13px] font-bold text-foreground">{label}</p>
         </div>
 
         {verified ? (
-          <p className="mt-2 text-[11.5px] font-medium text-success">Verified by MahaHub.</p>
+          <p className="mt-2 text-[11.5px] font-medium text-success">Verified by GrowHive.</p>
         ) : request?.status === "pending" ? (
-          <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-[#94a3b8]">
+          <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-muted-foreground/70">
             <Clock className="h-3.5 w-3.5" /> Submitted {new Date(request.submittedAt).toLocaleDateString()} — awaiting review.
           </p>
         ) : openType === type ? (
@@ -66,10 +66,10 @@ export function VerificationPanel({
             {pendingDocs.length > 0 && (
               <div className="space-y-1">
                 {pendingDocs.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-md bg-[#f8fafc] px-2.5 py-1.5 text-[11.5px]">
+                  <div key={i} className="flex items-center justify-between rounded-md bg-muted px-2.5 py-1.5 text-[11.5px]">
                     <span className="truncate">{d.name}</span>
                     <button onClick={() => setPendingDocs((prev) => prev.filter((_, idx) => idx !== i))}>
-                      <X className="h-3.5 w-3.5 text-[#94a3b8]" />
+                      <X className="h-3.5 w-3.5 text-muted-foreground/70" />
                     </button>
                   </div>
                 ))}
@@ -80,7 +80,7 @@ export function VerificationPanel({
               <button
                 onClick={() => submitMutation.mutate(type)}
                 disabled={pendingDocs.length === 0 || submitMutation.isPending}
-                className="rounded-lg bg-[#FF5722] px-3 py-1.5 text-[11.5px] font-bold text-white disabled:opacity-50"
+                className="rounded-lg bg-primary px-3 py-1.5 text-[11.5px] font-bold text-primary-foreground disabled:opacity-50"
               >
                 {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
               </button>
@@ -89,7 +89,7 @@ export function VerificationPanel({
                   setOpenType(null);
                   setPendingDocs([]);
                 }}
-                className="rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-[11.5px] font-bold text-[#0f172a]"
+                className="rounded-lg border border-border px-3 py-1.5 text-[11.5px] font-bold text-foreground"
               >
                 Cancel
               </button>
@@ -109,7 +109,7 @@ export function VerificationPanel({
             )}
             <button
               onClick={() => setOpenType(type)}
-              className="mt-2 rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-[11.5px] font-bold text-[#FF5722] hover:bg-[#f8fafc]"
+              className="mt-2 rounded-lg border border-border px-3 py-1.5 text-[11.5px] font-bold text-foreground hover:bg-muted"
             >
               Request {label}
             </button>
@@ -120,10 +120,10 @@ export function VerificationPanel({
   };
 
   return (
-    <div className="mb-5 rounded-2xl border border-[#e2e8f0] bg-white p-5">
-      <p className="mb-1 text-[14px] font-bold text-[#0f172a]">Verification</p>
-      <p className="mb-3 text-[11.5px] text-[#64748b]">
-        Submit ID proof or a business registration document — MahaHub's team reviews it manually before granting a verified badge.
+    <div className="mb-5 rounded-2xl border border-border bg-card p-5">
+      <p className="mb-1 text-[14px] font-bold text-foreground">Verification</p>
+      <p className="mb-3 text-[11.5px] text-muted-foreground">
+        Submit ID proof or a business registration document — GrowHive's team reviews it manually before granting a verified badge.
       </p>
       <div className="flex flex-col gap-3 sm:flex-row">
         {renderSection("founder", "Founder Verification", founderVerified)}

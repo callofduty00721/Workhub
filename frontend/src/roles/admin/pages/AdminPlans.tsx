@@ -55,12 +55,14 @@ function PlanCard({ plan }: { plan: Plan }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(plan.name);
   const [priceInInr, setPriceInInr] = useState(String(plan.priceInInr));
+  const [priceInInrYearly, setPriceInInrYearly] = useState(String(plan.priceInInrYearly));
   const [featuresText, setFeaturesText] = useState(plan.features.join("\n"));
   const [maxListings, setMaxListings] = useState(String(plan.maxListings));
 
   useEffect(() => {
     setName(plan.name);
     setPriceInInr(String(plan.priceInInr));
+    setPriceInInrYearly(String(plan.priceInInrYearly));
     setFeaturesText(plan.features.join("\n"));
     setMaxListings(String(plan.maxListings));
   }, [plan]);
@@ -70,6 +72,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       adminApi.updatePlan(plan._id, {
         name,
         priceInInr: Number(priceInInr),
+        priceInInrYearly: Number(priceInInrYearly),
         features: featuresText.split("\n").map((f) => f.trim()).filter(Boolean),
         maxListings: Number(maxListings),
       }),
@@ -80,8 +83,16 @@ function PlanCard({ plan }: { plan: Plan }) {
   });
 
   const price = Number(priceInInr);
+  const yearlyPrice = Number(priceInInrYearly);
   const listings = Number(maxListings);
-  const isValid = name.trim() !== "" && !Number.isNaN(price) && price >= 0 && !Number.isNaN(listings) && (listings === -1 || listings >= 0);
+  const isValid =
+    name.trim() !== "" &&
+    !Number.isNaN(price) &&
+    price >= 0 &&
+    !Number.isNaN(yearlyPrice) &&
+    yearlyPrice >= 0 &&
+    !Number.isNaN(listings) &&
+    (listings === -1 || listings >= 0);
 
   return (
     <Card className={cn(plan.tier === "pro" && "border-primary/30")}>
@@ -98,15 +109,31 @@ function PlanCard({ plan }: { plan: Plan }) {
         {editing ? (
           <>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Plan name" />
-            <div className="relative">
-              <Input
-                type="number"
-                min={0}
-                value={priceInInr}
-                onChange={(e) => setPriceInInr(e.target.value)}
-                className="pl-7"
-              />
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Monthly price</label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min={0}
+                  value={priceInInr}
+                  onChange={(e) => setPriceInInr(e.target.value)}
+                  className="pl-7"
+                />
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Yearly price</label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min={0}
+                  value={priceInInrYearly}
+                  onChange={(e) => setPriceInInrYearly(e.target.value)}
+                  className="pl-7"
+                />
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
+              </div>
             </div>
             <textarea
               value={featuresText}
@@ -132,6 +159,7 @@ function PlanCard({ plan }: { plan: Plan }) {
                   setEditing(false);
                   setName(plan.name);
                   setPriceInInr(String(plan.priceInInr));
+                  setPriceInInrYearly(String(plan.priceInInrYearly));
                   setFeaturesText(plan.features.join("\n"));
                   setMaxListings(String(plan.maxListings));
                 }}
@@ -152,6 +180,16 @@ function PlanCard({ plan }: { plan: Plan }) {
               ₹{plan.priceInInr}
               {plan.priceInInr > 0 && <span className="text-xs font-normal text-muted-foreground">/month</span>}
             </p>
+            {plan.priceInInrYearly > 0 && (
+              <p className="text-xs text-muted-foreground">
+                ₹{plan.priceInInrYearly}/year
+                {plan.priceInInr > 0 && (
+                  <span className="ml-1 font-medium text-success">
+                    (save {Math.round((1 - plan.priceInInrYearly / (plan.priceInInr * 12)) * 100)}%)
+                  </span>
+                )}
+              </p>
+            )}
             <ul className="space-y-1">
               {plan.features.map((f) => (
                 <li key={f} className="text-xs text-muted-foreground">

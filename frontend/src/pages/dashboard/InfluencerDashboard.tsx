@@ -32,7 +32,6 @@ export default function InfluencerDashboard() {
 
   const platforms = user?.influencerProfile?.platforms ?? [];
   const totalFollowers = platforms.reduce((sum, p) => sum + (p.followers ?? 0), 0);
-  const profileComplete = !!(user?.influencerProfile?.niche && platforms.length > 0);
   const profileStrength = user ? influencerProfileCompletion(user) : 0;
 
   const { data: applications, isLoading: loadingApplications } = useQuery({ queryKey: ["applications", "mine"], queryFn: jobApi.myApplications });
@@ -66,16 +65,8 @@ export default function InfluencerDashboard() {
         </Button>
       }
     >
-      {!profileComplete && (
-        <div className="mb-6 flex flex-col gap-2 rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-foreground/90">Add your niche and platforms so brands can discover you in the Influencer Directory.</p>
-          <Link to="/dashboard/profile" className="shrink-0 font-semibold text-primary underline">
-            Complete Profile
-          </Link>
-        </div>
-      )}
 
-      <Card className="mb-6 overflow-hidden border-none bg-gradient-to-r from-primary to-secondary text-primary-foreground">
+      <Card className="mb-6 overflow-hidden border-none bg-primary text-primary-foreground">
         <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold sm:text-base">Grow your influence today</p>
@@ -93,7 +84,7 @@ export default function InfluencerDashboard() {
         </CardContent>
       </Card>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Card className="p-5">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Users className="h-5 w-5" />
@@ -107,13 +98,6 @@ export default function InfluencerDashboard() {
           </div>
           <p className="text-2xl font-bold">{activeCampaigns.length}</p>
           <p className="text-xs text-muted-foreground">Active Campaigns</p>
-        </Card>
-        <Card className="p-5">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
-            <ExternalLink className="h-5 w-5" />
-          </div>
-          <p className="text-2xl font-bold">{user?.influencerProfile?.avgEngagementRate ?? 0}%</p>
-          <p className="text-xs text-muted-foreground">Avg. Engagement Rate</p>
         </Card>
         <Card className="p-5">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
@@ -290,7 +274,7 @@ export default function InfluencerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden border-none bg-gradient-to-br from-primary to-secondary text-primary-foreground">
+          <Card className="overflow-hidden border-none bg-primary text-primary-foreground">
             <CardContent className="p-5 text-center">
               <Crown className="mx-auto h-6 w-6" />
               <p className="mt-2 text-sm font-semibold">Upgrade to Premium</p>

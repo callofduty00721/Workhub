@@ -6,11 +6,12 @@ import { Check, Loader2, Sparkles, ShieldCheck, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { paymentApi } from "@/api/payments";
 import { plansApi } from "@/api/plans";
+import { publicSettingsApi } from "@/api/settings";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency, cn } from "@/lib/utils";
 import { loadRazorpayScript } from "@/lib/razorpay";
 import { ROLE_LABELS } from "@/lib/roles";
-import type { PlanTier, PlanRole } from "@/types";
+import type { PlanTier, PlanRole, BillingCycle } from "@/types";
 
 const asPlanRole = (role: string | null | undefined): PlanRole | null => (role && role !== "super_admin" ? (role as PlanRole) : null);
 
@@ -19,6 +20,7 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [loadingTier, setLoadingTier] = useState<PlanTier | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
   // Plans are per-role — a roleless visitor/user (or super_admin, who isn't
   // priced at all) has nothing to price yet.
@@ -30,7 +32,23 @@ export default function Pricing() {
     enabled: !!role,
   });
 
-  const { data: subscription } = useQuery({ queryKey: ["payments", "subscription"], queryFn: paymentApi.mySubscription, enabled: !!user });
+  // role in the key — see FreelancerDashboard.tsx's identical comment;
+  // without it, switching roles (an SPA-internal navigation, no reload)
+  // would keep showing the previous role's subscription from cache.
+  const { data: subscription } = useQuery({
+    queryKey: ["payments", "subscription", role],
+    queryFn: paymentApi.mySubscription,
+    enabled: !!user,
+  });
+
+  // Real per-gateway config check, not a hardcoded toggle — the Stripe
+  // button disappears the moment STRIPE_SECRET_KEY is unset, and reappears
+  // the moment it's set, no code change needed either way.
+  const { data: gateways } = useQuery({
+    queryKey: ["settings", "payment-gateways"],
+    queryFn: publicSettingsApi.paymentGateways,
+    staleTime: 60 * 1000,
+  });
 
   const handleRazorpay = async (tier: PlanTier) => {
     if (!user) return navigate("/login");
@@ -39,15 +57,15 @@ export default function Pricing() {
     setLoadingTier(tier);
     try {
       await loadRazorpayScript();
-      const order = await paymentApi.createRazorpayOrder(role, tier);
+      const order = await paymentApi.createRazorpayOrder(role, tier, billingCycle);
 
       const razorpay = new window.Razorpay({
         key: order.keyId,
         amount: order.amount,
         currency: order.currency,
         order_id: order.orderId,
-        name: "MahaHub",
-        description: `${ROLE_LABELS[role]} — ${tier} plan subscription`,
+        name: "GrowHive",
+        description: `${ROLE_LABELS[role]} — ${tier} plan (${billingCycle}) subscription`,
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           await paymentApi.verifyRazorpayPayment(response);
           window.location.reload();
@@ -69,7 +87,7 @@ export default function Pricing() {
     setError(null);
     setLoadingTier(tier);
     try {
-      const { checkoutUrl } = await paymentApi.createStripeCheckout(role, tier);
+      const { checkoutUrl } = await paymentApi.createStripeCheckout(role, tier, billingCycle);
       window.location.href = checkoutUrl;
     } catch (err) {
       setError(isAxiosError(err) ? err.response?.data?.message || "Payment failed" : "Payment gateway unavailable");
@@ -92,7 +110,7 @@ export default function Pricing() {
           </span>
           <h1 className="mx-auto max-w-xl text-[32px] font-extrabold leading-tight tracking-tight text-neutral-900 sm:text-[40px]">
             Choose the plan that fits{" "}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">where you are</span>
+            <span className="bg-primary bg-clip-text text-transparent">where you are</span>
           </h1>
           <p className="mx-auto mt-3 max-w-lg text-[14.5px] text-neutral-500">
             {role
@@ -140,10 +158,43 @@ export default function Pricing() {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-3">
-            {plans?.map((plan) => {
-              const isPopular = plan.tier === "pro";
-              return (
+          <>
+            <div className="mb-8 flex items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white p-1 w-fit mx-auto">
+              {(["monthly", "yearly"] as const).map((cycle) => (
+                <button
+                  key={cycle}
+                  type="button"
+                  onClick={() => setBillingCycle(cycle)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors",
+                    billingCycle === cycle ? "bg-neutral-900 text-white" : "text-neutral-500 hover:text-neutral-900"
+                  )}
+                >
+                  {cycle === "monthly" ? "Monthly" : "Yearly"}
+                  {cycle === "yearly" && (
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                        billingCycle === "yearly" ? "bg-white/20 text-white" : "bg-success/10 text-success"
+                      )}
+                    >
+                      Save up to 17%
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-3">
+              {plans?.map((plan) => {
+                const isPopular = plan.tier === "pro";
+                const price = billingCycle === "yearly" ? plan.priceInInrYearly : plan.priceInInr;
+                const monthlyEquivalent = billingCycle === "yearly" && price > 0 ? Math.round(price / 12) : null;
+                const savingsPct =
+                  billingCycle === "yearly" && plan.priceInInr > 0 && plan.priceInInrYearly > 0
+                    ? Math.round((1 - plan.priceInInrYearly / (plan.priceInInr * 12)) * 100)
+                    : 0;
+                return (
                 <div
                   key={plan._id}
                   className={cn(
@@ -154,17 +205,23 @@ export default function Pricing() {
                   )}
                 >
                   {isPopular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-br from-primary to-secondary px-3 py-1 text-[10.5px] font-bold text-white shadow-[0_8px_18px_-8px_rgba(255,87,34,0.7)]">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[10.5px] font-bold text-white shadow-[0_8px_18px_-8px_rgba(255,87,34,0.7)]">
                       Most Popular
                     </span>
                   )}
                   <h3 className="text-[15px] font-bold text-neutral-900">{plan.name}</h3>
                   <p className="mt-2 flex items-baseline gap-1">
                     <span className="text-[30px] font-extrabold tabular-nums tracking-tight text-neutral-900">
-                      {formatCurrency(plan.priceInInr)}
+                      {formatCurrency(price)}
                     </span>
-                    {plan.priceInInr > 0 && <span className="text-[12.5px] text-neutral-400">/month</span>}
+                    {price > 0 && <span className="text-[12.5px] text-neutral-400">/{billingCycle === "yearly" ? "year" : "month"}</span>}
                   </p>
+                  {monthlyEquivalent !== null && (
+                    <p className="mt-0.5 text-[11.5px] text-neutral-400">
+                      {formatCurrency(monthlyEquivalent)}/month, billed yearly
+                      {savingsPct > 0 && <span className="ml-1 font-semibold text-success">— save {savingsPct}%</span>}
+                    </p>
+                  )}
                   <ul className="my-6 flex-1 space-y-2.5">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-2 text-[12.5px] text-neutral-600">
@@ -172,33 +229,42 @@ export default function Pricing() {
                       </li>
                     ))}
                   </ul>
-                  {plan.priceInInr === 0 ? (
+                  {price === 0 ? (
                     <Button variant="outline" disabled className="w-full rounded-xl">
                       Current Default
                     </Button>
+                  ) : !gateways?.razorpay && !gateways?.stripe ? (
+                    <Button variant="outline" disabled className="w-full rounded-xl">
+                      Checkout unavailable
+                    </Button>
                   ) : (
                     <div className="space-y-2">
-                      <Button
-                        className={cn(
-                          "w-full rounded-xl",
-                          isPopular && "bg-gradient-to-br from-primary to-secondary text-white hover:opacity-90"
-                        )}
-                        variant={isPopular ? "default" : "outline"}
-                        disabled={loadingTier === plan.tier}
-                        onClick={() => handleRazorpay(plan.tier)}
-                      >
-                        {loadingTier === plan.tier && <Loader2 className="h-4 w-4 animate-spin" />}
-                        Pay with Razorpay
-                      </Button>
-                      <Button variant="ghost" className="w-full rounded-xl" disabled={loadingTier === plan.tier} onClick={() => handleStripe(plan.tier)}>
-                        Pay with Stripe
-                      </Button>
+                      {gateways?.razorpay && (
+                        <Button
+                          className={cn(
+                            "w-full rounded-xl",
+                            isPopular && "bg-primary text-white hover:opacity-90"
+                          )}
+                          variant={isPopular ? "default" : "outline"}
+                          disabled={loadingTier === plan.tier}
+                          onClick={() => handleRazorpay(plan.tier)}
+                        >
+                          {loadingTier === plan.tier && <Loader2 className="h-4 w-4 animate-spin" />}
+                          Pay with Razorpay
+                        </Button>
+                      )}
+                      {gateways?.stripe && (
+                        <Button variant="ghost" className="w-full rounded-xl" disabled={loadingTier === plan.tier} onClick={() => handleStripe(plan.tier)}>
+                          Pay with Stripe
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         <p className="mx-auto mt-8 max-w-lg text-center text-xs text-neutral-400">

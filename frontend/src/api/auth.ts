@@ -7,11 +7,28 @@ export interface AuthResponse {
   accessToken: string;
 }
 
-export const authApi = {
-  register: (payload: { name: string; email: string; password: string; phone?: string; role?: UserRole; referralCode?: string }) =>
-    api.post<AuthResponse>("/auth/register", payload).then((r) => r.data),
+// Returned by /auth/register instead of AuthResponse for BOTH channels now —
+// no account exists yet and no session is issued until the code (emailed or
+// texted, per `channel`) is confirmed via verifyOtp, so there's no
+// `user`/`accessToken` here.
+export interface OtpRequiredResponse {
+  success: boolean;
+  requiresOtpVerification: true;
+  channel: "email" | "phone";
+  destination: string;
+  ticket: string;
+}
 
-  login: (payload: { email: string; password: string }) =>
+export const authApi = {
+  register: (payload: { name: string; email?: string; phone?: string; password: string; role?: UserRole; referralCode?: string }) =>
+    api.post<AuthResponse | OtpRequiredResponse>("/auth/register", payload).then((r) => r.data),
+
+  verifyOtp: (payload: { ticket: string; otp: string }) => api.post<AuthResponse>("/auth/verify-otp", payload).then((r) => r.data),
+
+  resendOtp: (ticket: string) =>
+    api.post<{ success: boolean; message: string; ticket: string }>("/auth/resend-otp", { ticket }).then((r) => r.data),
+
+  login: (payload: { email?: string; phone?: string; password: string }) =>
     api.post<AuthResponse>("/auth/login", payload).then((r) => r.data),
 
   googleLogin: (idToken: string) => api.post<AuthResponse>("/auth/google", { idToken }).then((r) => r.data),

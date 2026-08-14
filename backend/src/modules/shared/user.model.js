@@ -4,6 +4,7 @@ import crypto from "crypto";
 
 const ROLES = [
   "super_admin",
+  "staff",
   "founder",
   "freelancer",
   "job_seeker",
@@ -13,6 +14,28 @@ const ROLES = [
   "mentor",
   "partner",
   "client",
+  "brand",
+  "agency",
+  "talent_partner",
+];
+
+// Delegable slices of the admin panel a "staff" account can be scoped to —
+// deliberately excludes anything that moves money (withdrawals, payment
+// disputes) or changes global config (settings, plans) or another account's
+// identity (users) — those stay super_admin-only no matter what a staff
+// account's permissions array contains. See middleware/auth.js's
+// requirePermission and admin.routes.js for where this is enforced.
+const PERMISSIONS = [
+  "grievances",
+  "kyc",
+  "profile-verifications",
+  "role-verifications",
+  "flagged-startups",
+  "startups",
+  "jobs",
+  "gigs",
+  "contests",
+  "skill-tests",
 ];
 
 const PARTNER_TYPES = ["accelerator", "incubator", "government", "ngo", "service_provider"];
@@ -60,11 +83,15 @@ const influencerRateSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Shared by Influencer's "Past Collaborations", Brand's "Past
+// Collaborations", and Agency's "Past Campaigns" — same free-text showcase
+// shape everywhere it's used.
 const influencerCollaborationSchema = new mongoose.Schema(
   {
     brandName: { type: String, required: true },
     description: { type: String, default: "" },
     resultMetric: { type: String, default: "" },
+    logoUrl: { type: String, default: "" },
   },
   { _id: false }
 );
@@ -73,6 +100,24 @@ const influencerContentSampleSchema = new mongoose.Schema(
   {
     url: { type: String, required: true },
     caption: { type: String, default: "" },
+    // Uploaded by the influencer themselves (see upload.controller.js's
+    // "content_thumbnail" folder) — not auto-fetched from Instagram/YouTube,
+    // so it needs no API integration and can't silently go stale/broken.
+    thumbnailUrl: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const LANGUAGE_LEVELS = ["beginner", "conversational", "fluent", "native"];
+
+// Self-reported, same trust level as everything else on this schema (rate
+// card, past collaborations) — not verified, but distinct from the removed
+// engagement-rate metric since there's no meaningful way to "verify" a
+// language claim anyway; a brand reads it as a claim, not a platform stat.
+const influencerLanguageSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    level: { type: String, enum: LANGUAGE_LEVELS, default: "fluent" },
   },
   { _id: false }
 );
@@ -88,11 +133,118 @@ const influencerProfileSchema = new mongoose.Schema(
     category: { type: String, default: "" },
     niche: { type: String, default: "" },
     mediaKitUrl: { type: String, default: "" },
-    avgEngagementRate: { type: Number, default: 0 },
     platforms: [influencerPlatformSchema],
     rateCard: [influencerRateSchema],
     pastCollaborations: [influencerCollaborationSchema],
     contentSamples: [influencerContentSampleSchema],
+    languages: [influencerLanguageSchema],
+  },
+  { _id: false }
+);
+
+const brandProductSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    description: { type: String, default: "" },
+    imageUrl: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+// A brand's standing ask, shown on its "Influencer Requirements" tab — not
+// tied to any one live Campaign, just a general brief for who they typically
+// want to hear from.
+const influencerRequirementSchema = new mongoose.Schema(
+  {
+    category: { type: String, default: "" },
+    minFollowers: { type: Number, default: 0 },
+    platforms: [{ type: String }],
+    location: { type: String, default: "" },
+    notes: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+// A brand/agency/talent-partner's own marketing handles — deliberately a
+// free-form list (platform name + URL), not fixed fields like
+// instagramUrl/youtubeUrl, so a new platform never needs a schema change to
+// add. Same idea as influencerPlatformSchema, and separate from the generic
+// top-level socialLinks (twitter/github/website — a professional-network
+// set shared by every role) since that shape doesn't fit Instagram/YouTube.
+const profileSocialLinkSchema = new mongoose.Schema(
+  {
+    platform: { type: String, required: true },
+    url: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const brandProfileSchema = new mongoose.Schema(
+  {
+    industry: { type: String, default: "" },
+    // Multiple content categories the brand works across (e.g. "Skincare",
+    // "Haircare") — distinct from the single `industry` classification.
+    categories: [{ type: String }],
+    website: { type: String, default: "" },
+    socialLinks: [profileSocialLinkSchema],
+    followerCount: { type: Number, default: 0 },
+    products: [brandProductSchema],
+    influencerRequirements: [influencerRequirementSchema],
+    // Same free-text shape as influencerCollaborationSchema — a showcase, not
+    // a consent-gated relationship (contrast talentRoster.model.js's
+    // consent-gated "Our Creators", which is for a different kind of claim).
+    pastCollaborations: [influencerCollaborationSchema],
+  },
+  { _id: false }
+);
+
+const AGENCY_SERVICE_VALUES = [
+  "influencer_marketing",
+  "social_media_marketing",
+  "performance_marketing",
+  "brand_campaigns",
+  "ugc",
+  "content_production",
+  "pr",
+];
+
+// Shared by Agency's "Clients" tab and Talent Partner's "Brand Partnerships"
+// tab — both are a free-text showcase of who they've worked with, same shape
+// as influencerCollaborationSchema. Deliberately NOT consent-gated: unlike
+// claiming to represent a specific creator (talentRoster.model.js), naming a
+// past client relationship doesn't put words in that client's mouth the way
+// listing someone as "our creator" would.
+const partnerClientSchema = new mongoose.Schema(
+  {
+    clientName: { type: String, required: true },
+    logoUrl: { type: String, default: "" },
+    description: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const agencyProfileSchema = new mongoose.Schema(
+  {
+    agencyType: { type: String, default: "" },
+    website: { type: String, default: "" },
+    socialLinks: [profileSocialLinkSchema],
+    teamSize: { type: Number, default: 0 },
+    services: [{ type: String, enum: AGENCY_SERVICE_VALUES }],
+    clients: [partnerClientSchema],
+    pastCampaigns: [influencerCollaborationSchema],
+  },
+  { _id: false }
+);
+
+const talentPartnerProfileSchema = new mongoose.Schema(
+  {
+    // Display label only ("Talent Manager" / "Agency") — not the account
+    // role itself, which stays "talent_partner" everywhere else.
+    partnerType: { type: String, default: "" },
+    website: { type: String, default: "" },
+    socialLinks: [profileSocialLinkSchema],
+    services: [{ type: String }],
+    brandPartnerships: [partnerClientSchema],
   },
   { _id: false }
 );
@@ -152,7 +304,10 @@ const portfolioItemSchema = new mongoose.Schema(
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    // Optional now — a phone-verified account (see auth.controller.js's
+    // register()/verifyPhoneRegisterOtp) can exist with no email at all.
+    // `sparse` lets any number of docs omit it without tripping the unique index.
+    email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     password: { type: String, minlength: 8, select: false },
     googleId: { type: String, select: false },
     // `role` is the single ACTIVE role — every existing authorize(...) check in
@@ -161,6 +316,10 @@ const userSchema = new mongoose.Schema(
     // just repoints `role` at one of them.
     role: { type: String, enum: ROLES, default: null },
     roles: [{ type: String, enum: ROLES }],
+    // Only meaningful when role === "staff" — which admin-panel sections a
+    // super_admin-created staff account can access (see requirePermission).
+    // A super_admin account ignores this entirely; it always has full access.
+    staffPermissions: [{ type: String, enum: PERMISSIONS }],
     selectedCategory: { type: String, enum: CATEGORY_VALUES, default: null },
     avatar: { type: String, default: "" },
     coverImage: { type: String, default: "" },
@@ -204,6 +363,11 @@ const userSchema = new mongoose.Schema(
     // above for why these have no schema-level default.
     jobSeekerProfile: { type: jobSeekerProfileSchema },
     influencerProfile: { type: influencerProfileSchema },
+    // Brand / Agency / Talent Partner — same lazy-init pattern (no
+    // schema-level default), created on demand by roleController.addRoles.
+    brandProfile: { type: brandProfileSchema },
+    agencyProfile: { type: agencyProfileSchema },
+    talentPartnerProfile: { type: talentPartnerProfileSchema },
 
     // Startup founder — 'idea' stage lets a founder look for a co-founder/team
     // freely; anything money- or employment-shaped (paid job post, investor
@@ -219,16 +383,28 @@ const userSchema = new mongoose.Schema(
     verificationSubmittedAt: { type: Date },
     verificationNote: { type: String, default: "" },
 
+    // Running total of every file this user has ever uploaded (avatars, chat
+    // attachments, deliverables, documents, ...) — checked against a flat quota
+    // in upload.controller.js before any new upload is accepted. This is what
+    // stops a user from sharing any more files, in chat or anywhere else, once
+    // they're out of space.
+    storageUsedBytes: { type: Number, default: 0 },
+
     // KYC — required before a freelancer can withdraw real money
     kycStatus: { type: String, enum: ["unverified", "pending", "verified", "rejected"], default: "unverified" },
     kycDocuments: [{ url: { type: String, required: true }, name: { type: String, required: true } }],
     kycSubmittedAt: { type: Date },
     kycReviewNote: { type: String, default: "" },
+    // Which admin/staff account reviewed this — see admin/kyc.js's
+    // reviewKyc/reviewProfileVerification and the Staff Activity Log page,
+    // which is what this actually exists for (attributing a staff account's
+    // scoped review actions, not just super_admin's).
+    kycReviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     // Mobile verification — via whichever provider PlatformSettings.phoneAuthProvider
-    // points at (Firebase or Twilio); see user.controller.js's sendPhoneOtp/
-    // verifyPhoneOtp/verifyPhoneFirebaseToken. No OTP state is stored here —
-    // both providers own their own verification state.
+    // points at (currently only Firebase); see user.controller.js's
+    // verifyPhoneFirebaseToken. No OTP state is stored here — the provider
+    // owns its own verification state.
     isPhoneVerified: { type: Boolean, default: false },
 
     // Face / Address / Bank verification — same submit-then-admin-review
@@ -237,16 +413,19 @@ const userSchema = new mongoose.Schema(
     faceVerificationSelfie: { type: String, default: "" },
     faceVerificationSubmittedAt: { type: Date },
     faceVerificationReviewNote: { type: String, default: "" },
+    faceVerificationReviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     addressVerificationStatus: { type: String, enum: ["unverified", "pending", "verified", "rejected"], default: "unverified" },
     addressVerificationDocuments: [{ url: { type: String, required: true }, name: { type: String, required: true } }],
     addressVerificationSubmittedAt: { type: Date },
     addressVerificationReviewNote: { type: String, default: "" },
+    addressVerificationReviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     bankVerificationStatus: { type: String, enum: ["unverified", "pending", "verified", "rejected"], default: "unverified" },
     bankVerificationDocuments: [{ url: { type: String, required: true }, name: { type: String, required: true } }],
     bankVerificationSubmittedAt: { type: Date },
     bankVerificationReviewNote: { type: String, default: "" },
+    bankVerificationReviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     // Analytics
     profileViews: { type: Number, default: 0 },
@@ -306,6 +485,11 @@ const userSchema = new mongoose.Schema(
     savedServices: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
     savedFreelancers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     savedContests: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contest" }],
+    // A hiring-side shortlist — brand/agency/talent_partner/employer/client
+    // bookmarking an influencer before deciding whether to invite/hire them.
+    savedInfluencers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    // An influencer bookmarking a campaign before deciding whether to apply.
+    savedCampaigns: [{ type: mongoose.Schema.Types.ObjectId, ref: "Campaign" }],
 
     // Referral program — every user gets a code at creation; referredBy is set
     // once at signup if they arrived via someone else's code. Bonus balance is
@@ -340,8 +524,21 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// `role` alone (or as a compound prefix) is in almost every listing query in
+// the app — marketplace browse, admin's "all super_admins", the freelancer
+// directory — so it's the highest-value index here. `category` is the next
+// most common secondary filter after role (see service.controller.js's
+// listFreelancers), so a role+category compound serves that combined case
+// too (Mongo can also use it for role-only queries via the index prefix).
+userSchema.index({ role: 1, category: 1 });
+
 userSchema.pre("save", async function hashPassword(next) {
   if (!this.isModified("password") || !this.password) return next();
+  // Set by auth.controller.js's createVerifiedUser() — the password there
+  // was already bcrypt-hashed before being embedded in a pending-signup JWT
+  // ticket (so the ticket never carries a recoverable plaintext password),
+  // so hashing it a second time here would break login entirely.
+  if (this.$locals.skipPasswordHash) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
@@ -387,9 +584,13 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     email,
     role,
     roles,
+    staffPermissions,
     selectedCategory,
     jobSeekerProfile,
     influencerProfile,
+    brandProfile,
+    agencyProfile,
+    talentPartnerProfile,
     founderStage,
     isVerified,
     verificationStatus,
@@ -480,6 +681,8 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     savedServices,
     savedFreelancers,
     savedContests,
+    savedInfluencers,
+    savedCampaigns,
     lastActiveAt,
     isEmailVerified,
     isProfileComplete,
@@ -492,9 +695,13 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     email,
     role,
     roles,
+    staffPermissions,
     selectedCategory,
     jobSeekerProfile,
     influencerProfile,
+    brandProfile,
+    agencyProfile,
+    talentPartnerProfile,
     founderStage,
     isVerified,
     verificationStatus,
@@ -585,6 +792,8 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     savedServices,
     savedFreelancers,
     savedContests,
+    savedInfluencers,
+    savedCampaigns,
     lastActiveAt,
     isEmailVerified,
     isProfileComplete,
@@ -594,5 +803,7 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
 };
 
 export const ROLE_VALUES = ROLES;
+export const PERMISSION_VALUES = PERMISSIONS;
 export const PARTNER_TYPE_VALUES = PARTNER_TYPES;
+export const LANGUAGE_LEVEL_VALUES = LANGUAGE_LEVELS;
 export default mongoose.model("User", userSchema);

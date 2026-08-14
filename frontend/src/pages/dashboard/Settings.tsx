@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { Loader2, KeyRound, Bell, AlertTriangle, UserCog } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import type { DashboardRole } from "@/components/layout/DashboardSidebar";
+import { resolveDashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,23 +16,10 @@ import { setAccessToken } from "@/api/axios";
 import { useAuth } from "@/context/AuthContext";
 import { CATEGORY_LABELS, CATEGORY_ROLES, ROLE_LABELS } from "@/lib/roles";
 
-const DASHBOARD_ROLES: DashboardRole[] = [
-  "founder",
-  "freelancer",
-  "job_seeker",
-  "influencer",
-  "employer",
-  "super_admin",
-  "investor",
-  "mentor",
-  "partner",
-  "client",
-];
-
 export default function Settings() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const sidebarRole: DashboardRole = DASHBOARD_ROLES.includes(user?.role as DashboardRole) ? (user!.role as DashboardRole) : "founder";
+  const sidebarRole = resolveDashboardRole(user?.role);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -117,7 +104,7 @@ export default function Settings() {
               )}
               <p className="text-[11px] text-muted-foreground">
                 Roles are switched from your profile menu in the navbar. Picking a different category resets your
-                current roles — do that only if you're changing what you use MahaHub for.
+                current roles — do that only if you're changing what you use GrowHive for.
               </p>
             </CardContent>
           </Card>
@@ -173,7 +160,10 @@ export default function Settings() {
             <label className="flex items-center justify-between gap-4 rounded-lg border border-border p-3.5">
               <span>
                 <p className="text-sm font-medium">Email Notifications</p>
-                <p className="text-xs text-muted-foreground">Get emailed about messages, application updates, payments, and reviews.</p>
+                <p className="text-xs text-muted-foreground">
+                  Get emailed about important activity only — hiring decisions, payments, and account/KYC updates. Everything else (new
+                  messages, applications received, reviews) still shows up in-app.
+                </p>
               </span>
               <input
                 type="checkbox"

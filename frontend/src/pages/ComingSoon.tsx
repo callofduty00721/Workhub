@@ -10,7 +10,7 @@ export function ComingSoon({ title }: { title: string }) {
       </span>
       <h1 className="text-2xl font-bold">{title}</h1>
       <p className="max-w-md text-sm text-muted-foreground">
-        This section is part of the MahaHub roadmap and is being built out in an upcoming iteration.
+        This section is part of the GrowHive roadmap and is being built out in an upcoming iteration.
       </p>
       <Button variant="outline" asChild>
         <Link to="/">Back to Home</Link>

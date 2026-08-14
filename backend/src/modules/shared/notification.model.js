@@ -10,6 +10,9 @@ const NOTIFICATION_TYPES = [
   "session_request",
   "session_status",
   "review_received",
+  "roster_invite",
+  "roster_invite_status",
+  "campaign_invite",
   "system",
 ];
 

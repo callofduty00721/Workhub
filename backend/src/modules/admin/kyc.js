@@ -2,6 +2,7 @@ import User from "../shared/user.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
+import { earningsLinkForRole } from "../../utils/earningsLink.js";
 
 export const listKycRequests = asyncHandler(async (req, res) => {
   const users = await User.find({ kycStatus: "pending" })
@@ -20,6 +21,7 @@ export const reviewKyc = asyncHandler(async (req, res) => {
 
   user.kycStatus = action === "approve" ? "verified" : "rejected";
   user.kycReviewNote = note || "";
+  user.kycReviewedBy = req.user._id;
   await user.save();
 
   await notify(req.app, {
@@ -30,7 +32,7 @@ export const reviewKyc = asyncHandler(async (req, res) => {
       action === "approve"
         ? "You're now KYC-verified and can withdraw your earnings."
         : note || "Please resubmit with clearer documents.",
-    link: "/dashboard/freelancer/earnings",
+    link: earningsLinkForRole(user.role),
   });
 
   res.json({ success: true, data: user.toSafeJSON() });
@@ -43,26 +45,29 @@ const VERIFICATION_TYPES = {
   face: {
     statusField: "faceVerificationStatus",
     noteField: "faceVerificationReviewNote",
+    reviewedByField: "faceVerificationReviewedBy",
     submittedAtField: "faceVerificationSubmittedAt",
     selectFields: "name email avatar faceVerificationSelfie faceVerificationSubmittedAt",
     approvedTitle: "Your face verification was approved",
-    approvedMessage: "You're now face-verified on MahaHub.",
+    approvedMessage: "You're now face-verified on GrowHive.",
   },
   address: {
     statusField: "addressVerificationStatus",
     noteField: "addressVerificationReviewNote",
+    reviewedByField: "addressVerificationReviewedBy",
     submittedAtField: "addressVerificationSubmittedAt",
     selectFields: "name email avatar addressVerificationDocuments addressVerificationSubmittedAt",
     approvedTitle: "Your address verification was approved",
-    approvedMessage: "Your address is now verified on MahaHub.",
+    approvedMessage: "Your address is now verified on GrowHive.",
   },
   bank: {
     statusField: "bankVerificationStatus",
     noteField: "bankVerificationReviewNote",
+    reviewedByField: "bankVerificationReviewedBy",
     submittedAtField: "bankVerificationSubmittedAt",
     selectFields: "name email avatar bankVerificationDocuments bankVerificationSubmittedAt",
     approvedTitle: "Your bank verification was approved",
-    approvedMessage: "Your bank details are now verified on MahaHub.",
+    approvedMessage: "Your bank details are now verified on GrowHive.",
   },
 };
 
@@ -91,6 +96,7 @@ export const reviewProfileVerification = asyncHandler(async (req, res) => {
 
   user[config.statusField] = action === "approve" ? "verified" : "rejected";
   user[config.noteField] = note || "";
+  user[config.reviewedByField] = req.user._id;
   await user.save();
 
   await notify(req.app, {

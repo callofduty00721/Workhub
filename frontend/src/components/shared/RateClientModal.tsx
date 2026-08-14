@@ -38,7 +38,7 @@ export function RateClientModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Rate {clientName}</DialogTitle>
-          <DialogDescription>Share how it was working with this client — this helps other freelancers.</DialogDescription>
+          <DialogDescription>Share how it was working with them — this helps others on GrowHive decide.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">

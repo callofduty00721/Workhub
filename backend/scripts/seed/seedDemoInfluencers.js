@@ -1,6 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 
 const PASSWORD = "Demo@12345";
@@ -8,7 +9,7 @@ const PASSWORD = "Demo@12345";
 const INFLUENCERS = [
   {
     name: "Riya Kulkarni",
-    email: "riya.influencer@mahahub.test",
+    email: "riya.influencer@growhive.test",
     headline: "Sustainable fashion creator, styling budget-friendly outfits",
     location: "Pune, Maharashtra",
     bio: "I help people build a wardrobe that doesn't cost the planet — thrifted styling, upcycling tutorials, and honest reviews of sustainable brands.",
@@ -16,7 +17,6 @@ const INFLUENCERS = [
       category: "Fashion & Beauty",
       niche: "Sustainable Fashion",
       mediaKitUrl: "",
-      avgEngagementRate: 6.4,
       platforms: [
         { platform: "Instagram", handle: "@riya.wears", followers: 84000, url: "https://instagram.com/riya.wears" },
         { platform: "YouTube", handle: "Riya Kulkarni", followers: 21000, url: "https://youtube.com/@riyakulkarni" },
@@ -38,7 +38,7 @@ const INFLUENCERS = [
   },
   {
     name: "Arjun Deshpande",
-    email: "arjun.influencer@mahahub.test",
+    email: "arjun.influencer@growhive.test",
     headline: "Tech reviewer — smartphones, laptops, and everyday gadgets",
     location: "Bengaluru, Karnataka",
     bio: "Honest, no-sponsor-bias tech reviews. I buy most of what I review with my own money so I can say what I actually think.",
@@ -46,7 +46,6 @@ const INFLUENCERS = [
       category: "Technology",
       niche: "Gadget Reviews",
       mediaKitUrl: "",
-      avgEngagementRate: 5.1,
       platforms: [
         { platform: "YouTube", handle: "Arjun Tech", followers: 142000, url: "https://youtube.com/@arjuntech" },
         { platform: "Instagram", handle: "@arjun.tech", followers: 38000, url: "https://instagram.com/arjun.tech" },
@@ -69,15 +68,18 @@ const INFLUENCERS = [
   },
   {
     name: "Sanika Patil",
-    email: "sanika.influencer@mahahub.test",
+    email: "sanika.influencer@growhive.test",
     headline: "Home cook sharing quick Maharashtrian recipes & food reviews",
     location: "Nashik, Maharashtra",
     bio: "Traditional recipes made simple for busy weeknights, plus honest reviews of home-grown food brands and local restaurants.",
+    achievements: [
+      { title: "Instagram Verified Badge", description: "Awarded for authentic, notable presence", dateLabel: "2024" },
+      { title: "100K Milestone", description: "Crossed 100K combined followers", dateLabel: "2025" },
+    ],
     influencerProfile: {
       category: "Food & Cooking",
       niche: "Home Cooking",
-      mediaKitUrl: "",
-      avgEngagementRate: 7.8,
+      mediaKitUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
       platforms: [
         { platform: "Instagram", handle: "@sanikaskitchen", followers: 96000, url: "https://instagram.com/sanikaskitchen" },
         { platform: "YouTube", handle: "Sanika's Kitchen", followers: 12000, url: "https://youtube.com/@sanikaskitchen" },
@@ -99,6 +101,7 @@ const INFLUENCERS = [
 ];
 
 async function run() {
+  assertNotProduction("seedDemoInfluencers");
   await connectDB();
 
   for (const data of INFLUENCERS) {
@@ -119,6 +122,7 @@ async function run() {
       location: data.location,
       bio: data.bio,
       influencerProfile: data.influencerProfile,
+      achievements: data.achievements ?? [],
       isEmailVerified: true,
       isProfileComplete: true,
     });

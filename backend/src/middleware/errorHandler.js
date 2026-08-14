@@ -1,3 +1,6 @@
+import { logger } from "../utils/logger.js";
+import { captureException } from "../config/sentry.js";
+
 export class ApiError extends Error {
   constructor(statusCode, message, details) {
     super(message);
@@ -13,6 +16,13 @@ export const notFound = (req, res, next) => {
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || (res.statusCode !== 200 ? res.statusCode : 500);
+
+  // Only unexpected (5xx) failures are worth an error-level log + Sentry
+  // report — 4xx codes are expected outcomes (bad input, missing resource).
+  if (statusCode >= 500) {
+    logger.error(err.message, { stack: err.stack, method: req?.method, url: req?.originalUrl });
+    captureException(err);
+  }
 
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue || {})[0] || "field";

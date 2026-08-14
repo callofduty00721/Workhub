@@ -38,7 +38,7 @@ export default function SelectCategory() {
 
   return (
     <div className="mx-auto max-w-xl px-6 py-16">
-      <h1 className="text-2xl font-bold text-foreground">What brings you to MahaHub?</h1>
+      <h1 className="text-2xl font-bold text-foreground">What brings you to GrowHive?</h1>
       <p className="mt-1 text-sm text-muted-foreground">Choose one — you'll pick specific roles next.</p>
 
       <div className="mt-6 space-y-3">

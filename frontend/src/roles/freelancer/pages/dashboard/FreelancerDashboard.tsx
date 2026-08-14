@@ -131,7 +131,11 @@ export default function FreelancerDashboard() {
 
   const { data: gigs, isLoading: loadingGigs } = useQuery({ queryKey: ["services", "mine"], queryFn: serviceApi.mine });
 
-  const { data: subscription } = useQuery({ queryKey: ["payments", "subscription"], queryFn: paymentApi.mySubscription });
+  // role in the key — the backend now scopes "my subscription" to the
+  // caller's currently active role (someone can hold a paid plan per role),
+  // so the cache must be keyed the same way or a role switch would keep
+  // showing the previous role's plan until a hard reload.
+  const { data: subscription } = useQuery({ queryKey: ["payments", "subscription", user?.role], queryFn: paymentApi.mySubscription });
   const currentPlan = subscription?.status === "active" ? subscription.plan : "free";
 
   const { data: notifications, isLoading: loadingNotifications } = useQuery({
@@ -206,7 +210,7 @@ export default function FreelancerDashboard() {
         </Button>
       }
     >
-      <Card className="mb-6 overflow-hidden border-none bg-gradient-to-r from-primary to-secondary text-primary-foreground">
+      <Card className="mb-6 overflow-hidden border-none bg-primary text-primary-foreground">
         <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold sm:text-base">Grow your freelance career today</p>

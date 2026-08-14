@@ -1,10 +1,22 @@
 import { api } from "./axios";
 import type { InfluencerSummary, Paginated } from "@/types";
 
+export type InfluencerSort = "newest" | "rating" | "reviews" | "followers" | "campaigns" | "match";
+
 export interface InfluencerFilters {
   search?: string;
   niche?: string;
   category?: string;
+  location?: string;
+  minRating?: number;
+  verifiedOnly?: boolean;
+  // Case-insensitive exact match against a platform name (e.g. "Instagram").
+  platform?: string;
+  minFollowers?: number;
+  maxFollowers?: number;
+  // Ceiling on the influencer's cheapest rate-card entry, in INR.
+  maxBudget?: number;
+  sort?: InfluencerSort;
   page?: number;
   limit?: number;
 }

@@ -45,7 +45,7 @@ export function Step5Documents() {
           <Button onClick={() => documentsArray.append({ name: "", description: "", url: "", category: "Other", fileSize: "" })}>Add Document</Button>
         </div>
         {documentsArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Document name (e.g. FSSAI License)" {...register(`documents.${index}.name` as const)} />
             <Controller control={control} name={`documents.${index}.category` as const} render={({ field: f }) => (
               <Select value={f.value} onValueChange={f.onChange}>

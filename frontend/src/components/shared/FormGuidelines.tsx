@@ -6,10 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 // typing, rather than finding out after a rejection or low engagement.
 export function FormGuidelines({ title = "Guidelines", tips }: { title?: string; tips: string[] }) {
   return (
-    <Card className="border-primary/20 bg-primary/5">
+    <Card className="border-brand/20 bg-brand/5 shadow-none">
       <CardContent className="p-4">
         <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Info className="h-4 w-4 text-primary" /> {title}
+          <Info className="h-4 w-4 text-brand" /> {title}
         </h4>
         <ul className="mt-2.5 space-y-1.5">
           {tips.map((tip, i) => (

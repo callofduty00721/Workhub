@@ -8,7 +8,8 @@ import Alert from "../src/modules/productivity/alert.model.js";
 import Milestone from "../src/modules/jobs/milestone.model.js";
 import Job, { JOB_TYPE_VALUES, EXPERIENCE_LEVEL_VALUES } from "../src/modules/jobs/job.model.js";
 import Application from "../src/modules/shared/application.model.js";
-import User, { ROLE_VALUES } from "../src/modules/shared/user.model.js";
+import User, { ROLE_VALUES, PERMISSION_VALUES } from "../src/modules/shared/user.model.js";
+import Grievance, { GRIEVANCE_STATUS_VALUES } from "../src/modules/shared/grievance.model.js";
 
 // validateSync() runs Mongoose's schema validation in-process without needing
 // a live database connection, so these tests exercise real schema rules.
@@ -205,7 +206,7 @@ describe("Job model validation", () => {
     const job = new Job({
       employer: new mongoose.Types.ObjectId(),
       title: "Frontend Engineer",
-      companyName: "MahaHub",
+      companyName: "GrowHive",
       description: "Build things",
       location: "Remote",
     });
@@ -250,6 +251,12 @@ describe("Job model validation", () => {
     });
     expect(job.validateSync().errors.type).toBeDefined();
   });
+
+  it("declares indexes matching listJobs' actual filter+sort and the employer's own-listings query", () => {
+    const indexKeys = Job.schema.indexes().map(([keys]) => keys);
+    expect(indexKeys).toContainEqual({ status: 1, visibility: 1, createdAt: -1 });
+    expect(indexKeys).toContainEqual({ employer: 1, status: 1 });
+  });
 });
 
 describe("Application model validation", () => {
@@ -281,16 +288,27 @@ describe("Application model validation", () => {
 });
 
 describe("User model validation", () => {
-  it("requires name and email", () => {
+  it("requires name", () => {
     const err = new User({}).validateSync();
     expect(err.errors.name).toBeDefined();
-    expect(err.errors.email).toBeDefined();
   });
 
-  it("defaults role to freelancer", () => {
-    const user = new User({ name: "Test User", email: "test@mahahub.demo" });
+  // email isn't schema-required — a phone-verified signup (see
+  // auth.controller.js's register()/verifyPhoneRegisterOtp) can create a user
+  // with no email at all. Either-email-or-phone is enforced at the
+  // controller level, not the schema level.
+  it("allows a user with no email, as long as name is set", () => {
+    const user = new User({ name: "Test User" });
     expect(user.validateSync()).toBeUndefined();
-    expect(user.role).toBe("freelancer");
+  });
+
+  // role starts unset — a fresh signup lands on Explore (see
+  // frontend/src/pages/dashboard/Explore.tsx) to pick a category and role(s)
+  // rather than being defaulted into one.
+  it("defaults role to null until the user picks one", () => {
+    const user = new User({ name: "Test User", email: "test@growhive.demo" });
+    expect(user.validateSync()).toBeUndefined();
+    expect(user.role).toBeNull();
   });
 
   it("includes job_seeker and influencer as distinct talent-category roles", () => {
@@ -300,7 +318,64 @@ describe("User model validation", () => {
   });
 
   it("rejects a role outside the known enum", () => {
-    const user = new User({ name: "Test User", email: "test@mahahub.demo", role: "not_a_role" });
+    const user = new User({ name: "Test User", email: "test@growhive.demo", role: "not_a_role" });
     expect(user.validateSync().errors.role).toBeDefined();
+  });
+
+  it("declares a role+category index matching the marketplace listing query's filter", () => {
+    const indexKeys = User.schema.indexes().map(([keys]) => keys);
+    expect(indexKeys).toContainEqual({ role: 1, category: 1 });
+  });
+
+  it("accepts staff as a role, with a staffPermissions array scoped to the known permission values", () => {
+    const user = new User({
+      name: "Support Staff",
+      email: "staff@growhive.demo",
+      role: "staff",
+      staffPermissions: ["grievances", "kyc"],
+    });
+    expect(user.validateSync()).toBeUndefined();
+    expect(user.staffPermissions).toEqual(["grievances", "kyc"]);
+  });
+
+  it("rejects a staffPermissions value outside the known permission enum", () => {
+    const user = new User({
+      name: "Support Staff",
+      email: "staff@growhive.demo",
+      role: "staff",
+      staffPermissions: ["withdrawals"],
+    });
+    const err = user.validateSync();
+    expect(err.errors["staffPermissions.0"]).toBeDefined();
+  });
+
+  it("never lists money-moving or global-config permissions as delegable", () => {
+    for (const notDelegable of ["withdrawals", "payments", "settings", "plans", "users"]) {
+      expect(PERMISSION_VALUES).not.toContain(notDelegable);
+    }
+  });
+});
+
+describe("Grievance model validation", () => {
+  it("requires name, email, and message", () => {
+    const err = new Grievance({}).validateSync();
+    expect(err.errors.name).toBeDefined();
+    expect(err.errors.email).toBeDefined();
+    expect(err.errors.message).toBeDefined();
+  });
+
+  it("defaults status to open", () => {
+    const grievance = new Grievance({ name: "Aditya", email: "a@growhive.demo", message: "Help" });
+    expect(grievance.validateSync()).toBeUndefined();
+    expect(grievance.status).toBe("open");
+  });
+
+  it("exposes open, acknowledged, and resolved as the only valid statuses", () => {
+    expect(GRIEVANCE_STATUS_VALUES).toEqual(["open", "acknowledged", "resolved"]);
+  });
+
+  it("rejects a status outside the known enum", () => {
+    const grievance = new Grievance({ name: "Aditya", email: "a@growhive.demo", message: "Help", status: "closed" });
+    expect(grievance.validateSync().errors.status).toBeDefined();
   });
 });

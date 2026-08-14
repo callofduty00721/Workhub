@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, FolderKanban, Trophy, Megaphone, ClipboardList } from "lucide-react";
+import { Briefcase, FolderKanban, Trophy, Megaphone, HandCoins, ClipboardList } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OrderStatusPanel } from "@/components/payments/OrderStatusPanel";
+import { OrderStatusPanel } from "@/pages/payments/OrderStatusPanel";
 import { paymentApi } from "@/api/payments";
 import { useAuth } from "@/context/AuthContext";
 import { formatCurrency, initialsFromName } from "@/lib/utils";
@@ -15,6 +15,7 @@ const TYPE_LABELS: Record<PaymentType, string> = {
   job_hire: "Job / Project",
   contest_prize: "Contest Prize",
   campaign: "Influencer Campaign",
+  campaign_facilitation: "Off-Platform Facilitation Fee",
 };
 
 const TYPE_ICONS: Record<PaymentType, typeof Briefcase> = {
@@ -22,6 +23,7 @@ const TYPE_ICONS: Record<PaymentType, typeof Briefcase> = {
   job_hire: FolderKanban,
   contest_prize: Trophy,
   campaign: Megaphone,
+  campaign_facilitation: HandCoins,
 };
 
 export default function FreelancerOrders() {
@@ -61,7 +63,7 @@ export default function FreelancerOrders() {
                 <CardContent className="p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-white">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
                         {payer ? initialsFromName(payer.name) : <Icon className="h-4 w-4" />}
                       </div>
                       <div className="min-w-0">

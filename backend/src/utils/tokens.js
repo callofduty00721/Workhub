@@ -15,7 +15,23 @@ export const signRefreshToken = (user) =>
 export const verifyAccessToken = (token) => jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 export const verifyRefreshToken = (token) => jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
-export const REFRESH_COOKIE_NAME = "mahahub_rt";
+// Short-lived "ticket" holding a not-yet-created signup's details (name,
+// email or phone, password, role, referralCode, plus an email OTP hash when
+// channel is "email") between /auth/register and /auth/verify-otp — the
+// account itself isn't created until the code is confirmed, so there's no
+// user row to attach this state to in the meantime. `purpose` is checked on
+// verify so this can never be replayed as a real access token even though it
+// shares a secret with one.
+export const signPendingRegistrationToken = (payload) =>
+  jwt.sign({ ...payload, purpose: "pending_registration" }, process.env.JWT_ACCESS_SECRET, { expiresIn: "10m" });
+
+export const verifyPendingRegistrationToken = (token) => {
+  const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+  if (payload.purpose !== "pending_registration") throw new Error("Invalid token purpose");
+  return payload;
+};
+
+export const REFRESH_COOKIE_NAME = "growhive_rt";
 
 export const refreshCookieOptions = {
   httpOnly: true,

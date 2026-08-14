@@ -34,6 +34,25 @@ export const getMyCompany = asyncHandler(async (req, res) => {
   res.json({ success: true, data: company });
 });
 
+// Public counterpart to getMyCompany — for a profile page's "Team" tab, not
+// the owner-only company-management flow. No email (that's only ever shown
+// to the company's own admins via getMyCompany), and no admin/member role on
+// each entry — a visiting influencer doesn't need to know who's an admin.
+export const getPublicCompany = asyncHandler(async (req, res) => {
+  const company = await Company.findById(req.params.id).populate("members.user", "name avatar headline");
+  if (!company) throw new ApiError(404, "Company not found");
+
+  res.json({
+    success: true,
+    data: {
+      name: company.name,
+      members: company.members
+        .filter((m) => m.user)
+        .map((m) => ({ name: m.user.name, avatar: m.user.avatar, headline: m.user.headline })),
+    },
+  });
+});
+
 export const inviteMember = asyncHandler(async (req, res) => {
   if (!req.user.company) throw new ApiError(400, "You're not part of a company yet");
 
@@ -60,7 +79,14 @@ export const inviteMember = asyncHandler(async (req, res) => {
   invitee.company = company._id;
   await invitee.save();
 
-  const postingType = invitee.role === "client" ? "projects" : invitee.role === "freelancer" ? "gigs" : "job postings";
+  const postingType =
+    invitee.role === "client"
+      ? "projects"
+      : invitee.role === "freelancer"
+        ? "gigs"
+        : invitee.role === "agency" || invitee.role === "talent_partner" || invitee.role === "brand"
+          ? "campaigns"
+          : "job postings";
   const teamLink =
     invitee.role === "client" ? "/dashboard/client/company" : invitee.role === "freelancer" ? "/dashboard/freelancer/company" : "/dashboard/employer/company";
   await notify(req.app, {

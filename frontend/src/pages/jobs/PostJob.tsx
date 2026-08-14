@@ -22,7 +22,7 @@ import { jobApi } from "@/api/jobs";
 import { uploadApi } from "@/api/uploads";
 import { freelancerApi } from "@/api/freelancers";
 import { initialsFromName } from "@/lib/utils";
-import { JOB_CATEGORIES } from "@/types";
+import { JOB_CATEGORIES, COMPANY_TYPES, INDUSTRY_TYPES, INDUSTRY_SUB_INDUSTRIES } from "@/types";
 import type { JobAttachment, JobVisibility } from "@/types";
 
 // Traditional employment only — freelance/contract "Projects" have their own
@@ -40,7 +40,12 @@ const schema = z.object({
   category: z.enum(JOB_CATEGORIES),
   experienceLevel: z.enum(EXPERIENCE_LEVELS),
   role: z.string().optional(),
+  // Not z.enum — INDUSTRY_TYPES is derived at runtime from
+  // INDUSTRY_SUB_INDUSTRIES' keys (Object.keys), not a `readonly [...] as
+  // const` tuple, so its element type is a plain `string`.
   industryType: z.string().optional(),
+  subIndustry: z.string().optional(),
+  companyType: z.enum(COMPANY_TYPES).optional().or(z.literal("")),
   department: z.string().optional(),
   roleCategory: z.string().optional(),
   educationUG: z.string().optional(),
@@ -70,11 +75,16 @@ export default function PostJob() {
     handleSubmit,
     control,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { type: "full_time", category: "Other", experienceLevel: "entry", isRemote: false, salaryMin: 0, salaryMax: 0 },
   });
+
+  const selectedIndustry = watch("industryType");
+  const subIndustryOptions = selectedIndustry ? INDUSTRY_SUB_INDUSTRIES[selectedIndustry] ?? [] : [];
 
   const [visibility, setVisibility] = useState<JobVisibility>("public");
   const [requiresNda, setRequiresNda] = useState(false);
@@ -99,6 +109,8 @@ export default function PostJob() {
         experienceLevel: existing.experienceLevel,
         role: existing.role ?? "",
         industryType: existing.industryType ?? "",
+        subIndustry: existing.subIndustry ?? "",
+        companyType: existing.companyType ?? "",
         department: existing.department ?? "",
         roleCategory: existing.roleCategory ?? "",
         educationUG: existing.educationUG ?? "",
@@ -179,7 +191,7 @@ export default function PostJob() {
   // the create flow, not isEdit.
   if (!isEdit && user?.role === "employer" && !user.isVerified) {
     return (
-      <DashboardLayout role="employer" title="Post a Job" subtitle="Reach qualified candidates on MahaHub.">
+      <DashboardLayout role="employer" title="Post a Job" subtitle="Reach qualified candidates on GrowHive.">
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <ShieldAlert className="h-8 w-8 text-muted-foreground" />
@@ -197,7 +209,7 @@ export default function PostJob() {
   }
 
   return (
-    <DashboardLayout role="employer" title={isEdit ? "Edit Job" : "Post a Job"} subtitle="Reach qualified candidates on MahaHub.">
+    <DashboardLayout role="employer" title={isEdit ? "Edit Job" : "Post a Job"} subtitle="Reach qualified candidates on GrowHive.">
       <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="space-y-6" noValidate>
         <FormGuidelines
           tips={[
@@ -337,8 +349,78 @@ export default function PostJob() {
                 <Input id="role" placeholder="e.g. Full Stack Developer" {...register("role")} />
               </div>
               <div className="space-y-2">
-                <FieldLabel htmlFor="industryType" info="Your company's industry, e.g. 'IT Services & Consulting'.">Industry Type</FieldLabel>
-                <Input id="industryType" placeholder="e.g. IT Services & Consulting" {...register("industryType")} />
+                <FieldLabel info="Your company's industry — same list as naukri.com.">Industry Type</FieldLabel>
+                <Controller
+                  control={control}
+                  name="industryType"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || "none"}
+                      onValueChange={(v) => {
+                        field.onChange(v === "none" ? "" : v);
+                        setValue("subIndustry", "");
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select industry" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Not specified</SelectItem>
+                        {INDUSTRY_TYPES.map((ind) => (
+                          <SelectItem key={ind} value={ind}>
+                            {ind}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              {subIndustryOptions.length > 0 && (
+                <div className="space-y-2">
+                  <FieldLabel info="A more specific classification within the selected industry.">Sub-Industry</FieldLabel>
+                  <Controller
+                    control={control}
+                    name="subIndustry"
+                    render={({ field }) => (
+                      <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select sub-industry" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not specified</SelectItem>
+                          {subIndustryOptions.map((sub) => (
+                            <SelectItem key={sub} value={sub}>
+                              {sub}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <FieldLabel info="How candidates can filter by the kind of company this is — same categories as naukri.com.">Company Type</FieldLabel>
+                <Controller
+                  control={control}
+                  name="companyType"
+                  render={({ field }) => (
+                    <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select company type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Not specified</SelectItem>
+                        {COMPANY_TYPES.map((ct) => (
+                          <SelectItem key={ct} value={ct}>
+                            {ct}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <FieldLabel htmlFor="department" info="Which department this role sits in, e.g. 'Engineering - Software & QA'.">Department</FieldLabel>
@@ -436,8 +518,8 @@ export default function PostJob() {
             </label>
             {requiresNda && (
               <div className="space-y-2">
-                <FieldLabel info="Write your own NDA, or leave blank to use MahaHub's default one.">
-                  NDA Text (optional — leave blank to use the standard MahaHub NDA)
+                <FieldLabel info="Write your own NDA, or leave blank to use GrowHive's default one.">
+                  NDA Text (optional — leave blank to use the standard GrowHive NDA)
                 </FieldLabel>
                 <Textarea
                   value={ndaText}
@@ -513,7 +595,7 @@ export default function PostJob() {
                       return (
                         <div key={f._id} className="flex items-center justify-between gap-2 px-1.5 py-1 text-sm">
                           <span className="flex items-center gap-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-[10px] font-semibold text-white">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">
                               {initialsFromName(f.name)}
                             </span>
                             {f.name}

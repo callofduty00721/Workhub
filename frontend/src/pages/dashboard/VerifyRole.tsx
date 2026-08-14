@@ -36,7 +36,7 @@ export default function VerifyRole() {
   const status = user.verificationStatus ?? "unverified";
 
   return (
-    <DashboardLayout role={sidebarRole} title="Account Verification" subtitle="Verify your account to unlock high-risk actions on MahaHub.">
+    <DashboardLayout role={sidebarRole} title="Account Verification" subtitle="Verify your account to unlock high-risk actions on GrowHive.">
       <Card>
         <CardContent className="space-y-5 p-6">
           <div className="flex items-center justify-between">

@@ -1,15 +1,23 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-export function Logo({ className }: { className?: string }) {
+// Navbar/Footer always sit on a dark (bg-black) surface regardless of page
+// theme, so "Grow" defaults to white. AuthShell's left column is a light
+// surface — pass variant="light" there so "Grow" stays readable instead of
+// rendering white-on-white.
+export function Logo({ className, variant = "dark" }: { className?: string; variant?: "dark" | "light" } = {}) {
   return (
-    <Link to="/" className={cn("flex items-center gap-2.5 shrink-0", className)}>
-      <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-glow">
-        <span className="text-base font-bold text-white">M</span>
-      </span>
-      <span className="flex flex-col leading-none">
-        <span className="text-lg font-extrabold tracking-tight text-foreground">MahaHub</span>
-        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Connect · Build · Grow</span>
+    <Link
+      to="/"
+      className={cn(
+        "flex items-center gap-0.5 text-2xl font-extrabold tracking-tight select-none",
+        className
+      )}
+      aria-label="GrowHive home"
+    >
+      <span className={variant === "light" ? "text-black" : "text-white"}>Grow</span>
+      <span className="bg-gradient-to-b from-[#E8FF25] to-[#22C55E] bg-clip-text text-transparent">
+        Hive
       </span>
     </Link>
   );

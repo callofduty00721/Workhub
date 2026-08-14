@@ -102,7 +102,7 @@ export default function FounderInvestors() {
               <Card key={inv._id}>
                 <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-white">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
                       {inv.investor.avatar ? <img src={inv.investor.avatar} alt="" className="h-full w-full rounded-full object-cover" /> : initialsFromName(inv.investor.name)}
                     </div>
                     <div className="min-w-0">

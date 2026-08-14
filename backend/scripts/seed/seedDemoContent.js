@@ -1,6 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 import Service from "../../src/modules/marketplace/service.model.js";
 import Job from "../../src/modules/jobs/job.model.js";
@@ -12,7 +13,7 @@ const DEMO_PASSWORD = "Demo@12345";
 const FREELANCERS = [
   {
     name: "Aditi Kulkarni",
-    email: "aditi.kulkarni@mahahub.demo",
+    email: "aditi.kulkarni@growhive.demo",
     headline: "ग्राफिक डिझायनर आणि ब्रँड आयडेंटिटी स्पेशालिस्ट",
     bio: "मी ५ वर्षांपासून लोगो, ब्रँडिंग आणि सोशल मीडिया डिझाईनचे काम करते. स्टार्टअप्सना त्यांची व्हिज्युअल ओळख तयार करण्यात मदत करते.",
     location: "Pune, Maharashtra, India",
@@ -22,7 +23,7 @@ const FREELANCERS = [
   },
   {
     name: "Rohan Sharma",
-    email: "rohan.sharma@mahahub.demo",
+    email: "rohan.sharma@growhive.demo",
     headline: "फुल-स्टैक वेब डेवलपर (React और Node.js)",
     bio: "मैं पिछले 4 सालों से React, Node.js और MongoDB के साथ वेब एप्लिकेशन बना रहा हूं। स्टार्टअप्स के लिए तेज़ और स्केलेबल प्रोडक्ट बनाना पसंद है।",
     location: "New Delhi, India",
@@ -32,7 +33,7 @@ const FREELANCERS = [
   },
   {
     name: "Sarah Fernandes",
-    email: "sarah.fernandes@mahahub.demo",
+    email: "sarah.fernandes@growhive.demo",
     headline: "Content Writer & SEO Strategist",
     bio: "I help startups and small businesses tell their story through clear, engaging, and SEO-optimized content — blogs, landing pages, and product copy.",
     location: "Bengaluru, Karnataka, India",
@@ -44,15 +45,15 @@ const FREELANCERS = [
 
 const CLIENT = {
   name: "Priya Deshmukh",
-  email: "priya.deshmukh@mahahub.demo",
-  headline: "Founder, MahaHub Ventures",
-  companyName: "MahaHub Ventures",
+  email: "priya.deshmukh@growhive.demo",
+  headline: "Founder, GrowHive Ventures",
+  companyName: "GrowHive Ventures",
   location: "Mumbai, Maharashtra, India",
 };
 
 const EMPLOYER = {
   name: "Vikram Joshi",
-  email: "vikram.joshi@mahahub.demo",
+  email: "vikram.joshi@growhive.demo",
   headline: "HR Manager, TechNova Solutions",
   companyName: "TechNova Solutions",
   location: "Bengaluru, Karnataka, India",
@@ -83,6 +84,7 @@ async function upsertByTitle(Model, filter, payload) {
 }
 
 async function run() {
+  assertNotProduction("seedDemoContent");
   await connectDB();
 
   const [aditi, rohan, sarah] = await Promise.all(FREELANCERS.map((f) => upsertUser(f, "freelancer")));

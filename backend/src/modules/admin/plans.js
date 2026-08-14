@@ -8,7 +8,7 @@ export const listPlans = asyncHandler(async (req, res) => {
 });
 
 export const updatePlan = asyncHandler(async (req, res) => {
-  const { name, priceInInr, features, maxListings } = req.body;
+  const { name, priceInInr, priceInInrYearly, features, maxListings } = req.body;
 
   const plan = await Plan.findById(req.params.id);
   if (!plan) throw new ApiError(404, "Plan not found");
@@ -20,6 +20,10 @@ export const updatePlan = asyncHandler(async (req, res) => {
   if (priceInInr !== undefined) {
     if (typeof priceInInr !== "number" || priceInInr < 0) throw new ApiError(400, "Price must be 0 or more");
     plan.priceInInr = priceInInr;
+  }
+  if (priceInInrYearly !== undefined) {
+    if (typeof priceInInrYearly !== "number" || priceInInrYearly < 0) throw new ApiError(400, "Yearly price must be 0 or more");
+    plan.priceInInrYearly = priceInInrYearly;
   }
   if (features !== undefined) {
     if (!Array.isArray(features)) throw new ApiError(400, "Features must be a list");

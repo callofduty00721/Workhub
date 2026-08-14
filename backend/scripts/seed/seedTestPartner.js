@@ -1,13 +1,14 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 
 const DEMO_PASSWORD = "Demo@12345";
 
 const PARTNER = {
   name: "Anjali Rao",
-  email: "anjali.rao@mahahub.demo",
+  email: "anjali.rao@growhive.demo",
   organizationName: "Sahyadri Startup Accelerator",
   partnerType: "accelerator",
   programDetails: "A 12-week accelerator program for early-stage startups across Maharashtra, offering mentorship, seed funding connections, and office space.",
@@ -17,6 +18,7 @@ const PARTNER = {
 };
 
 async function run() {
+  assertNotProduction("seedTestPartner");
   await connectDB();
   let user = await User.findOne({ email: PARTNER.email });
   if (!user) {

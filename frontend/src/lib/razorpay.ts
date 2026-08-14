@@ -48,7 +48,7 @@ export async function payWithRazorpay(opts: {
     amount: order.amount,
     currency: order.currency,
     order_id: order.orderId,
-    name: "MahaHub",
+    name: "GrowHive",
     description: opts.description,
     handler: async (response: RazorpayVerifyPayload) => {
       await opts.verify(response);

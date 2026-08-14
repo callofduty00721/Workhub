@@ -78,19 +78,19 @@ export function JoinTeamModal({
         </DialogHeader>
 
         {role ? (
-          <div className="mb-4 flex items-center gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e8effe] text-[#2563eb]">
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted p-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
               <Users2 className="h-4.5 w-4.5" />
             </span>
             <div className="min-w-0">
-              <p className="text-[13px] font-bold text-[#0f172a]">{role.title}</p>
-              <p className="text-[11.5px] text-[#64748b]">
+              <p className="text-[13px] font-bold text-foreground">{role.title}</p>
+              <p className="text-[11.5px] text-muted-foreground">
                 {role.type === "full_time" ? "Full Time" : "Part Time"} · {WORK_MODE_LABELS[role.workMode]}
               </p>
               {(role.requiredSkills?.length ?? 0) > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {role.requiredSkills!.map((skill) => (
-                    <span key={skill} className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#7c3aed]">
+                    <span key={skill} className="rounded-full bg-card px-1.5 py-0.5 text-[10px] font-semibold text-brand">
                       {skill}
                     </span>
                   ))}
@@ -134,7 +134,7 @@ export function JoinTeamModal({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-lg border border-[#e2e8f0] px-4 py-2 text-[12.5px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
+            className="rounded-lg border border-border px-4 py-2 text-[12.5px] font-bold text-foreground hover:bg-muted"
           >
             Cancel
           </button>
@@ -142,7 +142,7 @@ export function JoinTeamModal({
             type="button"
             disabled={!canSubmit || mutation.isPending}
             onClick={() => mutation.mutate()}
-            className="flex items-center gap-1.5 rounded-lg bg-[#2563eb] px-4 py-2 text-[12.5px] font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[12.5px] font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Send Application
           </button>

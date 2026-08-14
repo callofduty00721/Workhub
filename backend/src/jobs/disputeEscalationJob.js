@@ -1,6 +1,7 @@
 import Payment from "../modules/shared/payment.model.js";
 import User from "../modules/shared/user.model.js";
 import { notify } from "../utils/notify.js";
+import { logger } from "../utils/logger.js";
 
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // every 6 hours
 const ESCALATE_AFTER_DAYS = 5;
@@ -40,7 +41,7 @@ export async function escalateStaleDisputes(app) {
 
 export function startDisputeEscalationJob(app) {
   const run = () => {
-    escalateStaleDisputes(app).catch((err) => console.error("Dispute escalation job failed:", err.message));
+    escalateStaleDisputes(app).catch((err) => logger.error("Dispute escalation job failed", { error: err.message }));
   };
 
   run();

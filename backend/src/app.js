@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
+import mongoose from "mongoose";
 
 import authRoutes from "./modules/shared/auth.routes.js";
 import userRoutes from "./modules/shared/user.routes.js";
@@ -44,13 +46,24 @@ import taskRoutes from "./modules/productivity/task.routes.js";
 import influencerRoutes from "./modules/campaign/influencer.routes.js";
 import contactRoutes from "./modules/shared/contact.routes.js";
 import publicSettingsRoutes from "./modules/shared/publicSettings.routes.js";
+import publicProfileRoutes from "./modules/shared/publicProfile.routes.js";
+import talentRosterRoutes from "./modules/campaign/talentRoster.routes.js";
+import agencyClientRoutes from "./modules/campaign/agencyClient.routes.js";
 import { stripeWebhook } from "./modules/finance/subscription.controller.js";
 import { razorpayWebhook } from "./modules/finance/webhooks.controller.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
+import { requireTrustedOrigin } from "./middleware/originCheck.js";
+import { morganStream } from "./utils/logger.js";
+import { createRateLimitStore, userOrIpKeyGenerator } from "./utils/rateLimitStore.js";
 
 const app = express();
 
-app.use(helmet());
+// Helmet's default Cross-Origin-Opener-Policy ("same-origin") blocks the
+// window.postMessage traffic Google Identity Services' Sign-In button needs
+// between the page and Google's popup/iframe — "same-origin-allow-popups" is
+// Google's own recommended relaxation, and still blocks the cross-origin
+// window-reference attacks COOP exists for.
+app.use(helmet({ crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" } }));
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
@@ -66,18 +79,40 @@ app.post("/api/payments/razorpay/webhook", express.raw({ type: "application/json
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-if (process.env.NODE_ENV !== "test") app.use(morgan("dev"));
+app.use(mongoSanitize());
+if (process.env.NODE_ENV !== "test") app.use(morgan("dev", { stream: morganStream }));
 
+const GLOBAL_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
+    windowMs: GLOBAL_RATE_LIMIT_WINDOW_MS,
     limit: 300,
     standardHeaders: true,
     legacyHeaders: false,
+    // Per-user for logged-in requests, IP for everyone else — see
+    // userOrIpKeyGenerator's comment (a real load test showed a plain IP key
+    // lets unrelated users behind one NAT exhaust each other's budget).
+    keyGenerator: userOrIpKeyGenerator,
+    // Shared across instances once REDIS_URL is set (falls back to
+    // per-process in-memory otherwise, same as before) — see rateLimitStore.js.
+    store: createRateLimitStore(GLOBAL_RATE_LIMIT_WINDOW_MS, "global"),
   })
 );
 
+// Liveness: is the process itself up (health check doesn't touch anything else).
 app.get("/api/health", (req, res) => res.json({ success: true, status: "ok", uptime: process.uptime() }));
+
+// Readiness: can this instance actually serve requests — i.e. is Mongo
+// connected. Load balancers/orchestrators should probe this one, not /health,
+// before routing traffic to an instance.
+app.get("/api/health/ready", (req, res) => {
+  const mongoConnected = mongoose.connection.readyState === 1;
+  res.status(mongoConnected ? 200 : 503).json({
+    success: mongoConnected,
+    status: mongoConnected ? "ok" : "not ready",
+    dependencies: { mongo: mongoConnected ? "connected" : "disconnected" },
+  });
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -118,6 +153,9 @@ app.use("/api/job-seekers", jobSeekerRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/influencers", influencerRoutes);
 app.use("/api/settings", publicSettingsRoutes);
+app.use("/api/public-profiles", publicProfileRoutes);
+app.use("/api/talent-roster", talentRosterRoutes);
+app.use("/api/agency-clients", agencyClientRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

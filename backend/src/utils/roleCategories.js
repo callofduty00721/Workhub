@@ -7,7 +7,12 @@ export const CATEGORIES = ["talent", "hiring", "startup"];
 
 export const CATEGORY_ROLES = {
   talent: ["freelancer", "job_seeker", "influencer"],
-  hiring: ["employer", "client"],
+  // brand/agency/talent_partner all hire influencers via the same Campaign
+  // flow as employer/client (see campaign.routes.js) — three names for who's
+  // doing the hiring (an in-house brand team, an agency buying on a client's
+  // behalf, or a talent-partner buying across the roster it represents), not
+  // three different flows.
+  hiring: ["employer", "client", "brand", "agency", "talent_partner"],
   startup: ["founder", "partner", "investor", "mentor"],
 };
 
@@ -25,6 +30,10 @@ export function categoryForRole(role) {
 // action never accidentally requires verification.
 export const ACTION_VERIFICATION_MAP = {
   employer: ["post_job", "post_campaign"],
+  client: ["post_project", "post_campaign"],
+  brand: ["post_campaign"],
+  agency: ["post_campaign"],
+  talent_partner: ["post_campaign"],
   founder: ["post_paid_job", "pitch_investor"],
   investor: ["contact_startup"],
 };

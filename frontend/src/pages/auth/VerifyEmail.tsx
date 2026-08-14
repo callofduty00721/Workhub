@@ -27,7 +27,7 @@ export default function VerifyEmail() {
   return (
     <AuthShell
       title="Email Verification"
-      subtitle="Confirming your MahaHub account"
+      subtitle="Confirming your GrowHive account"
       footer={
         <Link to="/login" className="font-semibold text-primary hover:underline">
           Back to log in

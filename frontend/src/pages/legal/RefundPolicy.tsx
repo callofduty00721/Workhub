@@ -4,7 +4,7 @@ export default function RefundPolicy() {
   return (
     <LegalPage title="Refund Policy" updatedAt="22 July 2026">
       <p>
-        This policy explains when and how refunds are issued for payments made through MahaHub. It applies to Gig orders, Job/Project
+        This policy explains when and how refunds are issued for payments made through GrowHive. It applies to Gig orders, Job/Project
         hires, milestone payments, and hourly payments.
       </p>
 
@@ -23,12 +23,12 @@ export default function RefundPolicy() {
       <h2>3. Raising a Dispute</h2>
       <p>
         If a freelancer doesn't deliver, delivers work that doesn't match the agreed scope, or you're otherwise unable to resolve things
-        directly, you can raise a dispute on the payment. A MahaHub admin will review the order details, delivered files, and messages
+        directly, you can raise a dispute on the payment. A GrowHive admin will review the order details, delivered files, and messages
         between both parties before making a decision.
       </p>
       <ul>
         <li>Disputes should be raised as soon as possible — ideally within 7 days of the issue.</li>
-        <li>If a freelancer does not respond to a dispute within 5 business days, MahaHub may resolve it in the client's favor based on
+        <li>If a freelancer does not respond to a dispute within 5 business days, GrowHive may resolve it in the client's favor based on
           available evidence.
         </li>
         <li>Admin decisions may result in a full refund, a partial refund, or the payment being released to the freelancer as originally

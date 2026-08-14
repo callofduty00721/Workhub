@@ -65,12 +65,12 @@ const EMPTY_PACKAGE = (name: PackageName): ServicePackage => ({ name, title: "",
 const PACKAGE_ACCENT: Record<PackageName, string> = {
   basic: "border-success/30 bg-success/5",
   standard: "border-blue-500/30 bg-blue-500/5",
-  premium: "border-[#5B3DF5]/30 bg-[#5B3DF5]/5",
+  premium: "border-brand/30 bg-brand/5",
 };
 const PACKAGE_LABEL_ACCENT: Record<PackageName, string> = {
   basic: "text-success",
   standard: "text-blue-600",
-  premium: "text-[#5B3DF5]",
+  premium: "text-brand",
 };
 const PACKAGE_DEFAULT_COPY: Record<PackageName, string> = {
   basic: "Perfect for small projects and basic requirements.",
@@ -466,13 +466,13 @@ export default function CreateGig() {
                             type="button"
                             onClick={() => setValue("experienceLevel", key)}
                             className={`relative rounded-lg border p-3 text-left transition-colors ${
-                              selected ? "border-[#5B3DF5] bg-[#F3F0FF]" : "border-[#E5E7EB] bg-card hover:border-[#5B3DF5]/40"
+                              selected ? "border-brand bg-brand/10" : "border-border bg-card hover:border-brand/40"
                             }`}
                           >
                             <div className="flex items-center gap-2">
                               <span
                                 className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                                  selected ? "border-[#5B3DF5] bg-[#5B3DF5]" : "border-border"
+                                  selected ? "border-brand bg-brand" : "border-border"
                                 }`}
                               >
                                 {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
@@ -481,7 +481,7 @@ export default function CreateGig() {
                             </div>
                             <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
                             {selected && (
-                              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5B3DF5] text-white">
+                              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-brand-foreground">
                                 <Check className="h-2.5 w-2.5" />
                               </span>
                             )}
@@ -499,12 +499,12 @@ export default function CreateGig() {
                   </div>
 
                   {showTip && (
-                    <div className="flex items-start gap-2 rounded-lg bg-[#F3F0FF] p-3 text-xs text-[#4C2FD6]">
+                    <div className="flex items-start gap-2 rounded-lg bg-brand/10 p-3 text-xs text-brand">
                       <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" />
                       <p className="flex-1">
                         <span className="font-semibold">Pro Tip:</span> A clear and specific title helps you get more views and orders.
                       </p>
-                      <button type="button" onClick={() => setShowTip(false)} className="text-[#4C2FD6]/70 hover:text-[#4C2FD6]" aria-label="Dismiss tip">
+                      <button type="button" onClick={() => setShowTip(false)} className="text-brand/70 hover:text-brand" aria-label="Dismiss tip">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -576,7 +576,7 @@ export default function CreateGig() {
                           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <input
                               type="checkbox"
-                              className="h-3.5 w-3.5 rounded border-border accent-[#5B3DF5]"
+                              className="h-3.5 w-3.5 rounded border-border accent-brand"
                               checked={watch("revisions") === -1}
                               onChange={(e) => setValue("revisions", e.target.checked ? -1 : 1)}
                             />
@@ -596,8 +596,8 @@ export default function CreateGig() {
                                 <span className={`text-base font-bold capitalize ${PACKAGE_LABEL_ACCENT[pkg.name]}`}>{pkg.name}</span>
                                 <div className="flex items-center gap-1.5">
                                   {pkg.name === "standard" && (
-                                    <Badge className="gap-1 border-transparent bg-[#F3F0FF] text-[10px] text-[#5B3DF5]">
-                                      <Star className="h-2.5 w-2.5 fill-[#5B3DF5]" /> Recommended
+                                    <Badge className="gap-1 border-transparent bg-brand/10 text-[10px] text-brand">
+                                      <Star className="h-2.5 w-2.5 fill-brand" /> Recommended
                                     </Badge>
                                   )}
                                   <DropdownMenu>
@@ -659,7 +659,7 @@ export default function CreateGig() {
                                   <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                     <input
                                       type="checkbox"
-                                      className="h-3 w-3 rounded border-border accent-[#5B3DF5]"
+                                      className="h-3 w-3 rounded border-border accent-brand"
                                       checked={pkg.revisions === -1}
                                       onChange={(e) => updatePackage(i, { revisions: e.target.checked ? -1 : 1 })}
                                     />
@@ -739,7 +739,7 @@ export default function CreateGig() {
 
                       {pricingError && <p className="text-xs text-danger">{pricingError}</p>}
 
-                      <div className="flex items-start gap-2 rounded-lg bg-[#F3F0FF] p-3 text-xs text-[#4C2FD6]">
+                      <div className="flex items-start gap-2 rounded-lg bg-brand/10 p-3 text-xs text-brand">
                         <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" />
                         <p>Click "Edit Features" on any package to customize its title, description and feature list.</p>
                       </div>
@@ -758,7 +758,7 @@ export default function CreateGig() {
                     <FieldLabel htmlFor="description" info="Explain what's included in simple words.">
                       Service Description
                     </FieldLabel>
-                    <div className="flex items-center gap-1 rounded-t-lg border border-b-0 border-[#E5E7EB] bg-muted/40 p-1.5">
+                    <div className="flex items-center gap-1 rounded-t-lg border border-b-0 border-border bg-muted/40 p-1.5">
                       <button type="button" onClick={() => applyDescMarker("**")} className="rounded p-1.5 hover:bg-muted" aria-label="Bold">
                         <Bold className="h-3.5 w-3.5" />
                       </button>
@@ -775,7 +775,7 @@ export default function CreateGig() {
                     <Textarea
                       id="description"
                       placeholder="Describe what's included in this gig..."
-                      className="min-h-[140px] rounded-t-none border-[#E5E7EB] focus-visible:ring-[#5B3DF5]"
+                      className="min-h-[140px] rounded-t-none border-border focus-visible:ring-brand"
                       {...descRegister}
                       ref={(el) => {
                         descRhfRef(el);
@@ -813,7 +813,7 @@ export default function CreateGig() {
                         />
                       )}
                       {images.map((url, i) => (
-                        <div key={i} className="group relative aspect-square overflow-hidden rounded-lg border border-[#E5E7EB]">
+                        <div key={i} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
                           <img src={url} alt="" className="h-full w-full object-cover" />
                           <button
                             type="button"
@@ -830,7 +830,7 @@ export default function CreateGig() {
                     </p>
                   </div>
 
-                  <div className="space-y-2 border-t border-[#E5E7EB] pt-5">
+                  <div className="space-y-2 border-t border-border pt-5">
                     <div>
                       <h2 className="text-base font-semibold">Video (Optional)</h2>
                       <p className="text-xs text-muted-foreground">Add a video to better explain your service.</p>
@@ -856,7 +856,7 @@ export default function CreateGig() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 border-t border-[#E5E7EB] pt-5">
+                  <div className="space-y-3 border-t border-border pt-5">
                     <div>
                       <h2 className="text-base font-semibold">Extras (Upsell Services)</h2>
                       <p className="text-xs text-muted-foreground">Offer additional services to increase your earnings.</p>
@@ -865,7 +865,7 @@ export default function CreateGig() {
                       {EXTRAS_PRESETS.map(({ label, description, defaultPrice, icon: Icon }) => {
                         const active = extras.find((e) => e.label === label);
                         return (
-                          <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-[#E5E7EB] p-3">
+                          <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
                             <div className="flex items-center gap-3">
                               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                                 <Icon className="h-4 w-4" />
@@ -885,7 +885,7 @@ export default function CreateGig() {
                       {extras
                         .filter((e) => !EXTRAS_PRESETS.some((p) => p.label === e.label))
                         .map((extra) => (
-                          <div key={extra.label} className="flex items-center justify-between gap-3 rounded-lg border border-[#E5E7EB] p-3">
+                          <div key={extra.label} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
                             <div className="flex items-center gap-3">
                               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                                 <Plus className="h-4 w-4" />
@@ -910,7 +910,7 @@ export default function CreateGig() {
                         ))}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-[#E5E7EB] p-3">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
                       <Input
                         value={customExtraLabel}
                         onChange={(e) => setCustomExtraLabel(e.target.value)}
@@ -965,11 +965,11 @@ export default function CreateGig() {
                                 type="button"
                                 onClick={() => setValue("status", key)}
                                 className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                                  selected ? "border-[#5B3DF5] bg-[#F3F0FF]" : "border-[#E5E7EB] bg-card hover:border-[#5B3DF5]/40"
+                                  selected ? "border-brand bg-brand/10" : "border-border bg-card hover:border-brand/40"
                                 }`}
                               >
                                 {selected ? (
-                                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#5B3DF5] bg-[#5B3DF5]">
+                                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-brand bg-brand">
                                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
                                   </span>
                                 ) : (
@@ -1002,7 +1002,7 @@ export default function CreateGig() {
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Gig Title Preview</Label>
                         <p className="text-xs text-muted-foreground">This is how your title will appear in search results.</p>
-                        <div className="rounded-lg border border-[#E5E7EB] bg-muted/40 px-3.5 py-2.5 text-sm">
+                        <div className="rounded-lg border border-border bg-muted/40 px-3.5 py-2.5 text-sm">
                           {watchedTitle || "Your gig title will appear here"}
                         </div>
                         <p className="text-[11px] text-muted-foreground">
@@ -1075,14 +1075,14 @@ export default function CreateGig() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-2.5 rounded-lg bg-[#F3F0FF] p-4">
-                    <Shield className="mt-0.5 h-4 w-4 shrink-0 text-[#5B3DF5]" />
+                  <div className="flex items-start gap-2.5 rounded-lg bg-brand/10 p-4">
+                    <Shield className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-[#4C2FD6]">Your Gig is Almost Ready!</p>
-                      <p className="flex items-center gap-1.5 text-xs text-[#4C2FD6]">
+                      <p className="text-sm font-semibold text-brand">Your Gig is Almost Ready!</p>
+                      <p className="flex items-center gap-1.5 text-xs text-brand">
                         <Check className="h-3 w-3 shrink-0" /> You can preview how your gig will look to buyers on the right.
                       </p>
-                      <p className="flex items-center gap-1.5 text-xs text-[#4C2FD6]">
+                      <p className="flex items-center gap-1.5 text-xs text-brand">
                         <Check className="h-3 w-3 shrink-0" /> Once published, your gig will be live and visible in search results.
                       </p>
                     </div>
@@ -1132,7 +1132,7 @@ export default function CreateGig() {
               </div>
             ) : (
               STEP_SIDE_TIPS[step] && (
-                <div className="flex items-start gap-2 rounded-lg bg-[#F3F0FF] p-3 text-xs text-[#4C2FD6]">
+                <div className="flex items-start gap-2 rounded-lg bg-brand/10 p-3 text-xs text-brand">
                   <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <p className="font-semibold">Pro Tip</p>
@@ -1144,7 +1144,7 @@ export default function CreateGig() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-card p-4">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
           <div>
             {step > 1 && (
               <Button type="button" variant="outline" onClick={goBack}>
@@ -1160,11 +1160,11 @@ export default function CreateGig() {
               Cancel
             </Button>
             {step < STEPS.length ? (
-              <Button key="continue" type="button" className="bg-[#5B3DF5] text-white hover:bg-[#4C2FD6]" onClick={goNext}>
+              <Button key="continue" type="button" className="bg-brand text-brand-foreground hover:brightness-90" onClick={goNext}>
                 Save &amp; Continue <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
-              <Button key="submit" type="submit" className="bg-success text-white hover:opacity-90" disabled={isSubmitting || mutation.isPending}>
+              <Button key="submit" type="submit" className="bg-success text-success-foreground hover:opacity-90" disabled={isSubmitting || mutation.isPending}>
                 {(isSubmitting || mutation.isPending) && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isEdit ? "Save Changes" : watch("status") === "draft" ? "Save as Draft" : "Publish Gig"}
               </Button>
@@ -1190,10 +1190,10 @@ function TagsChipInput({ tags, onChange, max }: { tags: string[]; onChange: (tag
   return (
     <div className="flex min-h-11 flex-wrap items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-ring">
       {tags.map((tag) => (
-        <span key={tag} className="flex items-center gap-1 rounded-md bg-[#F3F0FF] px-2 py-1 text-xs font-medium text-[#5B3DF5]">
+        <span key={tag} className="flex items-center gap-1 rounded-md bg-brand/10 px-2 py-1 text-xs font-medium text-brand">
           {tag}
           <button type="button" onClick={() => removeTag(tag)} aria-label={`Remove ${tag}`}>
-            <X className="h-3 w-3 text-[#5B3DF5]/70 hover:text-[#5B3DF5]" />
+            <X className="h-3 w-3 text-brand/70 hover:text-brand" />
           </button>
         </span>
       ))}
@@ -1304,7 +1304,7 @@ function SkillsChipInput({
 function SectionHeader({ icon: Icon, title, subtitle }: { icon: LucideIcon; title: string; subtitle: string }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3F0FF] text-[#5B3DF5]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
         <Icon className="h-4.5 w-4.5" />
       </span>
       <div>
@@ -1374,7 +1374,7 @@ function LivePreview({
       <CardContent className="space-y-4 p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#F3F0FF] text-[#5B3DF5]">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
               <Eye className="h-3.5 w-3.5" />
             </span>
             <div>
@@ -1383,7 +1383,7 @@ function LivePreview({
             </div>
           </div>
           {variant === "summary" && onEdit && (
-            <button type="button" onClick={onEdit} className="text-xs font-medium text-[#5B3DF5] hover:underline">
+            <button type="button" onClick={onEdit} className="text-xs font-medium text-brand hover:underline">
               Edit
             </button>
           )}
@@ -1393,7 +1393,7 @@ function LivePreview({
           {images[0] ? (
             <img src={images[0]} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-[#4C2FD6] to-[#5B3DF5]" />
+            <div className="h-full w-full bg-gradient-to-br from-brand to-brand-light" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 space-y-1.5 p-3">
@@ -1415,7 +1415,7 @@ function LivePreview({
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={freelancerAvatar} alt={freelancerName} />
-                <AvatarFallback className="bg-gradient-to-br from-[#4C2FD6] to-[#5B3DF5] text-[10px] font-semibold text-white">
+                <AvatarFallback className="bg-gradient-to-br from-brand to-brand-light text-[10px] font-semibold text-brand-foreground">
                   {initialsFromName(freelancerName)}
                 </AvatarFallback>
               </Avatar>
@@ -1427,7 +1427,7 @@ function LivePreview({
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 border-t border-[#E5E7EB] pt-3 text-center">
+            <div className="grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
               <div>
                 <p className="text-[10px] text-muted-foreground">Starts at</p>
                 <p className="text-xs font-semibold">{formatCurrency(price || 0)}</p>
@@ -1448,20 +1448,20 @@ function LivePreview({
 
             {description && (
               <p
-                className="line-clamp-3 border-t border-[#E5E7EB] pt-3 text-xs text-muted-foreground"
+                className="line-clamp-3 border-t border-border pt-3 text-xs text-muted-foreground"
                 dangerouslySetInnerHTML={{ __html: renderBioHtml(description) }}
               />
             )}
 
             {skills.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 border-t border-[#E5E7EB] pt-3">
+              <div className="flex flex-wrap gap-1.5 border-t border-border pt-3">
                 {visibleSkills.map((s) => (
-                  <Badge key={s} variant="outline" className="border-[#E5E7EB] text-[10px]">
+                  <Badge key={s} variant="outline" className="border-border text-[10px]">
                     {s}
                   </Badge>
                 ))}
                 {extraSkillsCount > 0 && (
-                  <Badge variant="outline" className="border-[#E5E7EB] text-[10px]">
+                  <Badge variant="outline" className="border-border text-[10px]">
                     +{extraSkillsCount}
                   </Badge>
                 )}
@@ -1471,7 +1471,7 @@ function LivePreview({
         ) : (
           <div>
             <p className="line-clamp-2 text-sm font-semibold">{title || "Your gig title will appear here"}</p>
-            <div className="mt-1 divide-y divide-[#E5E7EB]">
+            <div className="mt-1 divide-y divide-border">
               <SummaryRow icon={Tag} label="Category" value={category || "—"} />
               <SummaryRow icon={Code2} label="Subcategory" value={subCategory || "—"} />
               <SummaryRow icon={Star} label="Experience Level" value={experienceLevelLabel || "—"} />
@@ -1498,20 +1498,20 @@ function StepIndicator({ current, onStepClick }: { current: number; onStepClick:
               <button type="button" onClick={() => onStepClick(stepNum)} className="flex items-center gap-2" disabled={stepNum >= current}>
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
-                    isComplete || isActive ? "border-[#5B3DF5] bg-[#5B3DF5] text-white" : "border-[#E5E7EB] bg-white text-muted-foreground"
+                    isComplete || isActive ? "border-brand bg-brand text-brand-foreground" : "border-border bg-card text-muted-foreground"
                   }`}
                 >
                   {isComplete ? <Check className="h-4 w-4" /> : stepNum}
                 </span>
                 <span
                   className={`hidden text-sm sm:block ${
-                    isActive || isComplete ? "font-semibold text-[#5B3DF5]" : "text-muted-foreground"
+                    isActive || isComplete ? "font-semibold text-brand" : "text-muted-foreground"
                   }`}
                 >
                   {label}
                 </span>
               </button>
-              {stepNum < STEPS.length && <div className="mx-3 h-px flex-1 bg-[#E5E7EB]" />}
+              {stepNum < STEPS.length && <div className="mx-3 h-px flex-1 bg-muted" />}
             </div>
           );
         })}

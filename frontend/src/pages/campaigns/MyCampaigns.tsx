@@ -1,15 +1,22 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Megaphone, Plus, Users, Eye } from "lucide-react";
+import { Megaphone, Plus, Users, Eye, FileText } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import type { DashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerificationBanner } from "@/components/shared/VerificationBanner";
+import { useAuth } from "@/context/AuthContext";
 import { campaignApi } from "@/api/campaigns";
 
 export default function MyCampaigns() {
+  const { user } = useAuth();
+  // Shared by employer, brand, agency, and talent_partner — all four post
+  // through the same campaign routes, so the sidebar should reflect whoever
+  // is actually signed in.
+  const dashboardRole = (user?.role ?? "employer") as DashboardRole;
   const { data: campaigns, isLoading } = useQuery({ queryKey: ["campaigns", "mine"], queryFn: campaignApi.mine });
 
   const totalApplicants = campaigns?.reduce((sum, c) => sum + c.applicationsCount, 0) ?? 0;
@@ -17,7 +24,7 @@ export default function MyCampaigns() {
 
   return (
     <DashboardLayout
-      role="employer"
+      role={dashboardRole}
       title="My Campaigns"
       subtitle="Manage your influencer marketing campaigns and applicants."
       actions={
@@ -83,11 +90,17 @@ export default function MyCampaigns() {
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {c.location} · {c.applicationsCount} applicants · {c.viewsCount} views
+                      {c.onBehalfOf && typeof c.onBehalfOf === "object" && ` · on behalf of ${c.onBehalfOf.name}`}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/dashboard/employer/campaigns/${c._id}/applicants`}>View Applicants</Link>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/dashboard/employer/campaigns/${c._id}/report`}>
+                        <FileText className="h-3.5 w-3.5" /> Report
+                      </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/dashboard/employer/campaigns/${c._id}/edit`}>Edit</Link>

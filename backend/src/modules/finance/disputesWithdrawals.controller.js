@@ -4,6 +4,7 @@ import User from "../shared/user.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
+import { earningsLinkForPaymentType } from "../../utils/earningsLink.js";
 
 export const raiseDispute = asyncHandler(async (req, res) => {
   const { reason } = req.body;
@@ -26,7 +27,7 @@ export const raiseDispute = asyncHandler(async (req, res) => {
     type: "system",
     title: "A payment you received was disputed",
     message: `${req.user.name} raised a dispute on a payment of ₹${payment.amount}. An admin will review it.`,
-    link: "/dashboard/freelancer/earnings",
+    link: earningsLinkForPaymentType(payment.type),
   });
 
   const admins = await User.find({ role: "super_admin" }).select("_id");

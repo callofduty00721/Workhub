@@ -1,13 +1,15 @@
-import crypto from "crypto";
 import Payment from "../shared/payment.model.js";
 import Service from "../../modules/marketplace/service.model.js";
 import Milestone from "../jobs/milestone.model.js";
 import TimeEntry from "../jobs/timeEntry.model.js";
+import Application from "../shared/application.model.js";
 import Subscription from "./subscription.model.js";
 import { getCommissionPercent } from "./platformSettings.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
+import { earningsLinkForPaymentType } from "../../utils/earningsLink.js";
+import { verifyRazorpaySignature } from "../../utils/razorpaySignature.js";
 
 // Idempotent: only transitions a payment pending -> paid once, so it's safe to
 // call this from both the client-side verify handler AND the webhook (whichever
@@ -19,8 +21,11 @@ async function finalizeMarketplacePayment({ providerOrderId, providerPaymentId }
 
   // Contest prizes release immediately — picking a winner already implies approval.
   // Gig orders and job hires stay held in escrow until the payer explicitly releases them.
+  // campaign_facilitation is neither: it's a fee paid straight to the platform for a
+  // deal it never handles, so it's 100% commission, 0 net to the payee, released
+  // immediately — there's nothing to hold since nothing is ever owed to the payee here.
   // The pipeline update keeps the "only transition pending -> paid once" check and the
-  // type-dependent escrow decision atomic in a single operation.
+  // type-dependent escrow/commission decision atomic in a single operation.
   const updated = await Payment.findOneAndUpdate(
     { providerOrderId, status: "pending" },
     [
@@ -28,12 +33,18 @@ async function finalizeMarketplacePayment({ providerOrderId, providerPaymentId }
         $set: {
           status: "paid",
           providerPaymentId,
-          escrowStatus: { $cond: [{ $eq: ["$type", "contest_prize"] }, "released", "$escrowStatus"] },
-          releasedAt: { $cond: [{ $eq: ["$type", "contest_prize"] }, "$$NOW", "$releasedAt"] },
-          commissionPercent,
-          commissionAmount: { $round: [{ $multiply: ["$amount", commissionPercent / 100] }, 0] },
+          escrowStatus: { $cond: [{ $in: ["$type", ["contest_prize", "campaign_facilitation"]] }, "released", "$escrowStatus"] },
+          releasedAt: { $cond: [{ $in: ["$type", ["contest_prize", "campaign_facilitation"]] }, "$$NOW", "$releasedAt"] },
+          commissionPercent: { $cond: [{ $eq: ["$type", "campaign_facilitation"] }, 100, commissionPercent] },
+          commissionAmount: {
+            $cond: [{ $eq: ["$type", "campaign_facilitation"] }, "$amount", { $round: [{ $multiply: ["$amount", commissionPercent / 100] }, 0] }],
+          },
           netAmount: {
-            $subtract: ["$amount", { $round: [{ $multiply: ["$amount", commissionPercent / 100] }, 0] }],
+            $cond: [
+              { $eq: ["$type", "campaign_facilitation"] },
+              0,
+              { $subtract: ["$amount", { $round: [{ $multiply: ["$amount", commissionPercent / 100] }, 0] }] },
+            ],
           },
         },
       },
@@ -51,10 +62,36 @@ async function finalizeMarketplacePayment({ providerOrderId, providerPaymentId }
   if (updated.timeEntryIds?.length) {
     await TimeEntry.updateMany({ _id: { $in: updated.timeEntryIds } }, { billed: true, payment: updated._id });
   }
+  if (updated.type === "campaign_facilitation" && updated.application) {
+    await Application.findByIdAndUpdate(updated.application, { offPlatformSettledAt: new Date() });
+  }
   return updated;
 }
 
 async function notifyPaymentReceived(app, payment) {
+  // A facilitation fee is platform revenue, not money the influencer ever
+  // receives — the payee here must never be told anything was "credited to
+  // your wallet". Both sides instead just get told the hire is now settled.
+  if (payment.type === "campaign_facilitation") {
+    await Promise.all([
+      notify(app, {
+        user: payment.payer,
+        type: "system",
+        title: "Off-platform hire settled",
+        message: `Facilitation fee paid — this hire${payment.note ? ` ("${payment.note}")` : ""} is now marked settled off-platform.`,
+        link: "/dashboard/employer/campaigns",
+      }),
+      notify(app, {
+        user: payment.payee,
+        type: "system",
+        title: "Hire settled off-platform",
+        message: `The brand has marked${payment.note ? ` "${payment.note}"` : " this hire"} as settled off-platform — GrowHive isn't holding any payment for it.`,
+        link: "/dashboard/influencer",
+      }),
+    ]);
+    return;
+  }
+
   const held = payment.escrowStatus === "held";
   await notify(app, {
     user: payment.payee,
@@ -63,7 +100,7 @@ async function notifyPaymentReceived(app, payment) {
     message: held
       ? `₹${payment.amount} was paid${payment.note ? ` for "${payment.note}"` : ""} and is held in escrow until the client approves and releases it.`
       : `₹${payment.amount} was credited to your wallet${payment.note ? ` for "${payment.note}"` : ""}.`,
-    link: "/dashboard/freelancer/earnings",
+    link: earningsLinkForPaymentType(payment.type),
   });
 }
 
@@ -78,12 +115,12 @@ async function finalizeSubscription({ providerOrderId, providerPaymentId }) {
 export const verifyMarketplacePayment = asyncHandler(async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-  const expectedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-    .digest("hex");
-
-  if (expectedSignature !== razorpay_signature) {
+  const isValid = verifyRazorpaySignature(
+    `${razorpay_order_id}|${razorpay_payment_id}`,
+    razorpay_signature,
+    process.env.RAZORPAY_KEY_SECRET
+  );
+  if (!isValid) {
     throw new ApiError(400, "Payment verification failed: signature mismatch");
   }
 
@@ -106,8 +143,7 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
   if (!secret) return res.status(503).end();
 
   const signature = req.headers["x-razorpay-signature"];
-  const expectedSignature = crypto.createHmac("sha256", secret).update(req.body).digest("hex");
-  if (expectedSignature !== signature) return res.status(400).send("Invalid webhook signature");
+  if (!verifyRazorpaySignature(req.body, signature, secret)) return res.status(400).send("Invalid webhook signature");
 
   const event = JSON.parse(req.body.toString());
 

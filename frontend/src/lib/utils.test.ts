@@ -51,7 +51,7 @@ describe("initialsFromName", () => {
   });
 
   it("uppercases a single-word name", () => {
-    expect(initialsFromName("mahahub")).toBe("M");
+    expect(initialsFromName("growhive")).toBe("M");
   });
 
   it("ignores words beyond the first two", () => {

@@ -11,9 +11,9 @@ import { FilterPills } from "@/components/shared/FilterPills";
 import { jobApi } from "@/api/jobs";
 import { chatApi } from "@/api/chat";
 import { paymentApi } from "@/api/payments";
-import { MilestonesPanel } from "@/components/jobs/MilestonesPanel";
-import { WorkDiary } from "@/components/jobs/WorkDiary";
-import { ContractPanel } from "@/components/jobs/ContractPanel";
+import { MilestonesPanel } from "@/pages/jobs/MilestonesPanel";
+import { WorkDiary } from "@/pages/jobs/WorkDiary";
+import { ContractPanel } from "@/pages/jobs/ContractPanel";
 import { formatCurrency } from "@/lib/utils";
 import type { Payment } from "@/types";
 

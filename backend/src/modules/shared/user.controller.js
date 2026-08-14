@@ -5,10 +5,10 @@ import Job from "../jobs/job.model.js";
 import Project from "../jobs/project.model.js";
 import Service from "../marketplace/service.model.js";
 import Contest from "../contest/contest.model.js";
+import Campaign from "../campaign/campaign.model.js";
 import User from "./user.model.js";
 import { getPhoneAuthProvider } from "../finance/platformSettings.model.js";
 import { verifyFirebasePhoneIdToken } from "../../utils/firebaseAuth.js";
-import { startTwilioVerification, checkTwilioVerification } from "../../utils/twilioVerify.js";
 
 // User.phone is stored as a bare 10-digit number (see registerSchema's
 // `^\d{10}$` regex) — there's no separate country-code field, so every
@@ -73,6 +73,9 @@ const EDITABLE_FIELDS = [
   "socialLinks",
   "jobSeekerProfile",
   "influencerProfile",
+  "brandProfile",
+  "agencyProfile",
+  "talentPartnerProfile",
   "founderStage",
 ];
 
@@ -137,39 +140,6 @@ export const submitKyc = asyncHandler(async (req, res) => {
   req.user.kycStatus = "pending";
   req.user.kycSubmittedAt = new Date();
   req.user.kycReviewNote = "";
-  await req.user.save();
-
-  res.json({ success: true, user: req.user.toSafeJSON() });
-});
-
-// Only the Twilio path uses this pair (send code / check code) — Firebase
-// phone auth is driven entirely client-side (see verifyPhoneFirebaseToken).
-export const sendPhoneOtp = asyncHandler(async (req, res) => {
-  if (!req.user.phone) throw new ApiError(400, "Add a phone number to your profile first");
-  if (req.user.isPhoneVerified) throw new ApiError(400, "Your mobile number is already verified");
-
-  const provider = await getPhoneAuthProvider();
-  if (provider !== "twilio") {
-    throw new ApiError(503, "Phone verification isn't available right now");
-  }
-
-  await startTwilioVerification(toE164(req.user.phone));
-  res.json({ success: true, message: "We texted a verification code to your phone." });
-});
-
-export const verifyPhoneOtp = asyncHandler(async (req, res) => {
-  const { otp } = req.body;
-  if (!otp) throw new ApiError(400, "Enter the code you received");
-
-  const provider = await getPhoneAuthProvider();
-  if (provider !== "twilio") {
-    throw new ApiError(503, "Phone verification isn't available right now");
-  }
-
-  const approved = await checkTwilioVerification(toE164(req.user.phone), String(otp));
-  if (!approved) throw new ApiError(400, "Incorrect or expired code");
-
-  req.user.isPhoneVerified = true;
   await req.user.save();
 
   res.json({ success: true, user: req.user.toSafeJSON() });
@@ -315,6 +285,21 @@ export const toggleSavedFreelancer = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { saved: !alreadySaved } });
 });
 
+export const toggleSavedInfluencer = asyncHandler(async (req, res) => {
+  const influencer = await User.findOne({ _id: req.params.influencerId, role: "influencer" }).select("_id");
+  if (!influencer) throw new ApiError(404, "Influencer not found");
+
+  const alreadySaved = req.user.savedInfluencers.some((id) => id.toString() === influencer._id.toString());
+  if (alreadySaved) {
+    req.user.savedInfluencers = req.user.savedInfluencers.filter((id) => id.toString() !== influencer._id.toString());
+  } else {
+    req.user.savedInfluencers.push(influencer._id);
+  }
+  await req.user.save();
+
+  res.json({ success: true, data: { saved: !alreadySaved } });
+});
+
 export const toggleSavedContest = asyncHandler(async (req, res) => {
   const contest = await Contest.findById(req.params.contestId).select("_id");
   if (!contest) throw new ApiError(404, "Contest not found");
@@ -330,16 +315,38 @@ export const toggleSavedContest = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { saved: !alreadySaved } });
 });
 
+export const toggleSavedCampaign = asyncHandler(async (req, res) => {
+  const campaign = await Campaign.findById(req.params.campaignId).select("_id");
+  if (!campaign) throw new ApiError(404, "Campaign not found");
+
+  const alreadySaved = req.user.savedCampaigns.some((id) => id.toString() === campaign._id.toString());
+  if (alreadySaved) {
+    req.user.savedCampaigns = req.user.savedCampaigns.filter((id) => id.toString() !== campaign._id.toString());
+  } else {
+    req.user.savedCampaigns.push(campaign._id);
+  }
+  await req.user.save();
+
+  res.json({ success: true, data: { saved: !alreadySaved } });
+});
+
 export const getSavedItems = asyncHandler(async (req, res) => {
-  const [jobs, projects, services, freelancers, contests] = await Promise.all([
+  const [jobs, projects, services, freelancers, contests, influencers, campaigns] = await Promise.all([
     Job.find({ _id: { $in: req.user.savedJobs } }).populate("employer", "name avatar companyName").sort({ createdAt: -1 }),
     Project.find({ _id: { $in: req.user.savedProjects } }).populate("employer", "name avatar companyName").sort({ createdAt: -1 }),
     Service.find({ _id: { $in: req.user.savedServices } }).populate("freelancer", "name avatar rating reviewCount").sort({ createdAt: -1 }),
     User.find({ _id: { $in: req.user.savedFreelancers } }).select("name avatar headline category rating reviewCount hourlyRate level"),
     Contest.find({ _id: { $in: req.user.savedContests } }).populate("client", "name avatar companyName").sort({ createdAt: -1 }),
+    User.find({ _id: { $in: req.user.savedInfluencers } }).select(
+      "name avatar headline location influencerProfile isVerified rating reviewCount availabilityStatus"
+    ),
+    Campaign.find({ _id: { $in: req.user.savedCampaigns } })
+      .populate("employer", "name avatar isVerified rating reviewCount")
+      .populate("onBehalfOf", "name avatar")
+      .sort({ createdAt: -1 }),
   ]);
 
-  res.json({ success: true, data: { jobs, projects, services, freelancers, contests } });
+  res.json({ success: true, data: { jobs, projects, services, freelancers, contests, influencers, campaigns } });
 });
 
 export const getMyReferrals = asyncHandler(async (req, res) => {

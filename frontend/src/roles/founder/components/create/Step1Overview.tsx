@@ -23,21 +23,21 @@ export function Step1Overview() {
 
   return (
     <>
-      <h4 className="text-[13px] font-bold text-[#0f172a]">Basic Details</h4>
+      <h4 className="text-[13px] font-bold text-foreground">Basic Details</h4>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="name">Startup Name <Req /></Label>
-            <span className="text-[10.5px] text-[#94a3b8]">{nameLen}/100</span>
+            <span className="text-[10.5px] text-muted-foreground/70">{nameLen}/100</span>
           </div>
-          <Hint>This is how your startup will appear across MahaHub.</Hint>
+          <Hint>This is how your startup will appear across GrowHive.</Hint>
           <Input id="name" maxLength={100} placeholder="Enter startup name" {...register("name")} />
           {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="tagline">Tagline <Req /></Label>
-            <span className="text-[10.5px] text-[#94a3b8]">{taglineLen}/120</span>
+            <span className="text-[10.5px] text-muted-foreground/70">{taglineLen}/120</span>
           </div>
           <Hint>A short, catchy one-liner that captures what you do.</Hint>
           <Input id="tagline" maxLength={120} placeholder="A short and catchy tagline for your startup" {...register("tagline")} />
@@ -158,7 +158,7 @@ export function Step1Overview() {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="description">Short Description <Req /></Label>
-          <span className="text-[10.5px] text-[#94a3b8]">{descLen}/500</span>
+          <span className="text-[10.5px] text-muted-foreground/70">{descLen}/500</span>
         </div>
         <Hint>Describe your startup in a few lines — this shows up as "About the Idea" on your profile.</Hint>
         <Textarea id="description" maxLength={500} className="min-h-[100px]" placeholder="Write a short description about your startup..." {...register("description")} />
@@ -173,18 +173,18 @@ export function Step1Overview() {
             <Controller control={control} name="logo" render={({ field }) => (
               <FileUpload folder="startup_logo" value={field.value} onUploaded={(url) => field.onChange(url)} label="Upload Logo — JPG, PNG" />
             )} />
-            <p className="text-[10.5px] text-[#94a3b8]">Recommended: 400 × 400px (square), max 10MB.</p>
+            <p className="text-[10.5px] text-muted-foreground/70">Recommended: 400 × 400px (square), max 10MB.</p>
           </div>
           <div className="space-y-1">
             <Controller control={control} name="coverImage" render={({ field }) => (
               <FileUpload folder="startup_cover" value={field.value} onUploaded={(url) => field.onChange(url)} label="Upload Cover Image — JPG, PNG" />
             )} />
-            <p className="text-[10.5px] text-[#94a3b8]">Recommended: 1600 × 500px (16:5 ratio), max 10MB.</p>
+            <p className="text-[10.5px] text-muted-foreground/70">Recommended: 1600 × 500px (16:5 ratio), max 10MB.</p>
           </div>
         </div>
       </div>
 
-      <h4 className="border-t border-[#e2e8f0] pt-5 text-[13px] font-bold text-[#0f172a]">Problem &amp; Solution</h4>
+      <h4 className="border-t border-border pt-5 text-[13px] font-bold text-foreground">Problem &amp; Solution</h4>
       <div className="space-y-2">
         <Label htmlFor="problemStatement">Problem Statement</Label>
         <Hint>Explain the real-world problem your startup solves — one point per line.</Hint>
@@ -201,7 +201,7 @@ export function Step1Overview() {
         <Input id="targetAudience" placeholder="e.g. Farmers, Small Businesses, Households" {...register("targetAudience")} />
       </div>
 
-      <h4 className="border-t border-[#e2e8f0] pt-5 text-[13px] font-bold text-[#0f172a]">Mission, Highlights &amp; Business Plan</h4>
+      <h4 className="border-t border-border pt-5 text-[13px] font-bold text-foreground">Mission, Highlights &amp; Business Plan</h4>
       <div className="space-y-2">
         <Label htmlFor="missionStatement">Mission Statement</Label>
         <Hint>The long-term purpose behind your startup.</Hint>
@@ -239,9 +239,9 @@ export function Step1Overview() {
           </div>
           <Button onClick={() => milestonesArray.append({ title: "", description: "", date: "" })}>Add Milestone</Button>
         </div>
-        {milestonesArray.fields.length === 0 && <p className="text-[12.5px] text-[#94a3b8]">No milestones added yet — highlight key moments in your journey.</p>}
+        {milestonesArray.fields.length === 0 && <p className="text-[12.5px] text-muted-foreground/70">No milestones added yet — highlight key moments in your journey.</p>}
         {milestonesArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Milestone title (e.g. First 100 customers)" {...register(`milestones.${index}.title` as const)} />
             <Input type="date" {...register(`milestones.${index}.date` as const)} />
             <Textarea placeholder="Description (optional)" className="min-h-[60px] sm:col-span-2" {...register(`milestones.${index}.description` as const)} />

@@ -1,11 +1,11 @@
 import { useState, lazy, Suspense, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Trophy } from "lucide-react";
+import { Users, Trophy, ArrowRight } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { FreelancerCard } from "@/roles/freelancer/components/FreelancerCard";
-import { ContestCard } from "@/components/contests/ContestCard";
+import { ContestCard } from "@/pages/contests/ContestCard";
 import { Pagination } from "@/components/shared/Pagination";
 import { freelancerApi, type FreelancerSort } from "@/api/freelancers";
 import { contestApi } from "@/api/contests";
@@ -32,9 +32,24 @@ function parseBudget(budget: string): { rateMin?: number; rateMax?: number } {
 }
 
 export default function FreelancerList() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab");
-  const [tab, setTab] = useState<SectionTab>(SECTION_TABS.includes(initialTab as SectionTab) ? (initialTab as SectionTab) : "freelancers");
+  const [tab, setTabState] = useState<SectionTab>(SECTION_TABS.includes(initialTab as SectionTab) ? (initialTab as SectionTab) : "freelancers");
+
+  // Writes the active tab back to the URL — previously this only ever read
+  // ?tab= once on mount, so switching tabs left the URL out of sync. That
+  // meant a category picked on, say, the Services tab ended up in a URL with
+  // no tab= at all, and a refresh would default back to "freelancers" and
+  // misapply that category there instead.
+  const setTab = (next: SectionTab) => {
+    setTabState(next);
+    setSearchParams((prev) => {
+      const nextParams = new URLSearchParams(prev);
+      if (next === "freelancers") nextParams.delete("tab");
+      else nextParams.set("tab", next);
+      return nextParams;
+    });
+  };
 
   // Each tab keeps its own search text — switching tabs shouldn't carry a
   // freelancer-skill query over into contests, and vice versa.
@@ -48,10 +63,30 @@ export default function FreelancerList() {
   const setSearch = (value: string) => setSearchByTab((prev) => ({ ...prev, [tab]: value }));
 
   // Reads ?category= / ?subCategory= so the navbar's category mega-menu can
-  // deep-link straight into a filtered result set, not just the bare page.
+  // deep-link straight into a filtered result set, not just the bare page —
+  // and writes back to the URL too (via applyCategory below), so the
+  // selection survives a refresh, a back-nav, or being shared as a link,
+  // instead of only ever being a one-way read on mount.
   const initialCategory = searchParams.get("category");
-  const [category, setCategory] = useState(initialCategory && SERVICE_CATEGORY_NAMES.includes(initialCategory) ? initialCategory : "all");
-  const [subCategory, setSubCategory] = useState(searchParams.get("subCategory") ?? "all");
+  const [category, setCategoryState] = useState(initialCategory && SERVICE_CATEGORY_NAMES.includes(initialCategory) ? initialCategory : "all");
+  const [subCategory, setSubCategoryState] = useState(searchParams.get("subCategory") ?? "all");
+
+  // Both fields update together in one setSearchParams call — calling it
+  // twice back-to-back (once for category, once for subCategory) would have
+  // each read the same stale `prev`, so the second call would silently
+  // clobber the first.
+  const applyCategory = (cat: string, sub: string) => {
+    setCategoryState(cat);
+    setSubCategoryState(sub);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (cat === "all") next.delete("category");
+      else next.set("category", cat);
+      if (sub === "all") next.delete("subCategory");
+      else next.set("subCategory", sub);
+      return next;
+    });
+  };
   const [location, setLocation] = useState("");
   const [budget, setBudget] = useState("any");
   const [minExperience, setMinExperience] = useState("any");
@@ -103,19 +138,17 @@ export default function FreelancerList() {
   // sidebar select) — switching category always clears out a now-irrelevant
   // sub-category from the previous one.
   const selectCategory = (v: string) => {
-    setCategory(v);
-    setSubCategory("all");
+    applyCategory(v, "all");
     resetPage();
   };
   const selectSubCategory = (cat: string, sub: string) => {
-    setCategory(cat);
-    setSubCategory(sub);
+    applyCategory(cat, sub);
     resetPage();
   };
   return (
-    <div>
+    <div className="bg-black">
       {/* Section switcher */}
-      <div className="sticky top-16 z-30 border-b bg-white py-2">
+      <div className="sticky top-16 z-30 border-b border-white/[0.08] bg-black py-2">
         <div className="container flex justify-center">
           <MarketplaceTabs tab={tab} setTab={setTab} />
         </div>
@@ -135,7 +168,7 @@ export default function FreelancerList() {
       />
 
       {tab === "freelancers" && (
-        <div className="border-b border-neutral-200 bg-white lg:sticky lg:top-[136px] lg:z-[25]">
+        <div className="border-b border-white/[0.08] bg-black lg:sticky lg:top-[136px] lg:z-[25]">
           <div className="container">
             <CategoryBrowsePanel
               activeCategory={category}
@@ -143,12 +176,13 @@ export default function FreelancerList() {
               onSelectSubCategory={selectSubCategory}
               onViewAll={selectCategory}
               popup
+              variant="dark"
             />
           </div>
         </div>
       )}
 
-      <div className="container py-6">
+      <div className="container py-8">
         {tab === "freelancers" ? (
           <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[260px_1fr]">
             <FilterSidebar
@@ -156,7 +190,7 @@ export default function FreelancerList() {
               setCategory={selectCategory}
               subCategory={subCategory}
               setSubCategory={(v) => {
-                setSubCategory(v);
+                applyCategory(category, v);
                 resetPage();
               }}
               minExperience={minExperience}
@@ -190,6 +224,7 @@ export default function FreelancerList() {
                 resetPage();
               }}
               resultCount={freelancers?.pagination.total ?? 0}
+              variant="dark"
             />
 
             <div>
@@ -199,9 +234,9 @@ export default function FreelancerList() {
                 <EmptyState icon={Users} text="No freelancers found. Try a different search or filter." />
               ) : (
                 <>
-                  <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3 ">
+                  <div className="grid grid-cols-1 items-stretch gap-5 mb-5 sm:grid-cols-2 xl:grid-cols-4">
                     {freelancers.data.map((f) => (
-                      <FreelancerCard key={f._id} freelancer={f} />
+                      <FreelancerCard key={f._id} freelancer={f} variant="dark" />
                     ))}
                   </div>
                   <Pagination page={page} pages={freelancers.pagination.pages} onChange={setPage} />
@@ -229,15 +264,47 @@ export default function FreelancerList() {
           </div>
         )}
       </div>
+
+      {/* Final CTA — closes the page with the same dual "hire or get hired"
+          framing as the hero, matching Home.tsx's FinalCta styling. */}
+      <section className="relative overflow-hidden border-t border-white/[0.08] py-16 text-center sm:py-20">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#22C55E]/15 blur-[120px]" />
+        <div className="container relative">
+          <h2 className="mx-auto max-w-lg font-display text-[26px] font-black leading-tight tracking-tight text-white sm:text-[32px]">
+            Ready to build your next big thing?
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#A1A1AA]">
+            Find the right freelancer, or start offering your expertise on GrowHive.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[#E8FF25] to-[#22C55E] px-6 py-3 text-[14.5px] font-semibold text-black transition-all hover:brightness-110"
+            >
+              Find a Freelancer <ArrowRight className="h-4 w-4" />
+            </a>
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/5 px-6 py-3 text-[14.5px] font-semibold text-white transition-colors hover:border-white/20 hover:bg-white/10"
+            >
+              Join as Freelancer
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
-        <Skeleton key={i} className="h-80 w-full rounded-[22px]" />
+        <Skeleton key={i} className="h-80 w-full rounded-[22px] bg-white/5" />
       ))}
     </div>
   );
@@ -245,9 +312,9 @@ function GridSkeleton() {
 
 function EmptyState({ icon: Icon, text }: { icon: typeof Users; text: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
-      <Icon className="h-9 w-9 text-muted-foreground" />
-      <p className="max-w-sm text-sm text-muted-foreground">{text}</p>
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-white/[0.08] py-16 text-center">
+      <Icon className="h-9 w-9 text-[#71717A]" />
+      <p className="max-w-sm text-sm text-[#A1A1AA]">{text}</p>
     </div>
   );
 }

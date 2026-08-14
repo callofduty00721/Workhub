@@ -7,6 +7,9 @@ export type NotificationType =
   | "session_request"
   | "session_status"
   | "review_received"
+  | "roster_invite"
+  | "roster_invite_status"
+  | "campaign_invite"
   | "system";
 
 export interface AppNotification {

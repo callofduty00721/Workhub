@@ -120,6 +120,7 @@ const verificationRequestSchema = new mongoose.Schema({
   submittedAt: { type: Date, default: Date.now },
   reviewedAt: { type: Date },
   reviewNote: { type: String, default: "" },
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 const startupSchema = new mongoose.Schema(
@@ -202,6 +203,10 @@ const startupSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now },
       },
     ],
+    // Who last dismissed/suspended over a flag batch, and when — see
+    // admin/startups.js's resolveFlaggedStartup and the Staff Activity Log.
+    lastFlagReviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    lastFlagReviewedAt: { type: Date },
   },
   { timestamps: true }
 );

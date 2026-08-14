@@ -1,6 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 import Job from "../../src/modules/jobs/job.model.js";
 
@@ -12,7 +13,7 @@ const DEMO_PASSWORD = "Demo@12345";
 // overview fields on the job detail page with real-shaped data.
 const EMPLOYER = {
   name: "TCS Talent Acquisition",
-  email: "careers@tcs.mahahub.demo",
+  email: "careers@tcs.growhive.demo",
   headline: "Talent Acquisition, Tata Consultancy Services",
   companyName: "Tata Consultancy Services",
   location: "Mumbai, Maharashtra, India",
@@ -61,6 +62,7 @@ async function upsertUser(data, role) {
 }
 
 async function run() {
+  assertNotProduction("seedTcsFioriJob");
   await connectDB();
 
   const employer = await upsertUser(EMPLOYER, "employer");

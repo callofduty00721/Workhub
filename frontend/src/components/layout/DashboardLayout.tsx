@@ -1,7 +1,10 @@
 import { useState, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { DashboardSidebar, type DashboardRole } from "./DashboardSidebar";
 import { Navbar } from "./Navbar";
+import { useAuth } from "@/context/AuthContext";
+import { missingProfileFields } from "@/lib/profileCompletion";
 
 export function DashboardLayout({
   role,
@@ -17,9 +20,28 @@ export function DashboardLayout({
   children: ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
+  // Every role has a real completion scorer (lib/profileCompletion.ts) except
+  // super_admin, which has no public-facing profile to complete. Lives here —
+  // above the navbar, not inside any one dashboard's own page — so it's the
+  // same one strip for every role, and it follows you across every dashboard
+  // page (Analytics, My Gigs, Projects, etc.) until it's actually done.
+  const missingFields = user ? missingProfileFields(user) : [];
 
   return (
     <div className="min-h-screen bg-background">
+      {missingFields.length > 0 && (
+        <div className="flex flex-col gap-2 border-b border-border bg-muted/60 px-4 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-center">
+          <p className="text-foreground/90">
+            Add your {missingFields.slice(0, 3).map((f) => f.label).join(", ")}
+            {missingFields.length > 3 ? `, and ${missingFields.length - 3} more` : ""} to complete your profile.
+          </p>
+          <Link to="/dashboard/profile" className="shrink-0 font-semibold text-primary underline">
+            Complete Profile
+          </Link>
+        </div>
+      )}
+
       <Navbar hideMobileToggle />
 
       <div className="flex">
@@ -29,7 +51,7 @@ export function DashboardLayout({
 
         {mobileOpen && (
           <div className="fixed inset-0 z-50 flex lg:hidden">
-            <div className="absolute inset-0 bg-slate-950/40" onClick={() => setMobileOpen(false)} />
+            <div className="absolute inset-0 bg-ink/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
             <div className="relative">
               <DashboardSidebar role={role} onNavigate={() => setMobileOpen(false)} />
             </div>
@@ -50,7 +72,7 @@ export function DashboardLayout({
             <Menu className="h-5 w-5" /> Menu
           </button>
 
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <main id="main-content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>

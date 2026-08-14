@@ -1,6 +1,6 @@
 import type { PackageName } from "./service";
 
-export type PaymentType = "gig_order" | "job_hire" | "contest_prize" | "campaign";
+export type PaymentType = "gig_order" | "job_hire" | "contest_prize" | "campaign" | "campaign_facilitation";
 
 export type DisputeStatus = "none" | "raised" | "refunded" | "rejected";
 

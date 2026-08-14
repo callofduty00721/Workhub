@@ -36,16 +36,28 @@ describe("ROLE_LABELS", () => {
 });
 
 describe("CATEGORY_ROLES / categoryForRole", () => {
-  it("places every non-admin role into exactly one category", () => {
+  // job_seeker/employer are temporarily commented out of CATEGORY_ROLES
+  // while the Jobs feature is disabled (see lib/roles.ts) — existing
+  // accounts with those roles are unaffected, but the onboarding/role-add UI
+  // no longer offers them, so they intentionally have no category here.
+  const DISABLED_ROLES: UserRole[] = ["job_seeker", "employer"];
+
+  it("places every selectable non-admin role into exactly one category", () => {
     for (const role of ALL_ROLES) {
-      if (role === "super_admin") continue;
+      if (role === "super_admin" || DISABLED_ROLES.includes(role)) continue;
       expect(categoryForRole(role)).toBeTruthy();
     }
   });
 
+  it("leaves temporarily-disabled roles out of category selection", () => {
+    for (const role of DISABLED_ROLES) {
+      expect(categoryForRole(role)).toBeNull();
+    }
+  });
+
   it("never mixes roles from different categories under one key", () => {
-    expect(CATEGORY_ROLES.talent).toEqual(["freelancer", "job_seeker", "influencer"]);
-    expect(CATEGORY_ROLES.hiring).toEqual(["employer", "client"]);
+    expect(CATEGORY_ROLES.talent).toEqual(["freelancer", "influencer"]);
+    expect(CATEGORY_ROLES.hiring).toEqual(["client"]);
     expect(CATEGORY_ROLES.startup).toEqual(["founder", "partner", "investor", "mentor"]);
   });
 });

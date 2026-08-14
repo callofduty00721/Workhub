@@ -5,7 +5,7 @@ import { Search, Plus, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ContestCard } from "@/components/contests/ContestCard";
+import { ContestCard } from "@/pages/contests/ContestCard";
 import { Pagination } from "@/components/shared/Pagination";
 import { contestApi } from "@/api/contests";
 import { useAuth } from "@/context/AuthContext";
@@ -29,17 +29,17 @@ export default function ContestList() {
   return (
     <div>
       {/* Header */}
-      <section className="border-b bg-gradient-to-b from-primary/5 via-white to-white">
+      <section className="border-b bg-gradient-to-b from-primary/5 via-card to-card">
         <div className="container py-6">
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-[26px] font-bold leading-tight tracking-tight text-neutral-900 sm:text-3xl">
+            <h1 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
               Win <span className="text-primary">contests</span>, showcase your skill
             </h1>
-            <p className="mt-1 text-[13px] text-neutral-500">Submit your best work and win prizes from clients on MahaHub.</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">Submit your best work and win prizes from clients on GrowHive.</p>
 
-            <div className="mt-4 flex flex-col gap-1.5 rounded-2xl border border-neutral-200 bg-white p-1.5 shadow-sm sm:flex-row sm:items-center">
+            <div className="mt-4 flex flex-col gap-1.5 rounded-2xl border border-border bg-card p-1.5 shadow-sm sm:flex-row sm:items-center">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
                 <Input
                   value={search}
                   onChange={(e) => {
@@ -52,7 +52,7 @@ export default function ContestList() {
               </div>
               {categories && categories.length > 0 && (
                 <>
-                  <div className="hidden h-6 w-px bg-neutral-200 sm:block" />
+                  <div className="hidden h-6 w-px bg-border sm:block" />
                   <Select
                     value={category}
                     onValueChange={(v) => {
@@ -77,7 +77,7 @@ export default function ContestList() {
               {canPost && (
                 <Link
                   to={user?.role === "client" ? "/dashboard/client/post-contest" : "/dashboard/employer/post-contest"}
-                  className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-neutral-900 px-5 text-[13px] font-medium text-white transition-colors hover:bg-primary"
+                  className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   <Plus className="h-3.5 w-3.5" /> Post a Contest
                 </Link>
@@ -89,7 +89,7 @@ export default function ContestList() {
 
       <div className="container py-6">
         {!isLoading && (
-          <p className="mb-4 text-[12.5px] font-medium text-neutral-500">
+          <p className="mb-4 text-[12.5px] font-medium text-muted-foreground">
             {total.toLocaleString()} contest{total === 1 ? "" : "s"}
           </p>
         )}
@@ -103,16 +103,16 @@ export default function ContestList() {
         )}
 
         {isError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-8 text-center text-sm text-red-600">
+          <div className="rounded-xl border border-danger/30 bg-danger/10 px-5 py-8 text-center text-sm text-danger">
             Couldn&apos;t load contests right now. Make sure the API server is running.
           </div>
         )}
 
         {!isLoading && !isError && (data?.data.length ?? 0) === 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-200 bg-white py-16 text-center">
-            <Trophy className="h-9 w-9 text-neutral-300" />
-            <p className="font-medium text-neutral-900">No contests found</p>
-            <p className="max-w-sm text-sm text-neutral-500">Try a different search term, or check back later.</p>
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
+            <Trophy className="h-9 w-9 text-muted-foreground/50" />
+            <p className="font-medium text-foreground">No contests found</p>
+            <p className="max-w-sm text-sm text-muted-foreground">Try a different search term, or check back later.</p>
           </div>
         )}
 

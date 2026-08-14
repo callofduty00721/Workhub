@@ -25,7 +25,7 @@ export default function MyGigs() {
     <DashboardLayout
       role="freelancer"
       title="My Gigs"
-      subtitle="Manage the services you offer on MahaHub."
+      subtitle="Manage the services you offer on GrowHive."
       actions={
         <Button variant="gradient" asChild>
           <Link to="/dashboard/freelancer/gigs/new">
@@ -59,7 +59,7 @@ export default function MyGigs() {
             <Card key={service._id} className="flex flex-col overflow-hidden p-0">
               <div className="flex h-32 w-full items-center justify-center bg-muted">
                 {service.images?.[0] ? (
-                  <img src={service.images[0]} alt={service.title} className="h-full w-full object-cover" />
+                  <img src={service.images[0]} alt={service.title} loading="lazy" className="h-full w-full object-cover" />
                 ) : (
                   <ImageOff className="h-6 w-6 text-muted-foreground" />
                 )}

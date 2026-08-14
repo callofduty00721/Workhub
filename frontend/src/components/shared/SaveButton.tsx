@@ -3,13 +3,14 @@ import { Bookmark } from "lucide-react";
 import { userApi } from "@/api/users";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { CAMPAIGN_HIRER_ROLES } from "@/lib/roles";
 
 export function SaveButton({
   type,
   id,
   className,
 }: {
-  type: "job" | "project" | "service" | "freelancer" | "contest";
+  type: "job" | "project" | "service" | "freelancer" | "contest" | "influencer" | "campaign";
   id: string;
   className?: string;
 }) {
@@ -23,7 +24,11 @@ export function SaveButton({
           ? user?.savedServices?.includes(id)
           : type === "contest"
             ? user?.savedContests?.includes(id)
-            : user?.savedFreelancers?.includes(id);
+            : type === "influencer"
+              ? user?.savedInfluencers?.includes(id)
+              : type === "campaign"
+                ? user?.savedCampaigns?.includes(id)
+                : user?.savedFreelancers?.includes(id);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -35,7 +40,11 @@ export function SaveButton({
             ? userApi.toggleSavedService(id)
             : type === "contest"
               ? userApi.toggleSavedContest(id)
-              : userApi.toggleSavedFreelancer(id),
+              : type === "influencer"
+                ? userApi.toggleSavedInfluencer(id)
+                : type === "campaign"
+                  ? userApi.toggleSavedCampaign(id)
+                  : userApi.toggleSavedFreelancer(id),
     onSuccess: () => refreshUser(),
   });
 
@@ -44,8 +53,18 @@ export function SaveButton({
   // direction — relevant to whoever might hire them — so it's open to any
   // logged-in non-freelancer... except a freelancer's own profile, which
   // simply never renders this button (see FreelancerCard/FreelancerProfile).
+  // Saving an influencer is narrower still — only roles that can actually
+  // hire one via a Campaign (see CAMPAIGN_HIRER_ROLES) ever see this button.
+  // Saving a campaign is the influencer's own equivalent of that — bookmark
+  // one to apply to later.
   if (!user) return null;
-  if (type !== "freelancer" && user.role !== "freelancer") return null;
+  if (type === "influencer") {
+    if (!user.role || !CAMPAIGN_HIRER_ROLES.includes(user.role)) return null;
+  } else if (type === "campaign") {
+    if (user.role !== "influencer") return null;
+  } else if (type !== "freelancer" && user.role !== "freelancer") {
+    return null;
+  }
 
   return (
     <button

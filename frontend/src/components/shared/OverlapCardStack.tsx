@@ -108,46 +108,54 @@ function StackedCard({
             <motion.div style={{opacity: dim}}>
                 <Link
                     to={item.href}
-                    className="group relative grid overflow-hidden rounded-[36px] border border-white/40 bg-white shadow-[0_30px_70px_-25px_rgba(15,23,42,.35)] transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_60px_120px_-35px_rgba(15,23,42,.45)] hover:border-orange-300 lg:grid-cols-2"
+                    className="group relative grid overflow-hidden rounded-[36px] border border-border bg-card shadow-[0_30px_70px_-25px_rgba(15,23,42,.35)] transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_60px_120px_-35px_rgba(15,23,42,.45)] hover:border-foreground/15 lg:grid-cols-2"
                 >
                     {/* LEFT SIDE */}
                     <div className="relative z-10 flex flex-col justify-center p-6 md:p-9">
-                        <span className="inline-flex w-fit rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-primary">
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-foreground/80">
+                            <item.icon className="h-3.5 w-3.5" />
                             {item.tag}
                         </span>
 
-                        <h2 className="mt-5 text-3xl font-bold leading-tight text-neutral-900 lg:text-4xl">
+                        <h2 className="mt-5 text-3xl font-bold leading-tight text-foreground lg:text-4xl">
                             {item.title}
                         </h2>
 
-                        <p className="mt-3 max-w-lg text-base leading-7 text-neutral-500">{item.description}</p>
+                        <p className="mt-3 max-w-lg text-base leading-7 text-muted-foreground">{item.description}</p>
 
                         <div className="mt-6 space-y-3">
                             {item.points.map((point) => (
                                 <div key={point} className="flex items-center gap-3">
-                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                                        <Check className="h-3.5 w-3.5 text-primary" />
+                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-success/10">
+                                        <Check className="h-3.5 w-3.5 text-success" />
                                     </div>
-                                    <span className="text-[14px] font-medium text-neutral-700">{point}</span>
+                                    <span className="text-[14px] font-medium text-foreground/80">{point}</span>
                                 </div>
                             ))}
                         </div>
 
-                        <button className="mt-7 inline-flex w-fit items-center gap-3 rounded-2xl bg-primary px-6 py-3 font-semibold text-white transition-all duration-300 group-hover:gap-5">
+                        <button className="mt-7 inline-flex w-fit items-center gap-3 rounded-2xl bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-soft transition-all duration-300 group-hover:gap-5">
                             {item.ctaLabel ?? "Get Started"}
                             <ArrowUpRight size={18} />
                         </button>
                     </div>
 
-                    {/* RIGHT SIDE — a simple icon on a soft gradient, hidden below lg
-              (it's decoration only; the LEFT SIDE carries all the real content). */}
-                    <div className="relative hidden items-center justify-center overflow-hidden bg-gradient-to-br from-orange-100 via-pink-100 to-violet-200 lg:flex">
+                    {/* RIGHT SIDE — a simple icon on a quiet dark panel with a single
+              orange glow, hidden below lg (it's decoration only; the LEFT SIDE
+              carries all the real content). */}
+                    <div
+                        className="relative hidden items-center justify-center overflow-hidden lg:flex"
+                        style={{
+                            background:
+                                "radial-gradient(circle at 75% 20%, rgba(250,131,46,0.35) 0%, transparent 45%), linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%)",
+                        }}
+                    >
                         <motion.div
                             animate={{y: [0, -14, 0]}}
                             transition={{duration: 4, repeat: Infinity, ease: "easeIn"}}
-                            className="flex h-32 w-32 items-center justify-center rounded-[32px] border border-white/60 bg-white/80 shadow-[0_30px_60px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl"
+                            className="flex h-32 w-32 items-center justify-center rounded-[32px] border border-white/10 bg-white/10 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.4)] backdrop-blur-xl"
                         >
-                            <item.icon className="h-12 w-12 text-primary" />
+                            <item.icon className="h-12 w-12 text-white" />
                         </motion.div>
                     </div>
                 </Link>

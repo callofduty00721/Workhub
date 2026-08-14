@@ -38,9 +38,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ServiceCard } from "@/components/gigs/ServiceCard";
+import { GigListCard } from "@/pages/gigs/GigListCard";
 import { DirectHireModal } from "@/roles/freelancer/components/DirectHireModal";
-import { HorizontalSlider } from "@/components/shared/HorizontalSlider";
 import { PortfolioGrid } from "@/components/shared/PortfolioGrid";
 import { ReviewsSection } from "@/components/shared/ReviewsSection";
 import { freelancerApi } from "@/api/freelancers";
@@ -48,6 +47,7 @@ import { chatApi } from "@/api/chat";
 import { formatCurrency, initialsFromName, cn } from "@/lib/utils";
 import { renderBioHtml } from "@/lib/richText";
 import { useAuth } from "@/context/AuthContext";
+import { usePageMeta } from "@/lib/usePageMeta";
 import { getSkillIcon } from "@/lib/skillIcons";
 
 function relativeTime(iso?: string) {
@@ -84,11 +84,11 @@ function Section({ title, count, children }: { title: string; count?: number; ch
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.45, ease: "easeOut" }}
-      className="rounded-[22px] border border-neutral-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+      className="group rounded-2xl bg-muted p-6 transition-all duration-300 hover:bg-accent"
     >
-      <h3 className="mb-3 text-base font-bold text-neutral-900">
+      <h3 className="mb-3 text-base font-bold text-foreground">
         {title}
-        {count !== undefined && <span className="ml-1 font-medium text-neutral-400">({count})</span>}
+        {count !== undefined && <span className="ml-1 font-medium text-muted-foreground/70">({count})</span>}
       </h3>
       {children}
     </motion.div>
@@ -107,6 +107,11 @@ export default function FreelancerProfile() {
     queryFn: () => freelancerApi.getProfile(id),
     enabled: !!id,
   });
+
+  usePageMeta(
+    data ? `${data.freelancer.name} — ${data.freelancer.headline || "Freelancer"}` : "Freelancer Profile",
+    data ? `Hire ${data.freelancer.name} on GrowHive. ${data.freelancer.headline || ""}`.trim() : undefined
+  );
 
   const followMutation = useMutation({
     mutationFn: () => freelancerApi.toggleFollow(id),
@@ -207,7 +212,7 @@ export default function FreelancerProfile() {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="mb-4 flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+        className="mb-4 flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
@@ -217,13 +222,19 @@ export default function FreelancerProfile() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+        className="overflow-hidden rounded-[26px] border border-border bg-card shadow-card"
       >
         <div className="relative h-28 overflow-hidden sm:h-36">
           {freelancer.coverImage ? (
             <img src={freelancer.coverImage} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="h-full w-full bg-gradient-to-r from-primary via-secondary to-primary" />
+            <div
+              className="h-full w-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 80% 20%, rgba(250,131,46,0.35) 0%, transparent 45%), linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%)",
+              }}
+            />
           )}
         </div>
         <div className="relative px-6 pb-6 pt-0">
@@ -233,16 +244,18 @@ export default function FreelancerProfile() {
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
+                className="-mt-12 h-24 w-24 shrink-0 rounded-full p-[3px] shadow-lg sm:-mt-14"
+                style={{ background: "conic-gradient(from 180deg, #F59E0B, #EC4899, #8B5CF6, #3B82F6, #F59E0B)" }}
               >
-                <Avatar className="-mt-12 h-24 w-24 border-4 border-white shadow-lg sm:-mt-14">
+                <Avatar className="h-full w-full border-4 border-background">
                   <AvatarImage src={freelancer.avatar} alt={freelancer.name} />
-                  <AvatarFallback className="bg-primary text-xl font-bold text-white">{initialsFromName(freelancer.name)}</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-xl font-bold text-primary-foreground">{initialsFromName(freelancer.name)}</AvatarFallback>
                 </Avatar>
               </motion.div>
               <div className="min-w-0 pb-1">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xl font-bold text-neutral-900">{freelancer.name}</h1>
-                  {idVerified && <BadgeCheck className="h-5 w-5 shrink-0 text-primary" />}
+                  <h1 className="text-xl font-bold text-foreground">{freelancer.name}</h1>
+                  {idVerified && <BadgeCheck className="h-5 w-5 shrink-0 text-foreground" />}
                   {stats.level === "top_rated" && (
                     <Badge variant="warning" className="flex items-center gap-1">
                       <Crown className="h-3 w-3" /> Top Rated
@@ -259,8 +272,8 @@ export default function FreelancerProfile() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-neutral-500">{freelancer.headline || "Freelancer"}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-neutral-500">
+                <p className="text-sm text-muted-foreground">{freelancer.headline || "Freelancer"}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                   {freelancer.location && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3.5 w-3.5" /> {freelancer.location}
@@ -272,7 +285,7 @@ export default function FreelancerProfile() {
                     </Badge>
                   )}
                   <span className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {freelancer.rating || "0.0"}{" "}
+                    <Star className="h-3.5 w-3.5 fill-warning text-warning" /> {freelancer.rating || "0.0"}{" "}
                     {freelancer.reviewCount > 0 && `(${freelancer.reviewCount} reviews)`}
                   </span>
                   <span className="flex items-center gap-1 text-success">
@@ -364,13 +377,13 @@ export default function FreelancerProfile() {
             key={s.label}
             variants={fadeUp}
             whileHover={{ y: -4 }}
-            className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow duration-200 hover:shadow-[0_16px_32px_-20px_rgba(250,131,46,0.3)]"
+            className="rounded-2xl border border-border bg-card p-4 shadow-card transition-shadow duration-200 hover:shadow-hover"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground">
               <s.icon className="h-4 w-4" />
             </div>
-            <p className="mt-2.5 text-base font-bold text-neutral-900">{s.value}</p>
-            <p className="text-[10px] uppercase tracking-wide text-neutral-400">{s.label}</p>
+            <p className="mt-2.5 text-base font-bold text-foreground">{s.value}</p>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">{s.label}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -379,7 +392,7 @@ export default function FreelancerProfile() {
         <div className="min-w-0 space-y-6">
           {freelancer.videoIntro && (
             <Section title="Video Introduction">
-              <video src={freelancer.videoIntro} controls className="max-h-96 w-full rounded-xl border border-neutral-200" />
+              <video src={freelancer.videoIntro} controls className="max-h-96 w-full rounded-xl border border-border" />
             </Section>
           )}
 
@@ -388,7 +401,7 @@ export default function FreelancerProfile() {
             const bioText = !bioIsLong || bioExpanded ? freelancer.bio : `${freelancer.bio.slice(0, BIO_PREVIEW_LENGTH).trimEnd()}…`;
             return (
               <Section title="About Me">
-                <p className="text-sm leading-relaxed text-neutral-700" dangerouslySetInnerHTML={{ __html: renderBioHtml(bioText) }} />
+                <p className="text-sm leading-relaxed text-foreground/80" dangerouslySetInnerHTML={{ __html: renderBioHtml(bioText) }} />
                 {bioIsLong && (
                   <button
                     type="button"
@@ -398,7 +411,7 @@ export default function FreelancerProfile() {
                     {bioExpanded ? "Show less" : "Read more"}
                   </button>
                 )}
-                <div className="mt-4 grid gap-3 border-t border-neutral-100 pt-4 text-xs text-neutral-500 sm:grid-cols-4">
+                <div className="mt-4 grid gap-3 border-t border-border pt-4 text-xs text-muted-foreground sm:grid-cols-4">
                   <span className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5" /> {freelancer.location || "—"}
                   </span>
@@ -429,7 +442,7 @@ export default function FreelancerProfile() {
                       {brand ? (
                         <SkillIcon className="h-4 w-4 shrink-0" style={{ color }} />
                       ) : (
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-neutral-900">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary">
                           <SkillIcon className="h-2.5 w-2.5" style={{ color }} />
                         </span>
                       )}
@@ -454,11 +467,11 @@ export default function FreelancerProfile() {
             {services.length === 0 ? (
               <EmptyState text="No active services listed yet." />
             ) : (
-              <HorizontalSlider itemClassName="w-72">
+              <div className="flex flex-col gap-4">
                 {services.map((s) => (
-                  <ServiceCard key={s._id} service={s} />
+                  <GigListCard key={s._id} service={s} />
                 ))}
-              </HorizontalSlider>
+              </div>
             )}
           </Section>
 
@@ -473,21 +486,21 @@ export default function FreelancerProfile() {
               <div className="space-y-5">
                 {freelancer.experience!.map((exp, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-foreground">
                       <Building2 className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-neutral-900">{exp.title}</p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-sm font-semibold text-foreground">{exp.title}</p>
+                      <p className="text-xs text-muted-foreground">
                         {exp.company}
                         {exp.location && ` · ${exp.location}`}
                       </p>
                       {(exp.startLabel || exp.endLabel) && (
-                        <p className="text-[11px] text-neutral-400">
+                        <p className="text-[11px] text-muted-foreground/70">
                           {exp.startLabel} {exp.startLabel && exp.endLabel && "–"} {exp.endLabel}
                         </p>
                       )}
-                      {exp.description && <p className="mt-1 text-xs text-neutral-600">{exp.description}</p>}
+                      {exp.description && <p className="mt-1 text-xs text-muted-foreground">{exp.description}</p>}
                     </div>
                   </div>
                 ))}
@@ -502,14 +515,14 @@ export default function FreelancerProfile() {
               <div className="space-y-5">
                 {freelancer.education!.map((edu, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-foreground">
                       <GraduationCap className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-neutral-900">{edu.degree}</p>
-                      <p className="text-xs text-neutral-500">{edu.institution}</p>
+                      <p className="text-sm font-semibold text-foreground">{edu.degree}</p>
+                      <p className="text-xs text-muted-foreground">{edu.institution}</p>
                       {(edu.startLabel || edu.endLabel) && (
-                        <p className="text-[11px] text-neutral-400">
+                        <p className="text-[11px] text-muted-foreground/70">
                           {edu.startLabel} {edu.startLabel && edu.endLabel && "–"} {edu.endLabel}
                         </p>
                       )}
@@ -529,11 +542,11 @@ export default function FreelancerProfile() {
                   <div key={i} className="flex items-start gap-3">
                     <Award className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                     <div>
-                      <p className="text-sm font-medium text-neutral-900">
+                      <p className="text-sm font-medium text-foreground">
                         {a.title}
-                        {a.dateLabel && <span className="text-xs text-neutral-400"> — {a.dateLabel}</span>}
+                        {a.dateLabel && <span className="text-xs text-muted-foreground/70"> — {a.dateLabel}</span>}
                       </p>
-                      {a.description && <p className="text-xs text-neutral-500">{a.description}</p>}
+                      {a.description && <p className="text-xs text-muted-foreground">{a.description}</p>}
                     </div>
                   </div>
                 ))}
@@ -553,38 +566,38 @@ export default function FreelancerProfile() {
           {freelancer.hourlyRate > 0 && (
             <motion.div
               variants={fadeUp}
-              className="rounded-2xl border border-neutral-200 bg-gradient-to-br from-primary/10 to-secondary/5 p-5"
+              className="rounded-2xl border border-border bg-muted p-5"
             >
-              <p className="text-xs text-neutral-500">Hourly Rate</p>
-              <p className="text-lg font-bold text-primary">{formatCurrency(freelancer.hourlyRate)}/hr</p>
+              <p className="text-xs text-muted-foreground">Hourly Rate</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(freelancer.hourlyRate)}/hr</p>
             </motion.div>
           )}
 
-          <motion.div variants={fadeUp} className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <motion.div variants={fadeUp} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-card">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-neutral-900">Availability</h3>
+              <h3 className="text-sm font-semibold text-foreground">Availability</h3>
               <Badge variant={freelancer.availabilityStatus === "busy" ? "warning" : "success"}>
                 {freelancer.availabilityStatus === "busy" ? "Busy" : "Available"}
               </Badge>
             </div>
             {!!freelancer.hoursPerWeekAvailable && (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-neutral-500">Hours / week</span>
-                <span className="font-medium text-neutral-900">{freelancer.hoursPerWeekAvailable} hrs/week</span>
+                <span className="text-muted-foreground">Hours / week</span>
+                <span className="font-medium text-foreground">{freelancer.hoursPerWeekAvailable} hrs/week</span>
               </div>
             )}
             {!!freelancer.workingHours && (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-neutral-500">Working hours</span>
-                <span className="font-medium text-neutral-900">{freelancer.workingHours}</span>
+                <span className="text-muted-foreground">Working hours</span>
+                <span className="font-medium text-foreground">{freelancer.workingHours}</span>
               </div>
             )}
             {(freelancer.workingDays?.length ?? 0) > 0 && (
               <div className="text-xs">
-                <p className="text-neutral-500">Working days</p>
+                <p className="text-muted-foreground">Working days</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {freelancer.workingDays!.map((day) => (
-                    <span key={day} className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10.5px] font-semibold text-neutral-700">
+                    <span key={day} className="rounded-full bg-muted px-2 py-0.5 text-[10.5px] font-semibold text-foreground/80">
                       {day}
                     </span>
                   ))}
@@ -593,47 +606,47 @@ export default function FreelancerProfile() {
             )}
             {availableFor.length > 0 && (
               <div>
-                <p className="text-xs text-neutral-500">Available for</p>
+                <p className="text-xs text-muted-foreground">Available for</p>
                 <ul className="mt-1 space-y-0.5">
                   {availableFor.map((label) => (
-                    <li key={label} className="text-xs text-neutral-700">
+                    <li key={label} className="text-xs text-foreground/80">
                       · {label}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            <div className="flex items-center justify-between border-t border-neutral-100 pt-3 text-xs">
-              <span className="text-neutral-500">Response Time</span>
-              <span className="font-medium text-neutral-900">{freelancer.responseTimeLabel || "—"}</span>
+            <div className="flex items-center justify-between border-t border-border pt-3 text-xs">
+              <span className="text-muted-foreground">Response Time</span>
+              <span className="font-medium text-foreground">{freelancer.responseTimeLabel || "—"}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Last Active</span>
+              <span className="text-muted-foreground">Last Active</span>
               <span className="font-medium text-success">{relativeTime(freelancer.lastActiveAt)}</span>
             </div>
           </motion.div>
 
           {isOwnProfile && (
-            <motion.div variants={fadeUp} className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <motion.div variants={fadeUp} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-card">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-neutral-900">Profile Completion</h3>
-                <span className="text-sm font-bold text-primary">{completionPercent}%</span>
+                <h3 className="text-sm font-semibold text-foreground">Profile Completion</h3>
+                <span className="text-sm font-bold text-foreground">{completionPercent}%</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <motion.div
                   initial={{ scaleX: 0 }}
                   whileInView={{ scaleX: completionPercent / 100 }}
                   viewport={{ once: true }}
                   style={{ transformOrigin: "left" }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
+                  className="h-full rounded-full bg-brand"
                 />
               </div>
               <ul className="space-y-1.5">
                 {completionChecklist.map((c) => (
                   <li key={c.label} className="flex items-center justify-between text-xs">
-                    <span className={c.done ? "text-neutral-900" : "text-neutral-400"}>{c.label}</span>
-                    <CheckCircle2 className={cn("h-3.5 w-3.5", c.done ? "text-success" : "text-neutral-200")} />
+                    <span className={c.done ? "text-foreground" : "text-muted-foreground/70"}>{c.label}</span>
+                    <CheckCircle2 className={cn("h-3.5 w-3.5", c.done ? "text-success" : "text-muted-foreground/40")} />
                   </li>
                 ))}
               </ul>
@@ -645,19 +658,19 @@ export default function FreelancerProfile() {
             </motion.div>
           )}
 
-          <motion.div variants={fadeUp} className="space-y-2.5 rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <h3 className="text-sm font-semibold text-neutral-900">Verified</h3>
+          <motion.div variants={fadeUp} className="space-y-2.5 rounded-2xl border border-border bg-card p-5 shadow-card">
+            <h3 className="text-sm font-semibold text-foreground">Verified</h3>
             {verifications.map((v) => (
               <div key={v.label} className="flex items-center gap-2 text-xs">
-                <v.icon className={cn("h-3.5 w-3.5", v.done ? "text-primary" : "text-neutral-300")} />
-                <span className={v.done ? "text-neutral-900" : "text-neutral-400"}>{v.label}</span>
+                <v.icon className={cn("h-3.5 w-3.5", v.done ? "text-success" : "text-muted-foreground/50")} />
+                <span className={v.done ? "text-foreground" : "text-muted-foreground/70"}>{v.label}</span>
               </div>
             ))}
           </motion.div>
 
           {socialEntries.length > 0 && (
-            <motion.div variants={fadeUp} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Social Links</h3>
+            <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5 shadow-card">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Social Links</h3>
               <div className="flex gap-2">
                 {socialEntries.map((s) => (
                   <a
@@ -665,7 +678,7 @@ export default function FreelancerProfile() {
                     href={s.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground/80 transition-colors hover:bg-accent"
                     title={s.label}
                   >
                     <s.icon className="h-4 w-4" />
@@ -676,19 +689,19 @@ export default function FreelancerProfile() {
           )}
 
           {freelancer.resumeUrl && (
-            <motion.div variants={fadeUp} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Resume</h3>
-              <div className="flex items-center justify-between gap-2 rounded-lg border border-neutral-200 p-3">
+            <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5 shadow-card">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Resume</h3>
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <FileText className="h-4 w-4 shrink-0 text-primary" />
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-medium text-neutral-900">{freelancer.name.replace(/\s+/g, "_")}_Resume.pdf</p>
+                    <p className="truncate text-xs font-medium text-foreground">{freelancer.name.replace(/\s+/g, "_")}_Resume.pdf</p>
                     {freelancer.resumeUpdatedAt && (
-                      <p className="text-[10px] text-neutral-400">Updated {new Date(freelancer.resumeUpdatedAt).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-muted-foreground/70">Updated {new Date(freelancer.resumeUpdatedAt).toLocaleDateString()}</p>
                     )}
                   </div>
                 </div>
-                <a href={freelancer.resumeUrl} target="_blank" rel="noreferrer" className="shrink-0 text-primary">
+                <a href={freelancer.resumeUrl} target="_blank" rel="noreferrer" className="shrink-0 text-muted-foreground hover:text-foreground">
                   <Download className="h-4 w-4" />
                 </a>
               </div>
@@ -709,8 +722,8 @@ export default function FreelancerProfile() {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-neutral-200 py-12 text-center">
-      <p className="text-sm text-neutral-500">{text}</p>
+    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border py-12 text-center">
+      <p className="text-sm text-muted-foreground">{text}</p>
     </div>
   );
 }

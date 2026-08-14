@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ExternalLink, ArrowLeft, User, Briefcase, Image, Wallet, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import type { DashboardRole } from "@/components/layout/DashboardSidebar";
+import { resolveDashboardRole } from "@/components/layout/DashboardSidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FormGuidelines } from "@/components/shared/FormGuidelines";
@@ -26,26 +26,35 @@ import type {
   InfluencerRate,
   InfluencerCollaboration,
   InfluencerContentSample,
+  InfluencerLanguage,
+  BrandProduct,
+  InfluencerRequirement,
+  AgencyService,
+  PartnerClient,
+  ProfileSocialLink,
   StartupStage,
   MentorSessionFormat,
   CompanySize,
 } from "@/types";
 import { dashboardPathForRole, publicProfilePathForRole } from "@/lib/roles";
 import { motion } from "framer-motion";
-import { to24Hour, splitList } from "@/components/dashboard/edit-profile/shared";
-import { BasicInfoSection } from "@/components/dashboard/edit-profile/BasicInfoSection";
-import { FounderDetailsSection } from "@/components/dashboard/edit-profile/FounderDetailsSection";
-import { PersonalInfoSection } from "@/components/dashboard/edit-profile/PersonalInfoSection";
-import { ExperienceEducationSection } from "@/components/dashboard/edit-profile/ExperienceEducationSection";
-import { FreelancerDetailsSection } from "@/components/dashboard/edit-profile/FreelancerDetailsSection";
-import { PortfolioSection } from "@/components/dashboard/edit-profile/PortfolioSection";
-import { PayoutKycSection } from "@/components/dashboard/edit-profile/PayoutKycSection";
-import { InvestorDetailsSection } from "@/components/dashboard/edit-profile/InvestorDetailsSection";
-import { MentorDetailsSection } from "@/components/dashboard/edit-profile/MentorDetailsSection";
-import { PartnerDetailsSection } from "@/components/dashboard/edit-profile/PartnerDetailsSection";
-import { CompanyDetailsSection } from "@/components/dashboard/edit-profile/CompanyDetailsSection";
-import { JobSeekerDetailsSection } from "@/components/dashboard/edit-profile/JobSeekerDetailsSection";
-import { InfluencerDetailsSection } from "@/components/dashboard/edit-profile/InfluencerDetailsSection";
+import { to24Hour, splitList } from "@/pages/dashboard/edit-profile/shared";
+import { BasicInfoSection } from "@/pages/dashboard/edit-profile/BasicInfoSection";
+import { FounderDetailsSection } from "@/pages/dashboard/edit-profile/FounderDetailsSection";
+import { PersonalInfoSection } from "@/pages/dashboard/edit-profile/PersonalInfoSection";
+import { ExperienceEducationSection } from "@/pages/dashboard/edit-profile/ExperienceEducationSection";
+import { FreelancerDetailsSection } from "@/pages/dashboard/edit-profile/FreelancerDetailsSection";
+import { PortfolioSection } from "@/pages/dashboard/edit-profile/PortfolioSection";
+import { PayoutKycSection } from "@/pages/dashboard/edit-profile/PayoutKycSection";
+import { InvestorDetailsSection } from "@/pages/dashboard/edit-profile/InvestorDetailsSection";
+import { MentorDetailsSection } from "@/pages/dashboard/edit-profile/MentorDetailsSection";
+import { PartnerDetailsSection } from "@/pages/dashboard/edit-profile/PartnerDetailsSection";
+import { CompanyDetailsSection } from "@/pages/dashboard/edit-profile/CompanyDetailsSection";
+import { JobSeekerDetailsSection } from "@/pages/dashboard/edit-profile/JobSeekerDetailsSection";
+import { InfluencerDetailsSection } from "@/pages/dashboard/edit-profile/InfluencerDetailsSection";
+import { BrandDetailsSection } from "@/pages/dashboard/edit-profile/BrandDetailsSection";
+import { AgencyDetailsSection } from "@/pages/dashboard/edit-profile/AgencyDetailsSection";
+import { TalentPartnerDetailsSection } from "@/pages/dashboard/edit-profile/TalentPartnerDetailsSection";
 
 const EMPTY_EXPERIENCE: ExperienceEntry = { title: "", company: "", location: "", startLabel: "", endLabel: "Present", description: "" };
 const EMPTY_EDUCATION: EducationEntry = { degree: "", institution: "", startLabel: "", endLabel: "" };
@@ -63,19 +72,6 @@ const EMPTY_PORTFOLIO_ITEM: PortfolioItem = {
   clientName: "",
   projectRole: "",
 };
-
-const DASHBOARD_ROLES: DashboardRole[] = [
-  "founder",
-  "freelancer",
-  "job_seeker",
-  "influencer",
-  "employer",
-  "super_admin",
-  "investor",
-  "mentor",
-  "partner",
-  "client",
-];
 
 // The freelancer form is long enough (Basic Info, Professional Details,
 // Portfolio, Payout & Verification) that showing it all on one scrolling
@@ -101,7 +97,7 @@ function nextFreelancerTab(tab: FreelancerTab): FreelancerTab {
 export default function EditProfile() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const sidebarRole: DashboardRole = DASHBOARD_ROLES.includes(user?.role as DashboardRole) ? (user!.role as DashboardRole) : "founder";
+  const sidebarRole = resolveDashboardRole(user?.role);
   useScrollToHash();
 
   const location = useLocation();
@@ -166,7 +162,6 @@ export default function EditProfile() {
   const [payoutBankAccountHolder, setPayoutBankAccountHolder] = useState(user?.payoutDetails?.bankAccountHolder ?? "");
   const [kycDocuments, setKycDocuments] = useState<{ url: string; name: string }[]>([]);
   const [faceSelfie, setFaceSelfie] = useState("");
-  const [addressDocuments, setAddressDocuments] = useState<{ url: string; name: string }[]>([]);
   const [bankVerificationDocuments, setBankVerificationDocuments] = useState<{ url: string; name: string }[]>([]);
 
   // Investor
@@ -207,11 +202,75 @@ export default function EditProfile() {
   const [influencerCategory, setInfluencerCategory] = useState(user?.influencerProfile?.category ?? "");
   const [niche, setNiche] = useState(user?.influencerProfile?.niche ?? "");
   const [mediaKitUrl, setMediaKitUrl] = useState(user?.influencerProfile?.mediaKitUrl ?? "");
-  const [avgEngagementRate, setAvgEngagementRate] = useState(user?.influencerProfile?.avgEngagementRate ?? 0);
   const [platforms, setPlatforms] = useState<InfluencerPlatform[]>(user?.influencerProfile?.platforms ?? []);
   const [rateCard, setRateCard] = useState<InfluencerRate[]>(user?.influencerProfile?.rateCard ?? []);
   const [pastCollaborations, setPastCollaborations] = useState<InfluencerCollaboration[]>(user?.influencerProfile?.pastCollaborations ?? []);
   const [contentSamples, setContentSamples] = useState<InfluencerContentSample[]>(user?.influencerProfile?.contentSamples ?? []);
+  const [languages, setLanguages] = useState<InfluencerLanguage[]>(user?.influencerProfile?.languages ?? []);
+
+  // Brand
+  const [brandIndustry, setBrandIndustry] = useState(user?.brandProfile?.industry ?? "");
+  const [brandCategories, setBrandCategories] = useState<string[]>(user?.brandProfile?.categories ?? []);
+  const [brandWebsite, setBrandWebsite] = useState(user?.brandProfile?.website ?? "");
+  const [brandSocialLinks, setBrandSocialLinks] = useState<ProfileSocialLink[]>(user?.brandProfile?.socialLinks ?? []);
+  const [brandFollowerCount, setBrandFollowerCount] = useState(user?.brandProfile?.followerCount ?? 0);
+  const [brandProducts, setBrandProducts] = useState<BrandProduct[]>(user?.brandProfile?.products ?? []);
+  const [brandRequirements, setBrandRequirements] = useState<InfluencerRequirement[]>(user?.brandProfile?.influencerRequirements ?? []);
+  const [brandPastCollaborations, setBrandPastCollaborations] = useState<InfluencerCollaboration[]>(user?.brandProfile?.pastCollaborations ?? []);
+
+  const updateBrandProduct = (index: number, patch: Partial<BrandProduct>) => {
+    setBrandProducts((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  };
+  const addBrandProduct = () => setBrandProducts((prev) => [...prev, { name: "", description: "", imageUrl: "" }]);
+  const removeBrandProduct = (index: number) => setBrandProducts((prev) => prev.filter((_, i) => i !== index));
+
+  const updateBrandRequirement = (index: number, patch: Partial<InfluencerRequirement>) => {
+    setBrandRequirements((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  };
+  const addBrandRequirement = () => setBrandRequirements((prev) => [...prev, { category: "", minFollowers: 0, platforms: [], location: "", notes: "" }]);
+  const removeBrandRequirement = (index: number) => setBrandRequirements((prev) => prev.filter((_, i) => i !== index));
+
+  const updateBrandCollaboration = (index: number, patch: Partial<InfluencerCollaboration>) => {
+    setBrandPastCollaborations((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+  };
+  const addBrandCollaboration = () => setBrandPastCollaborations((prev) => [...prev, { brandName: "", description: "", resultMetric: "" }]);
+  const removeBrandCollaboration = (index: number) => setBrandPastCollaborations((prev) => prev.filter((_, i) => i !== index));
+
+  // Agency
+  const [agencyType, setAgencyType] = useState(user?.agencyProfile?.agencyType ?? "");
+  const [agencyWebsite, setAgencyWebsite] = useState(user?.agencyProfile?.website ?? "");
+  const [agencySocialLinks, setAgencySocialLinks] = useState<ProfileSocialLink[]>(user?.agencyProfile?.socialLinks ?? []);
+  const [agencyTeamSize, setAgencyTeamSize] = useState(user?.agencyProfile?.teamSize ?? 0);
+  const [agencyServices, setAgencyServices] = useState<AgencyService[]>(user?.agencyProfile?.services ?? []);
+  const [agencyClients, setAgencyClients] = useState<PartnerClient[]>(user?.agencyProfile?.clients ?? []);
+  const [agencyPastCampaigns, setAgencyPastCampaigns] = useState<InfluencerCollaboration[]>(user?.agencyProfile?.pastCampaigns ?? []);
+
+  const updateAgencyClient = (index: number, patch: Partial<PartnerClient>) => {
+    setAgencyClients((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+  };
+  const addAgencyClient = () => setAgencyClients((prev) => [...prev, { clientName: "", logoUrl: "", description: "" }]);
+  const removeAgencyClient = (index: number) => setAgencyClients((prev) => prev.filter((_, i) => i !== index));
+
+  const updateAgencyPastCampaign = (index: number, patch: Partial<InfluencerCollaboration>) => {
+    setAgencyPastCampaigns((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+  };
+  const addAgencyPastCampaign = () => setAgencyPastCampaigns((prev) => [...prev, { brandName: "", description: "", resultMetric: "" }]);
+  const removeAgencyPastCampaign = (index: number) => setAgencyPastCampaigns((prev) => prev.filter((_, i) => i !== index));
+
+  // Talent Partner
+  const [talentPartnerType, setTalentPartnerType] = useState(user?.talentPartnerProfile?.partnerType ?? "");
+  const [talentPartnerWebsite, setTalentPartnerWebsite] = useState(user?.talentPartnerProfile?.website ?? "");
+  const [talentPartnerSocialLinks, setTalentPartnerSocialLinks] = useState<ProfileSocialLink[]>(user?.talentPartnerProfile?.socialLinks ?? []);
+  const [talentPartnerServicesInput, setTalentPartnerServicesInput] = useState(user?.talentPartnerProfile?.services?.join(", ") ?? "");
+  const [talentPartnerBrandPartnerships, setTalentPartnerBrandPartnerships] = useState<PartnerClient[]>(
+    user?.talentPartnerProfile?.brandPartnerships ?? []
+  );
+
+  const updateTalentPartnership = (index: number, patch: Partial<PartnerClient>) => {
+    setTalentPartnerBrandPartnerships((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+  };
+  const addTalentPartnership = () => setTalentPartnerBrandPartnerships((prev) => [...prev, { clientName: "", logoUrl: "", description: "" }]);
+  const removeTalentPartnership = (index: number) => setTalentPartnerBrandPartnerships((prev) => prev.filter((_, i) => i !== index));
 
   // Founder — verification stage (see backend/src/utils/roleCategories.js:
   // idea-stage founders can freely look for co-founders/team, but paid job
@@ -241,6 +300,12 @@ export default function EditProfile() {
   };
   const addContentSample = () => setContentSamples((prev) => [...prev, { url: "", caption: "" }]);
   const removeContentSample = (index: number) => setContentSamples((prev) => prev.filter((_, i) => i !== index));
+
+  const updateLanguage = (index: number, patch: Partial<InfluencerLanguage>) => {
+    setLanguages((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)));
+  };
+  const addLanguage = () => setLanguages((prev) => [...prev, { name: "", level: "fluent" }]);
+  const removeLanguage = (index: number) => setLanguages((prev) => prev.filter((_, i) => i !== index));
 
   // Founder
   const [linkedIn, setLinkedIn] = useState(user?.linkedIn ?? "");
@@ -375,11 +440,37 @@ export default function EditProfile() {
           category: influencerCategory,
           niche,
           mediaKitUrl,
-          avgEngagementRate,
           platforms: platforms.filter((p) => p.platform.trim()),
           rateCard: rateCard.filter((r) => r.platform.trim() && r.contentType.trim()),
           pastCollaborations: pastCollaborations.filter((c) => c.brandName.trim()),
           contentSamples: contentSamples.filter((s) => s.url.trim()),
+          languages: languages.filter((l) => l.name.trim()),
+        },
+        brandProfile: {
+          industry: brandIndustry,
+          categories: brandCategories,
+          website: brandWebsite,
+          socialLinks: brandSocialLinks.filter((l) => l.platform.trim() && l.url.trim()),
+          followerCount: brandFollowerCount,
+          products: brandProducts.filter((p) => p.name.trim()),
+          influencerRequirements: brandRequirements.filter((r) => r.category?.trim()),
+          pastCollaborations: brandPastCollaborations.filter((c) => c.brandName.trim()),
+        },
+        agencyProfile: {
+          agencyType,
+          website: agencyWebsite,
+          socialLinks: agencySocialLinks.filter((l) => l.platform.trim() && l.url.trim()),
+          teamSize: agencyTeamSize,
+          services: agencyServices,
+          clients: agencyClients.filter((c) => c.clientName.trim()),
+          pastCampaigns: agencyPastCampaigns.filter((c) => c.brandName.trim()),
+        },
+        talentPartnerProfile: {
+          partnerType: talentPartnerType,
+          website: talentPartnerWebsite,
+          socialLinks: talentPartnerSocialLinks.filter((l) => l.platform.trim() && l.url.trim()),
+          services: splitList(talentPartnerServicesInput),
+          brandPartnerships: talentPartnerBrandPartnerships.filter((c) => c.clientName.trim()),
         },
         founderStage,
         linkedIn,
@@ -416,14 +507,6 @@ export default function EditProfile() {
     onSuccess: () => {
       refreshUser();
       setFaceSelfie("");
-    },
-  });
-
-  const addressVerificationMutation = useMutation({
-    mutationFn: () => userApi.submitAddressVerification(addressDocuments),
-    onSuccess: () => {
-      refreshUser();
-      setAddressDocuments([]);
     },
   });
 
@@ -614,10 +697,14 @@ export default function EditProfile() {
             setResponseTimeLabel={setResponseTimeLabel}
             phone={phone}
             setPhone={setPhone}
-            resumeUrl={resumeUrl}
-            setResumeUrl={setResumeUrl}
             videoIntro={videoIntro}
             setVideoIntro={setVideoIntro}
+            website={website}
+            setWebsite={setWebsite}
+            github={github}
+            setGithub={setGithub}
+            twitter={twitter}
+            setTwitter={setTwitter}
           />
         )}
 
@@ -655,9 +742,6 @@ export default function EditProfile() {
             faceSelfie={faceSelfie}
             setFaceSelfie={setFaceSelfie}
             faceVerificationMutation={faceVerificationMutation}
-            addressDocuments={addressDocuments}
-            setAddressDocuments={setAddressDocuments}
-            addressVerificationMutation={addressVerificationMutation}
             bankVerificationDocuments={bankVerificationDocuments}
             setBankVerificationDocuments={setBankVerificationDocuments}
             bankVerificationMutation={bankVerificationMutation}
@@ -759,14 +843,16 @@ export default function EditProfile() {
 
         {user.role === "influencer" && (
           <InfluencerDetailsSection
+            availabilityStatus={availabilityStatus}
+            setAvailabilityStatus={setAvailabilityStatus}
             category={influencerCategory}
             setCategory={setInfluencerCategory}
             niche={niche}
             setNiche={setNiche}
-            avgEngagementRate={avgEngagementRate}
-            setAvgEngagementRate={setAvgEngagementRate}
             mediaKitUrl={mediaKitUrl}
             setMediaKitUrl={setMediaKitUrl}
+            website={website}
+            setWebsite={setWebsite}
             platforms={platforms}
             addPlatform={addPlatform}
             removePlatform={removePlatform}
@@ -783,6 +869,81 @@ export default function EditProfile() {
             addContentSample={addContentSample}
             removeContentSample={removeContentSample}
             updateContentSample={updateContentSample}
+            languages={languages}
+            addLanguage={addLanguage}
+            removeLanguage={removeLanguage}
+            updateLanguage={updateLanguage}
+            achievements={achievements}
+            addAchievement={addAchievement}
+            removeAchievement={removeAchievement}
+            updateAchievement={updateAchievement}
+          />
+        )}
+
+        {user.role === "brand" && (
+          <BrandDetailsSection
+            industry={brandIndustry}
+            setIndustry={setBrandIndustry}
+            categories={brandCategories}
+            setCategories={setBrandCategories}
+            website={brandWebsite}
+            setWebsite={setBrandWebsite}
+            socialLinks={brandSocialLinks}
+            setSocialLinks={setBrandSocialLinks}
+            followerCount={brandFollowerCount}
+            setFollowerCount={setBrandFollowerCount}
+            products={brandProducts}
+            addProduct={addBrandProduct}
+            removeProduct={removeBrandProduct}
+            updateProduct={updateBrandProduct}
+            requirements={brandRequirements}
+            addRequirement={addBrandRequirement}
+            removeRequirement={removeBrandRequirement}
+            updateRequirement={updateBrandRequirement}
+            pastCollaborations={brandPastCollaborations}
+            addCollaboration={addBrandCollaboration}
+            removeCollaboration={removeBrandCollaboration}
+            updateCollaboration={updateBrandCollaboration}
+          />
+        )}
+
+        {user.role === "agency" && (
+          <AgencyDetailsSection
+            agencyType={agencyType}
+            setAgencyType={setAgencyType}
+            website={agencyWebsite}
+            setWebsite={setAgencyWebsite}
+            socialLinks={agencySocialLinks}
+            setSocialLinks={setAgencySocialLinks}
+            teamSize={agencyTeamSize}
+            setTeamSize={setAgencyTeamSize}
+            services={agencyServices}
+            setServices={setAgencyServices}
+            clients={agencyClients}
+            addClient={addAgencyClient}
+            removeClient={removeAgencyClient}
+            updateClient={updateAgencyClient}
+            pastCampaigns={agencyPastCampaigns}
+            addPastCampaign={addAgencyPastCampaign}
+            removePastCampaign={removeAgencyPastCampaign}
+            updatePastCampaign={updateAgencyPastCampaign}
+          />
+        )}
+
+        {user.role === "talent_partner" && (
+          <TalentPartnerDetailsSection
+            partnerType={talentPartnerType}
+            setPartnerType={setTalentPartnerType}
+            website={talentPartnerWebsite}
+            setWebsite={setTalentPartnerWebsite}
+            socialLinks={talentPartnerSocialLinks}
+            setSocialLinks={setTalentPartnerSocialLinks}
+            servicesInput={talentPartnerServicesInput}
+            setServicesInput={setTalentPartnerServicesInput}
+            brandPartnerships={talentPartnerBrandPartnerships}
+            addBrandPartnership={addTalentPartnership}
+            removeBrandPartnership={removeTalentPartnership}
+            updateBrandPartnership={updateTalentPartnership}
           />
         )}
 

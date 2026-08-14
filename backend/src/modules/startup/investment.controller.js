@@ -6,6 +6,7 @@ import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 import { getRazorpayClient, isRazorpayConfigured } from "../../config/payments.js";
 import { assertStartupFounder } from "./founderAuth.js";
+import { logger } from "../../utils/logger.js";
 
 const VERIFICATION_FEE_INR = 199;
 const REFUND_KEEP_PCT = 0.06; // platform keeps 6% (covers gateway fee + handling) on auto-refunds
@@ -124,7 +125,7 @@ export const createVerificationOrder = asyncHandler(async (req, res) => {
   const order = await razorpay.orders.create({
     amount: amountInPaise,
     currency: "INR",
-    receipt: `mahahub_invverify_${investment._id}_${Date.now()}`,
+    receipt: `growhive_invverify_${investment._id}_${Date.now()}`,
   });
 
   investment.verificationOrderId = order.id;
@@ -184,7 +185,7 @@ export const createPreInvestmentVerificationOrder = asyncHandler(async (req, res
   const order = await razorpay.orders.create({
     amount: VERIFICATION_FEE_INR * 100,
     currency: "INR",
-    receipt: `mahahub_preinvverify_${startup._id}_${req.user._id}_${Date.now()}`,
+    receipt: `growhive_preinvverify_${startup._id}_${req.user._id}_${Date.now()}`,
   });
 
   res.status(201).json({
@@ -237,7 +238,7 @@ export const createVerifiedInvestment = asyncHandler(async (req, res) => {
  * Refunds the ₹199 verification fee (minus a 6% platform fee) for reports the
  * founder never acted on within NO_RESPONSE_REFUND_DAYS. Only the reporting fee
  * is refunded here — the reported investment amount itself never moved through
- * MahaHub, so there is nothing else to reverse. Intended to run on a recurring
+ * GrowHive, so there is nothing else to reverse. Intended to run on a recurring
  * timer (see jobs/investmentRefundJob.js), not as an HTTP route.
  */
 export async function refundExpiredVerifications(app) {
@@ -273,7 +274,7 @@ export async function refundExpiredVerifications(app) {
         link: `/startups/${investment.startup?._id}`,
       });
     } catch (err) {
-      console.error(`Failed to auto-refund investment ${investment._id}:`, err.message);
+      logger.error("Failed to auto-refund investment", { investmentId: investment._id.toString(), error: err.message });
     }
   }
 }

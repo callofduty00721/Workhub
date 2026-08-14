@@ -1,6 +1,5 @@
 import { Sparkles, ShieldCheck, Rocket } from "lucide-react";
 import { OverlapCardStack, type OverlapCardItem } from "@/components/shared/OverlapCardStack";
-import { RoleRailSection } from "@/pages/Home";
 
 // Generic placeholder data — swap this out with whatever content the new
 // usage needs. Only `icon`, `tag`, `title`, `description`, `points`, and
@@ -28,7 +27,7 @@ const EXAMPLE_ITEMS: OverlapCardItem[] = [
     tag: "Step three",
     title: "Drop it in anywhere.",
     description: "Import OverlapCardStack, pass an items array, done.",
-    points: ["Self-contained component", "No page-specific dependencies", "Reused as-is on the homepage"],
+    points: ["Self-contained component", "No page-specific dependencies", "Drop into any page with an items array"],
     href: "/",
   },
 ];
@@ -39,20 +38,13 @@ export default function OverlapCardDemo() {
       <div className="container py-10">
         <h1 className="text-2xl font-bold tracking-tight">Overlap card template</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Scroll down — each card pins near the top, then the next card slides up and covers it. First: a generic
-          example with placeholder content. Below that: the same component reused as-is on the homepage.
+          Scroll down — each card pins near the top, then the next card slides up and covers it.
         </p>
       </div>
 
       <div className="container">
         <OverlapCardStack items={EXAMPLE_ITEMS} />
       </div>
-
-      <div className="container border-t border-neutral-100 py-10">
-        <h2 className="text-lg font-bold tracking-tight">Live usage: homepage role rail</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Same component, real MahaHub content — no duplicated code.</p>
-      </div>
-      <RoleRailSection />
     </div>
   );
 }

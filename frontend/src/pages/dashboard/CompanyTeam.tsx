@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { Building2, Plus, Trash2, Loader2, Crown, UserPlus } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import type { DashboardRole } from "@/components/layout/DashboardSidebar";
+import { resolveDashboardRole, type DashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,28 @@ export default function CompanyTeam() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const sidebarRole: DashboardRole =
-    user?.role === "client" ? "client" : user?.role === "freelancer" ? "freelancer" : "employer";
-  const postingType = sidebarRole === "client" ? "project" : sidebarRole === "freelancer" ? "gig" : "job";
-  const postingTypePlural = sidebarRole === "freelancer" ? "gigs" : `${postingType} postings`;
-  const roleLabel = sidebarRole === "client" ? "Client" : sidebarRole === "freelancer" ? "Freelancer" : "Employer";
+  const sidebarRole: DashboardRole = resolveDashboardRole(user?.role, "employer");
+  const postingType =
+    sidebarRole === "client"
+      ? "project"
+      : sidebarRole === "freelancer"
+        ? "gig"
+        : sidebarRole === "brand" || sidebarRole === "agency" || sidebarRole === "talent_partner"
+          ? "campaign"
+          : "job";
+  const postingTypePlural = sidebarRole === "freelancer" ? "gigs" : `${postingType}${postingType === "campaign" ? "s" : " postings"}`;
+  const roleLabel =
+    sidebarRole === "client"
+      ? "Client"
+      : sidebarRole === "freelancer"
+        ? "Freelancer"
+        : sidebarRole === "brand"
+          ? "Brand"
+          : sidebarRole === "agency"
+            ? "Agency"
+            : sidebarRole === "talent_partner"
+              ? "Talent Partner"
+              : "Employer";
 
   const { data: company, isLoading } = useQuery({ queryKey: ["companies", "mine"], queryFn: companyApi.mine });
 

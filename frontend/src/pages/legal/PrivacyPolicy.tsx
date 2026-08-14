@@ -4,15 +4,15 @@ export default function PrivacyPolicy() {
   return (
     <LegalPage title="Privacy Policy" updatedAt="22 July 2026">
       <p>
-        This Privacy Policy explains what information MahaHub collects, how we use it, and the choices you have. By using MahaHub, you
+        This Privacy Policy explains what information GrowHive collects, how we use it, and the choices you have. By using GrowHive, you
         agree to the practices described here.
       </p>
 
       <h2>1. Information We Collect</h2>
       <ul>
         <li><strong>Account information:</strong> name, email, password (hashed), role, profile details you choose to add (bio, skills, portfolio, experience, education).</li>
-        <li><strong>Verification information:</strong> KYC documents (ID proof) submitted for withdrawal eligibility, reviewed by MahaHub admins only.</li>
-        <li><strong>Payment information:</strong> processed directly by Razorpay; MahaHub stores payment records (amount, status, commission) but not your card/bank credentials.</li>
+        <li><strong>Verification information:</strong> KYC documents (ID proof) submitted for withdrawal eligibility, reviewed by GrowHive admins only.</li>
+        <li><strong>Payment information:</strong> processed directly by Razorpay; GrowHive stores payment records (amount, status, commission) but not your card/bank credentials.</li>
         <li><strong>Payout details:</strong> UPI ID or bank account details you save for withdrawals.</li>
         <li><strong>Content you create:</strong> gig listings, job postings, messages, attachments, reviews, and portfolio items.</li>
         <li><strong>Usage data:</strong> pages viewed, gigs/profiles visited, and access logs for private/NDA-gated projects (who viewed or accepted an NDA, and when).</li>
@@ -37,7 +37,7 @@ export default function PrivacyPolicy() {
       <h2>4. Who Can See Your Information</h2>
       <ul>
         <li>Your public profile (name, headline, skills, portfolio, ratings) is visible to anyone browsing the Platform, unless you're on a private/invite-only project.</li>
-        <li>KYC documents are visible only to MahaHub admins reviewing your verification.</li>
+        <li>KYC documents are visible only to GrowHive admins reviewing your verification.</li>
         <li>Private/NDA project details and attachments are visible only to the client, the freelancers they've invited, and admins.</li>
         <li>We do not sell your personal information to third parties.</li>
       </ul>
@@ -66,6 +66,18 @@ export default function PrivacyPolicy() {
 
       <h2>9. Contact</h2>
       <p>For privacy questions or data requests, contact the support contact listed on the Platform.</p>
+
+      <h2>10. Grievance Officer</h2>
+      <p>
+        In accordance with the Information Technology Act, 2000 and the rules made thereunder, including the Information Technology
+        (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, the details of the Grievance Officer are provided below.
+      </p>
+      <p>
+        <em>
+          [Placeholder — fill in before launch: Grievance Officer name, designation, email address, and registered postal address.
+          Complaints must be acknowledged within 24 hours and resolved within 15 days as required by the IT Rules, 2021.]
+        </em>
+      </p>
     </LegalPage>
   );
 }

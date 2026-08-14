@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { rolesApi } from "@/api/roles";
 import { useAuth } from "@/context/AuthContext";
-import { CATEGORY_ROLES, ROLE_LABELS, dashboardPathForRole } from "@/lib/roles";
+import { CATEGORY_ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, dashboardPathForRole } from "@/lib/roles";
 import type { UserRole } from "@/types";
 
 // Multi-select within whatever category was picked in SelectCategory.tsx —
@@ -54,14 +54,17 @@ export default function SelectRoles() {
             type="button"
             onClick={() => toggle(role)}
             className={cn(
-              "flex w-full items-center justify-between rounded-lg border p-3.5 text-left transition-colors",
+              "flex w-full items-center justify-between gap-3 rounded-lg border p-3.5 text-left transition-colors",
               checked.has(role) ? "border-primary bg-primary/5" : "border-border hover:bg-accent"
             )}
           >
-            <span className="font-medium text-foreground">{ROLE_LABELS[role]}</span>
+            <div>
+              <p className="font-medium text-foreground">{ROLE_LABELS[role]}</p>
+              <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
+            </div>
             <span
               className={cn(
-                "flex h-5 w-5 items-center justify-center rounded-full border text-[10px]",
+                "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px]",
                 checked.has(role) ? "border-primary bg-primary text-primary-foreground" : "border-border"
               )}
             >

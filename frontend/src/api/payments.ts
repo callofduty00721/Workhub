@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { PlanRole, PlanTier, Subscription, Payment, EarningsSummary, Paginated, Withdrawal, WithdrawalMethod, PackageName, Deliverable } from "@/types";
+import type { PlanRole, PlanTier, BillingCycle, Subscription, Payment, EarningsSummary, Paginated, Withdrawal, WithdrawalMethod, PackageName, Deliverable } from "@/types";
 
 export interface PaymentHistoryFilters {
   page?: number;
@@ -19,19 +19,21 @@ export interface RazorpayOrderResponse {
 }
 
 export const paymentApi = {
-  createRazorpayOrder: (role: PlanRole, tier: PlanTier) =>
+  createRazorpayOrder: (role: PlanRole, tier: PlanTier, billingCycle: BillingCycle = "monthly") =>
     api
       .post<{ success: boolean; data: { orderId: string; amount: number; currency: string; keyId: string; subscriptionId: string } }>(
         "/payments/razorpay/order",
-        { role, tier }
+        { role, tier, billingCycle }
       )
       .then((r) => r.data.data),
 
   verifyRazorpayPayment: (payload: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
     api.post<{ success: boolean; data: Subscription }>("/payments/razorpay/verify", payload).then((r) => r.data.data),
 
-  createStripeCheckout: (role: PlanRole, tier: PlanTier) =>
-    api.post<{ success: boolean; data: { checkoutUrl: string } }>("/payments/stripe/checkout", { role, tier }).then((r) => r.data.data),
+  createStripeCheckout: (role: PlanRole, tier: PlanTier, billingCycle: BillingCycle = "monthly") =>
+    api
+      .post<{ success: boolean; data: { checkoutUrl: string } }>("/payments/stripe/checkout", { role, tier, billingCycle })
+      .then((r) => r.data.data),
 
   mySubscription: () => api.get<{ success: boolean; data: Subscription | null }>("/payments/subscription").then((r) => r.data.data),
 
@@ -45,6 +47,11 @@ export const paymentApi = {
 
   createCampaignPayment: (applicationId: string) =>
     api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/campaign/${applicationId}`).then((r) => r.data.data),
+
+  // The deal amount itself is settled directly between brand and influencer,
+  // outside GrowHive — this only charges the platform's facilitation fee.
+  createOffPlatformFacilitationPayment: (applicationId: string) =>
+    api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/campaign-offplatform/${applicationId}`).then((r) => r.data.data),
 
   createMilestonePayment: (milestoneId: string) =>
     api.post<{ success: boolean; data: RazorpayOrderResponse }>(`/payments/milestone/${milestoneId}`).then((r) => r.data.data),

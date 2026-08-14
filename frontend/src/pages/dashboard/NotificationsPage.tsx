@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, X, CheckCheck } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import type { DashboardRole } from "@/components/layout/DashboardSidebar";
+import { resolveDashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,22 +11,9 @@ import { useAuth } from "@/context/AuthContext";
 import { timeAgoRelative as timeAgo } from "@/lib/utils";
 import type { AppNotification } from "@/types";
 
-const DASHBOARD_ROLES: DashboardRole[] = [
-  "founder",
-  "freelancer",
-  "job_seeker",
-  "influencer",
-  "employer",
-  "super_admin",
-  "investor",
-  "mentor",
-  "partner",
-  "client",
-];
-
 export default function NotificationsPage() {
   const { user } = useAuth();
-  const sidebarRole: DashboardRole = DASHBOARD_ROLES.includes(user?.role as DashboardRole) ? (user!.role as DashboardRole) : "founder";
+  const sidebarRole = resolveDashboardRole(user?.role);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({ queryKey: ["notifications"], queryFn: notificationApi.list });
@@ -67,7 +54,7 @@ export default function NotificationsPage() {
     <DashboardLayout
       role={sidebarRole}
       title="Notifications"
-      subtitle="Everything MahaHub has let you know about, in one place."
+      subtitle="Everything GrowHive has let you know about, in one place."
       actions={
         !!data?.unreadCount && (
           <Button variant="outline" onClick={markAllRead}>

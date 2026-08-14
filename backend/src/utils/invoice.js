@@ -13,7 +13,7 @@ export function streamInvoicePdf(payment, res) {
   res.setHeader("Content-Disposition", `attachment; filename=invoice-${payment._id}.pdf`);
   doc.pipe(res);
 
-  doc.fontSize(20).font("Helvetica-Bold").text("MahaHub", { continued: false });
+  doc.fontSize(20).font("Helvetica-Bold").text("GrowHive", { continued: false });
   doc.fontSize(10).font("Helvetica").fillColor("#64748b").text("Invoice / Payment Receipt");
   doc.moveDown(1.5);
 
@@ -72,7 +72,7 @@ export function streamInvoicePdf(payment, res) {
 
   doc.moveDown(4);
   doc.fontSize(8).fillColor("#94a3b8").text(
-    "This is a system-generated receipt from MahaHub. For questions, contact support via the platform.",
+    "This is a system-generated receipt from GrowHive. For questions, contact support via the platform.",
     50,
     doc.y,
     { width: 495 }

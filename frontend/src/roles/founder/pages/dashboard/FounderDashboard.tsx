@@ -127,7 +127,7 @@ export default function FounderDashboard() {
               </div>
             ) : primaryStartup ? (
               <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-xl font-bold text-white">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-primary text-xl font-bold text-white">
                   {primaryStartup.name[0]}
                 </div>
                 <div className="min-w-0 flex-1">

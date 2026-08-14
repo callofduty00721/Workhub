@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Wallet, Briefcase, FolderKanban, Trophy, Megaphone, Flag, Lock, Unlock, Loader2, Receipt } from "lucide-react";
+import { Wallet, Briefcase, FolderKanban, Trophy, Megaphone, HandCoins, Flag, Lock, Unlock, Loader2, Receipt } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import type { DashboardRole } from "@/components/layout/DashboardSidebar";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { paymentApi } from "@/api/payments";
-import { OrderStatusPanel } from "@/components/payments/OrderStatusPanel";
+import { OrderStatusPanel } from "@/pages/payments/OrderStatusPanel";
 import { formatCurrency, initialsFromName } from "@/lib/utils";
 import type { Payment, PaymentType } from "@/types";
 
@@ -20,6 +22,7 @@ const TYPE_LABELS: Record<PaymentType, string> = {
   job_hire: "Job / Project",
   contest_prize: "Contest Prize",
   campaign: "Influencer Campaign",
+  campaign_facilitation: "Off-Platform Facilitation Fee",
 };
 
 const TYPE_ICONS: Record<PaymentType, typeof Briefcase> = {
@@ -27,9 +30,16 @@ const TYPE_ICONS: Record<PaymentType, typeof Briefcase> = {
   job_hire: FolderKanban,
   contest_prize: Trophy,
   campaign: Megaphone,
+  campaign_facilitation: HandCoins,
 };
 
-export default function MyPayments({ role = "client" }: { role?: "client" | "employer" }) {
+// `role` is only an override for callers that already know it (the client
+// route); the shared employer/brand/agency/talent_partner payments route
+// leaves it unset so the sidebar matches whoever's actually signed in
+// instead of always saying "employer".
+export default function MyPayments({ role }: { role?: DashboardRole }) {
+  const { user } = useAuth();
+  const dashboardRole = role ?? (user?.role as DashboardRole | undefined) ?? "client";
   const queryClient = useQueryClient();
   const [disputing, setDisputing] = useState<Payment | null>(null);
   const [reason, setReason] = useState("");
@@ -58,7 +68,7 @@ export default function MyPayments({ role = "client" }: { role?: "client" | "emp
   const totalSpent = result?.totalSpent ?? 0;
 
   return (
-    <DashboardLayout role={role} title="My Payments" subtitle="Payments you've made for gigs, hires, and contest prizes.">
+    <DashboardLayout role={dashboardRole} title="My Payments" subtitle="Payments you've made for gigs, hires, and contest prizes.">
       {isLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-24 w-full rounded-xl" />
@@ -98,7 +108,7 @@ export default function MyPayments({ role = "client" }: { role?: "client" | "emp
                       <div key={payment._id} className="rounded-lg border border-border p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-white">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
                               {payee ? initialsFromName(payee.name) : <Icon className="h-4 w-4" />}
                             </div>
                             <div className="min-w-0">

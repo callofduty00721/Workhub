@@ -50,15 +50,15 @@ function StageLadder({ stage }: { stage: string }) {
               <span
                 className={cn(
                   "shrink-0 rounded-full transition-colors",
-                  current ? "h-3 w-3 bg-primary ring-4 ring-primary/15" : done ? "h-2 w-2 bg-primary/60" : "h-2 w-2 bg-neutral-200"
+                  current ? "h-3 w-3 bg-primary ring-4 ring-primary/15" : done ? "h-2 w-2 bg-primary/60" : "h-2 w-2 bg-muted"
                 )}
               />
-              <span className={cn("hidden whitespace-nowrap text-[9px] font-semibold sm:block", current ? "text-primary" : "text-neutral-400")}>
+              <span className={cn("hidden whitespace-nowrap text-[9px] font-semibold sm:block", current ? "text-primary" : "text-muted-foreground/70")}>
                 {s.label}
               </span>
             </div>
             {i < STAGE_ORDER.length - 1 && (
-              <div className="mx-1 h-[2px] flex-1 overflow-hidden rounded-full bg-neutral-200">
+              <div className="mx-1 h-[2px] flex-1 overflow-hidden rounded-full bg-muted">
                 <motion.div
                   initial={{ scaleX: 0 }}
                   whileInView={{ scaleX: done ? 1 : 0 }}
@@ -81,12 +81,12 @@ function LivePill({ icon: Icon, tone = "primary", children }: { icon: typeof Bri
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold",
-        tone === "primary" ? "bg-primary/10 text-primary" : "bg-neutral-100 text-neutral-500"
+        tone === "primary" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
       )}
     >
       <span className="relative flex h-1.5 w-1.5">
         {tone === "primary" && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />}
-        <span className={cn("relative inline-flex h-1.5 w-1.5 rounded-full", tone === "primary" ? "bg-primary" : "bg-neutral-400")} />
+        <span className={cn("relative inline-flex h-1.5 w-1.5 rounded-full", tone === "primary" ? "bg-primary" : "bg-muted-foreground/60")} />
       </span>
       <Icon className="h-3 w-3" /> {children}
     </span>
@@ -100,7 +100,7 @@ export default function MyStartups() {
     <DashboardLayout
       role="founder"
       title="My Startups"
-      subtitle="Manage every startup you've posted on MahaHub."
+      subtitle="Manage every startup you've posted on GrowHive."
       actions={
         <Button variant="gradient" asChild>
           <Link to="/dashboard/founder/startup">
@@ -130,10 +130,10 @@ export default function MyStartups() {
                     key={s._id}
                     variants={fadeUp}
                     whileHover={{ y: -3 }}
-                    className="group rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:shadow-[0_16px_32px_-20px_rgba(255,87,34,0.3)]"
+                    className="group rounded-2xl border border-border p-4 transition-colors hover:border-primary/30 hover:shadow-hover"
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg font-bold text-white">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">
                         {s.name[0]}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -174,7 +174,7 @@ export default function MyStartups() {
                       </div>
                     </div>
 
-                    {/* Stage progression — the same six-stage ladder used across MahaHub */}
+                    {/* Stage progression — the same six-stage ladder used across GrowHive */}
                     <div className="mt-4 border-t border-border pt-3">
                       <StageLadder stage={s.stage} />
                     </div>

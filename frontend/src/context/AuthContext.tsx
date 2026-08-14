@@ -1,15 +1,30 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { authApi } from "@/api/auth";
+import { authApi, type OtpRequiredResponse } from "@/api/auth";
 import { rolesApi } from "@/api/roles";
 import { setAccessToken } from "@/api/axios";
 import type { User, UserRole } from "@/types";
 
+interface RegisterIdentifier {
+  email?: string;
+  phone?: string;
+}
+
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (identifier: RegisterIdentifier, password: string) => Promise<User>;
   loginWithGoogle: (idToken: string) => Promise<User>;
-  register: (name: string, email: string, password: string, phone?: string, role?: UserRole, referralCode?: string) => Promise<User>;
+  register: (
+    name: string,
+    identifier: RegisterIdentifier,
+    password: string,
+    role?: UserRole,
+    referralCode?: string
+  ) => Promise<User | OtpRequiredResponse>;
+  verifyOtp: (ticket: string, otp: string) => Promise<User>;
+  // Returns the new ticket to keep using — email resends rotate the ticket
+  // (it carries the OTP hash), phone resends echo the same one back.
+  resendOtp: (ticket: string) => Promise<string>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   switchRole: (role: UserRole) => Promise<void>;
@@ -41,8 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await authApi.login({ email, password });
+  const login = useCallback(async (identifier: RegisterIdentifier, password: string) => {
+    const res = await authApi.login({ ...identifier, password });
     setAccessToken(res.accessToken);
     setUser(res.user);
     return res.user;
@@ -55,11 +70,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.user;
   }, []);
 
-  const register = useCallback(async (name: string, email: string, password: string, phone?: string, role?: UserRole, referralCode?: string) => {
-    const res = await authApi.register({ name, email, password, phone, role, referralCode });
+  // Both channels now come back as `requiresOtpVerification` — no session
+  // yet, the caller (Register.tsx) shows an OTP screen and finishes via
+  // verifyOtp below.
+  const register = useCallback(
+    async (name: string, identifier: RegisterIdentifier, password: string, role?: UserRole, referralCode?: string) => {
+      const res = await authApi.register({ name, ...identifier, password, role, referralCode });
+      if ("requiresOtpVerification" in res) return res;
+      setAccessToken(res.accessToken);
+      setUser(res.user);
+      return res.user;
+    },
+    []
+  );
+
+  const verifyOtp = useCallback(async (ticket: string, otp: string) => {
+    const res = await authApi.verifyOtp({ ticket, otp });
     setAccessToken(res.accessToken);
     setUser(res.user);
     return res.user;
+  }, []);
+
+  const resendOtp = useCallback(async (ticket: string) => {
+    const res = await authApi.resendOtp(ticket);
+    return res.ticket;
   }, []);
 
   const logout = useCallback(async () => {
@@ -81,8 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, loginWithGoogle, register, logout, refreshUser, switchRole }),
-    [user, isLoading, login, loginWithGoogle, register, logout, refreshUser, switchRole]
+    () => ({ user, isLoading, login, loginWithGoogle, register, verifyOtp, resendOtp, logout, refreshUser, switchRole }),
+    [user, isLoading, login, loginWithGoogle, register, verifyOtp, resendOtp, logout, refreshUser, switchRole]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

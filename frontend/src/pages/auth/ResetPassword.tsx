@@ -45,7 +45,7 @@ export default function ResetPassword() {
   return (
     <AuthShell
       title="Set a new password"
-      subtitle="Choose a strong password for your MahaHub account"
+      subtitle="Choose a strong password for your GrowHive account"
       footer={
         <Link to="/login" className="font-semibold text-primary hover:underline">
           Back to log in

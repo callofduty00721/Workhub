@@ -1,16 +1,11 @@
 import { api } from "./axios";
-import type { User, Job, Project, Service, FreelancerSummary, Contest } from "@/types";
+import type { User, Job, Project, Service, FreelancerSummary, InfluencerSummary, Contest, Campaign } from "@/types";
 
 export const userApi = {
   updateMe: (payload: Partial<User>) => api.put<{ success: boolean; user: User }>("/users/me", payload).then((r) => r.data.user),
 
   submitKyc: (documents: { url: string; name: string }[]) =>
     api.post<{ success: boolean; user: User }>("/users/me/kyc", { documents }).then((r) => r.data.user),
-
-  sendPhoneOtp: () => api.post<{ success: boolean; message: string }>("/users/me/phone-otp").then((r) => r.data),
-
-  verifyPhoneOtp: (otp: string) =>
-    api.post<{ success: boolean; user: User }>("/users/me/phone-otp/verify", { otp }).then((r) => r.data.user),
 
   verifyPhoneFirebaseToken: (idToken: string) =>
     api.post<{ success: boolean; user: User }>("/users/me/phone-otp/verify-firebase", { idToken }).then((r) => r.data.user),
@@ -39,11 +34,25 @@ export const userApi = {
   toggleSavedContest: (contestId: string) =>
     api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-contests/${contestId}`).then((r) => r.data.data),
 
+  toggleSavedInfluencer: (influencerId: string) =>
+    api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-influencers/${influencerId}`).then((r) => r.data.data),
+
+  toggleSavedCampaign: (campaignId: string) =>
+    api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-campaigns/${campaignId}`).then((r) => r.data.data),
+
   getSavedItems: () =>
     api
       .get<{
         success: boolean;
-        data: { jobs: Job[]; projects: Project[]; services: Service[]; freelancers: FreelancerSummary[]; contests: Contest[] };
+        data: {
+          jobs: Job[];
+          projects: Project[];
+          services: Service[];
+          freelancers: FreelancerSummary[];
+          contests: Contest[];
+          influencers: InfluencerSummary[];
+          campaigns: Campaign[];
+        };
       }>("/users/me/saved")
       .then((r) => r.data.data),
 

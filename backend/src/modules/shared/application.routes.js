@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getMyApplications, withdrawApplication, signContract } from "../jobs/job.controller.js";
+import { getMyApplications, withdrawApplication, editApplication, requestRateChange, signContract } from "../jobs/job.controller.js";
 import { createMilestones, getMilestones, deleteMilestones } from "../jobs/milestone.controller.js";
 import { addTimeEntry, getTimeEntries, deleteTimeEntry } from "../jobs/timeEntry.controller.js";
 import { protect } from "../../middleware/auth.js";
@@ -8,6 +8,8 @@ const router = Router();
 
 router.get("/mine", protect, getMyApplications);
 router.put("/:id/withdraw", protect, withdrawApplication);
+router.put("/:id", protect, editApplication);
+router.put("/:id/request-rate-change", protect, requestRateChange);
 router.post("/:applicationId/contract/sign", protect, signContract);
 
 router.post("/:applicationId/milestones", protect, createMilestones);

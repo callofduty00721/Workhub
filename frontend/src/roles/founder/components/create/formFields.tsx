@@ -12,12 +12,12 @@ export function Req() {
 }
 
 export function Hint({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] text-[#94a3b8]">{children}</p>;
+  return <p className="text-[11px] text-muted-foreground/70">{children}</p>;
 }
 
 export function Button({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-[12px] font-bold text-[#0f172a] hover:bg-[#f8fafc]">
+    <button type="button" onClick={onClick} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[12px] font-bold text-foreground hover:bg-muted">
       <Plus className="h-3.5 w-3.5" /> {children}
     </button>
   );
@@ -32,7 +32,7 @@ export function ProductImagesField({ control, index }: { control: Control<FormVa
         <Label>Product Images</Label>
         <Button onClick={() => imagesArray.append({ url: "" })}>Add Image</Button>
       </div>
-      {imagesArray.fields.length === 0 && <p className="text-[11.5px] text-[#94a3b8]">No images yet — add one or more photos of this product.</p>}
+      {imagesArray.fields.length === 0 && <p className="text-[11.5px] text-muted-foreground/70">No images yet — add one or more photos of this product.</p>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {imagesArray.fields.map((field, imgIndex) => (
           <div key={field.id} className="space-y-1.5">
@@ -105,7 +105,7 @@ export function IndustrySelect({ control, name }: { control: Control<FormValues>
 export function SubIndustrySelect({ control, industry }: { control: Control<FormValues>; industry?: string }) {
   const options = industry ? INDUSTRY_SUBCATEGORIES[industry] ?? [] : [];
   if (options.length === 0) {
-    return <p className="flex h-9 items-center text-[12px] text-[#94a3b8]">Select an industry first.</p>;
+    return <p className="flex h-9 items-center text-[12px] text-muted-foreground/70">Select an industry first.</p>;
   }
   return <SelectController control={control} name="subIndustry" placeholder="Select sub-category" options={options} />;
 }

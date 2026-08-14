@@ -4,19 +4,19 @@ export default function TermsOfService() {
   return (
     <LegalPage title="Terms of Service" updatedAt="22 July 2026">
       <p>
-        These Terms of Service ("Terms") govern your access to and use of MahaHub (the "Platform"), operated by MahaHub. By creating an
+        These Terms of Service ("Terms") govern your access to and use of GrowHive (the "Platform"), operated by GrowHive. By creating an
         account or using the Platform, you agree to these Terms. If you do not agree, do not use the Platform.
       </p>
 
-      <h2>1. Who Can Use MahaHub</h2>
+      <h2>1. Who Can Use GrowHive</h2>
       <p>
-        You must be at least 18 years old and capable of entering into a binding contract to use MahaHub. By registering, you confirm the
+        You must be at least 18 years old and capable of entering into a binding contract to use GrowHive. By registering, you confirm the
         information you provide is accurate and that you'll keep it up to date.
       </p>
 
       <h2>2. Account Roles</h2>
       <p>
-        MahaHub supports multiple account types — Freelancer, Client, Employer, Founder, Investor, Mentor, and Partner. Each role has
+        GrowHive supports multiple account types — Freelancer, Client, Employer, Founder, Investor, Mentor, and Partner. Each role has
         access to features relevant to it. You are responsible for all activity under your account and for keeping your credentials
         secure.
       </p>
@@ -30,11 +30,11 @@ export default function TermsOfService() {
 
       <h2>4. Payments, Escrow, and Platform Commission</h2>
       <ul>
-        <li>Payments are processed through Razorpay. MahaHub does not store your card or bank details.</li>
+        <li>Payments are processed through Razorpay. GrowHive does not store your card or bank details.</li>
         <li>Funds paid for a Gig order or Job hire are held in escrow until the client approves and releases the work, or a milestone/hourly
           payment is accepted.
         </li>
-        <li>MahaHub deducts a platform commission (a percentage of the gross amount, set by MahaHub and shown to freelancers on each payment)
+        <li>GrowHive deducts a platform commission (a percentage of the gross amount, set by GrowHive and shown to freelancers on each payment)
           before crediting a freelancer's wallet. Clients pay the price they agreed to; the commission does not add to what the client pays.
         </li>
         <li>Withdrawals require identity verification (KYC) and are subject to processing time.</li>
@@ -43,7 +43,7 @@ export default function TermsOfService() {
       <h2>5. Revisions, Disputes, and Refunds</h2>
       <p>
         Each package/order includes a defined number of revisions. If a client and freelancer cannot agree on delivered work, either party
-        may raise a dispute, which MahaHub's admin team will review. See our{" "}
+        may raise a dispute, which GrowHive's admin team will review. See our{" "}
         <a href="/refund" className="text-primary hover:underline">
           Refund Policy
         </a>{" "}
@@ -58,7 +58,7 @@ export default function TermsOfService() {
 
       <h2>7. Prohibited Conduct</h2>
       <ul>
-        <li>Circumventing the Platform to pay or be paid outside MahaHub for work initiated on MahaHub.</li>
+        <li>Circumventing the Platform to pay or be paid outside GrowHive for work initiated on GrowHive.</li>
         <li>Posting fraudulent, infringing, or misleading listings, reviews, or portfolio items.</li>
         <li>Harassment, discrimination, or abusive behavior toward other users.</li>
         <li>Uploading malware, or content that violates applicable law or third-party rights.</li>
@@ -72,8 +72,8 @@ export default function TermsOfService() {
 
       <h2>9. Limitation of Liability</h2>
       <p>
-        MahaHub is a marketplace connecting independent parties. We are not a party to the contracts formed between freelancers and
-        clients/employers, and we do not guarantee the quality, legality, or outcome of any work. To the extent permitted by law, MahaHub's
+        GrowHive is a marketplace connecting independent parties. We are not a party to the contracts formed between freelancers and
+        clients/employers, and we do not guarantee the quality, legality, or outcome of any work. To the extent permitted by law, GrowHive's
         liability is limited to the platform commission earned on the transaction in question.
       </p>
 
@@ -82,6 +82,17 @@ export default function TermsOfService() {
 
       <h2>11. Contact</h2>
       <p>Questions about these Terms can be sent to the support contact listed on the Platform.</p>
+
+      <h2>12. Grievance Officer</h2>
+      <p>
+        As required under the Information Technology Act, 2000 and the Information Technology (Intermediary Guidelines and Digital
+        Media Ethics Code) Rules, 2021:
+      </p>
+      <p>
+        <em>
+          [Placeholder — fill in before launch: Grievance Officer name, designation, email address, and registered postal address.]
+        </em>
+      </p>
     </LegalPage>
   );
 }

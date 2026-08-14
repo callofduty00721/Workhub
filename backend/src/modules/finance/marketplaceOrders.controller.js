@@ -6,6 +6,7 @@ import ContestEntry from "../../modules/contest/contestEntry.model.js";
 import Milestone from "../jobs/milestone.model.js";
 import TimeEntry from "../jobs/timeEntry.model.js";
 import { getRazorpayClient, isRazorpayConfigured } from "../../config/payments.js";
+import { getCommissionPercent } from "./platformSettings.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 
@@ -150,6 +151,7 @@ export const createCampaignPayment = asyncHandler(async (req, res) => {
   }
   if (application.status !== "hired") throw new ApiError(400, "You can only pay an influencer you've hired");
   if (!application.proposedRate) throw new ApiError(400, "This application has no agreed rate to pay");
+  if (application.offPlatformSettledAt) throw new ApiError(400, "This hire was already settled off-platform");
 
   const applicantId = typeof application.applicant === "object" ? application.applicant._id : application.applicant;
   const deliveryDays = application.deliveryDays || 7;
@@ -167,6 +169,45 @@ export const createCampaignPayment = asyncHandler(async (req, res) => {
       revisionsAllowed: 1,
     },
     receiptPrefix: "campaign",
+  });
+
+  res.status(201).json({ success: true, data });
+});
+
+// The brand and influencer settle the actual campaign fee between
+// themselves, outside GrowHive — no escrow, no dispute protection, since the
+// platform never touches that money. This payment is only the facilitation
+// fee (the platform's commission on a deal it didn't process), charged as
+// its own small Razorpay order.
+export const createOffPlatformFacilitationPayment = asyncHandler(async (req, res) => {
+  const application = await Application.findById(req.params.applicationId).populate("job");
+  if (!application) throw new ApiError(404, "Application not found");
+  if (application.onModel !== "Campaign") throw new ApiError(400, "This application is not for a campaign");
+
+  const campaign = application.job;
+  const employerId = typeof campaign.employer === "object" ? campaign.employer._id : campaign.employer;
+  if (employerId.toString() !== req.user._id.toString() && req.user.role !== "super_admin") {
+    throw new ApiError(403, "Only the campaign poster can settle this hire");
+  }
+  if (application.status !== "hired") throw new ApiError(400, "You can only settle an influencer you've hired");
+  if (!application.proposedRate) throw new ApiError(400, "This application has no agreed rate to base the fee on");
+  if (application.offPlatformSettledAt) throw new ApiError(400, "This hire was already settled off-platform");
+
+  const existingEscrowPayment = await Payment.exists({ application: application._id, type: "campaign", status: "paid" });
+  if (existingEscrowPayment) throw new ApiError(400, "This hire was already paid through GrowHive — settle new hires off-platform, not this one");
+
+  const applicantId = typeof application.applicant === "object" ? application.applicant._id : application.applicant;
+  const commissionPercent = await getCommissionPercent();
+  const facilitationFee = Math.round(application.proposedRate * (commissionPercent / 100));
+  if (facilitationFee <= 0) throw new ApiError(400, "Facilitation fee must be a positive amount");
+
+  const data = await createMarketplaceRazorpayOrder({
+    payer: req.user._id,
+    payee: applicantId,
+    amount: facilitationFee,
+    type: "campaign_facilitation",
+    extra: { application: application._id, note: `${campaign.title} — off-platform facilitation fee` },
+    receiptPrefix: "offplatform",
   });
 
   res.status(201).json({ success: true, data });

@@ -4,9 +4,9 @@ import { connectDB } from "../../src/config/db.js";
 import User from "../../src/modules/shared/user.model.js";
 
 const UPDATES = [
-  { email: "aditi.kulkarni@mahahub.demo", category: "Graphics & Design", subCategory: "Logo & Brand Identity" },
-  { email: "rohan.sharma@mahahub.demo", category: "Programming & Tech", subCategory: "Website Development" },
-  { email: "sarah.fernandes@mahahub.demo", category: "Writing & Translation", subCategory: "Content Writing" },
+  { email: "aditi.kulkarni@growhive.demo", category: "Graphics & Design", subCategory: "Logo & Brand Identity" },
+  { email: "rohan.sharma@growhive.demo", category: "Programming & Tech", subCategory: "Website Development" },
+  { email: "sarah.fernandes@growhive.demo", category: "Writing & Translation", subCategory: "Content Writing" },
 ];
 
 async function run() {

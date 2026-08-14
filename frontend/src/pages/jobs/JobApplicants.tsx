@@ -33,9 +33,9 @@ import { projectApi } from "@/api/projects";
 import { chatApi } from "@/api/chat";
 import { paymentApi } from "@/api/payments";
 import { payWithRazorpay } from "@/lib/razorpay";
-import { MilestonesPanel } from "@/components/jobs/MilestonesPanel";
-import { WorkDiary } from "@/components/jobs/WorkDiary";
-import { ContractPanel } from "@/components/jobs/ContractPanel";
+import { MilestonesPanel } from "@/pages/jobs/MilestonesPanel";
+import { WorkDiary } from "@/pages/jobs/WorkDiary";
+import { ContractPanel } from "@/pages/jobs/ContractPanel";
 import { useAuth } from "@/context/AuthContext";
 import { initialsFromName, formatCurrency } from "@/lib/utils";
 import type { Application, ApplicationStatus, Job, Project } from "@/types";
@@ -157,6 +157,22 @@ export default function JobApplicants({
         <div className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{payError}</div>
       )}
 
+      {job && "openings" in job && !!job.openings && (
+        <Card className="mb-4">
+          <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-2 p-5 text-sm">
+            <span className="text-muted-foreground">
+              <span className="font-semibold text-foreground">{job.openings}</span> opening{job.openings === 1 ? "" : "s"}
+            </span>
+            <span className="text-muted-foreground">
+              <span className="font-semibold text-foreground">{applications?.length ?? 0}</span> applicant{(applications?.length ?? 0) === 1 ? "" : "s"}
+            </span>
+            <span className="text-muted-foreground">
+              <span className="font-semibold text-success">{applications?.filter((a) => a.status === "hired").length ?? 0}</span> hired
+            </span>
+          </CardContent>
+        </Card>
+      )}
+
       {isConfidential && (
         <Card className="mb-4">
           <CardContent className="p-5">
@@ -215,7 +231,7 @@ export default function JobApplicants({
               <Card key={app._id}>
                 <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-white">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
                       {applicant ? initialsFromName(applicant.name) : "?"}
                     </div>
                     <div className="min-w-0">

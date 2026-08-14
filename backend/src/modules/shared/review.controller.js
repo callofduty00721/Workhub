@@ -5,6 +5,7 @@ import Startup from "../startup/startup.model.js";
 import Payment from "./payment.model.js";
 import Job from "../jobs/job.model.js";
 import Project from "../jobs/project.model.js";
+import Campaign from "../campaign/campaign.model.js";
 import Application from "./application.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
@@ -32,21 +33,26 @@ async function hasCompletedRelationship(reviewerId, targetType, targetId) {
     });
     if (relatedPayment) return true;
 
-    // Application.job is polymorphic (Job or Project) — check both collections
-    // for a hire relationship, in either review direction.
-    const [reviewerJobIds, reviewerProjectIds, targetJobIds, targetProjectIds] = await Promise.all([
+    // Application.job is polymorphic (Job, Project, or Campaign) — check all
+    // three collections for a hire relationship, in either review direction.
+    // Campaign hires are the only path brand/agency/talent_partner ever have
+    // to an influencer, so without this branch they could never leave (or
+    // receive) a review before a payment exists.
+    const [reviewerJobIds, reviewerProjectIds, reviewerCampaignIds, targetJobIds, targetProjectIds, targetCampaignIds] = await Promise.all([
       Job.find({ employer: reviewerId }).distinct("_id"),
       Project.find({ employer: reviewerId }).distinct("_id"),
+      Campaign.find({ employer: reviewerId }).distinct("_id"),
       Job.find({ employer: targetId }).distinct("_id"),
       Project.find({ employer: targetId }).distinct("_id"),
+      Campaign.find({ employer: targetId }).distinct("_id"),
     ]);
 
-    const reviewerPostingIds = [...reviewerJobIds, ...reviewerProjectIds];
+    const reviewerPostingIds = [...reviewerJobIds, ...reviewerProjectIds, ...reviewerCampaignIds];
     if (reviewerPostingIds.length && (await Application.exists({ job: { $in: reviewerPostingIds }, applicant: targetId, status: "hired" }))) {
       return true;
     }
 
-    const targetPostingIds = [...targetJobIds, ...targetProjectIds];
+    const targetPostingIds = [...targetJobIds, ...targetProjectIds, ...targetCampaignIds];
     if (targetPostingIds.length && (await Application.exists({ job: { $in: targetPostingIds }, applicant: reviewerId, status: "hired" }))) {
       return true;
     }

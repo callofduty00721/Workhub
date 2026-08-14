@@ -14,10 +14,10 @@ const DISCUSSION_CATEGORIES = ["All Discussions", "Questions", "Feedback", "Part
 const POST_CATEGORIES = ["Questions", "Feedback", "Partnerships", "General"] as const;
 
 const CATEGORY_META: Record<Discussion["category"], { bg: string; fg: string; icon: typeof HelpCircle }> = {
-  Questions: { bg: "#ffece5", fg: "#FF5722", icon: HelpCircle },
+  Questions: { bg: "#F5F5F5", fg: "#171717", icon: HelpCircle },
   Feedback: { bg: "#fdf1de", fg: "#d97706", icon: MessageCircle },
   Partnerships: { bg: "#f1ebfc", fg: "#7c3aed", icon: Handshake },
-  Investors: { bg: "#ffece5", fg: "#FF5722", icon: Briefcase },
+  Investors: { bg: "#F5F5F5", fg: "#171717", icon: Briefcase },
   General: { bg: "#e0f6f6", fg: "#0d9488", icon: HelpCircle },
 };
 
@@ -89,18 +89,18 @@ export function DiscussionsTab({
 
   return (
     <div>
-      <h3 className="text-[19px] font-extrabold text-[#0f172a]">Discussions</h3>
-      <p className="mt-1 text-[12.5px] text-[#64748b]">Ask questions, share ideas and get suggestions from the community.</p>
+      <h3 className="text-[19px] font-extrabold text-foreground">Discussions</h3>
+      <p className="mt-1 text-[12.5px] text-muted-foreground">Ask questions, share ideas and get suggestions from the community.</p>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search discussions..." className="pl-9" />
         </div>
         {canPost && (
           <button
             onClick={() => onOpenChange(!open)}
-            className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#FF5722] px-4 py-2 text-[12.5px] font-bold text-white hover:opacity-90"
+            className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[12.5px] font-bold text-primary-foreground hover:opacity-90"
           >
             <Plus className="h-3.5 w-3.5" /> Start Discussion
           </button>
@@ -108,7 +108,7 @@ export function DiscussionsTab({
       </div>
 
       {open && (
-        <div className="mt-4 space-y-2 rounded-xl border border-[#e2e8f0] p-4">
+        <div className="mt-4 space-y-2 rounded-xl border border-border p-4">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Discussion title" />
           <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Ask a question, share feedback, or propose a partnership..." className="min-h-[80px]" />
           <Select value={postCategory} onValueChange={(v) => setPostCategory(v as Discussion["category"])}>
@@ -119,7 +119,7 @@ export function DiscussionsTab({
               ))}
             </SelectContent>
           </Select>
-          <button onClick={() => title.trim() && body.trim() && createMutation.mutate()} disabled={!title.trim() || !body.trim() || createMutation.isPending} className="flex items-center gap-1.5 rounded-lg bg-[#FF5722] px-3.5 py-2 text-[12px] font-bold text-white">
+          <button onClick={() => title.trim() && body.trim() && createMutation.mutate()} disabled={!title.trim() || !body.trim() || createMutation.isPending} className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-[12px] font-bold text-primary-foreground">
             {createMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Post
           </button>
         </div>
@@ -134,7 +134,7 @@ export function DiscussionsTab({
                 setCategory(c);
                 setShowAll(false);
               }}
-              className={cn("rounded-full px-3 py-1.5 text-[11.5px] font-semibold", category === c ? "bg-[#ffece5] text-[#FF5722]" : "text-[#64748b] hover:bg-[#f8fafc]")}
+              className={cn("rounded-full px-3 py-1.5 text-[11.5px] font-semibold", category === c ? "bg-brand text-brand-foreground" : "text-muted-foreground hover:bg-muted")}
             >
               {c}
             </button>
@@ -150,7 +150,7 @@ export function DiscussionsTab({
             <EmptyNote text="No discussions yet. Be the first to start one." />
           ) : (
             <>
-              <div className="divide-y divide-[#f1f5f9]">
+              <div className="divide-y divide-border">
                 {visible.map((d) => {
                   const meta = CATEGORY_META[d.category];
                   const Icon = meta.icon;
@@ -163,7 +163,7 @@ export function DiscussionsTab({
                           </span>
                           <div>
                             <p className="text-[13.5px] font-bold">{d.title}</p>
-                            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11.5px] text-[#94a3b8]">
+                            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted-foreground/70">
                               Asked by {d.author.name} · {timeAgo(d.createdAt)}
                               <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: meta.bg, color: meta.fg }}>
                                 {d.category}
@@ -171,19 +171,19 @@ export function DiscussionsTab({
                             </p>
                           </div>
                         </div>
-                        <div className="flex shrink-0 items-center gap-3 text-[11.5px] text-[#64748b]">
+                        <div className="flex shrink-0 items-center gap-3 text-[11.5px] text-muted-foreground">
                           <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {d.commentCount} Replies</span>
                           <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {d.viewCount} Views</span>
                         </div>
                       </div>
-                      <p className="mt-2 line-clamp-2 pl-12 text-[12.5px] text-[#64748b]">{d.body}</p>
+                      <p className="mt-2 line-clamp-2 pl-12 text-[12.5px] text-muted-foreground">{d.body}</p>
                       <div className="mt-2 flex items-center gap-4 pl-12">
-                        <button onClick={() => likeMutation.mutate(d._id)} className="flex items-center gap-1 text-[11.5px] text-[#64748b] hover:text-[#FF5722]">
+                        <button onClick={() => likeMutation.mutate(d._id)} className="flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground">
                           <ThumbsUp className="h-3.5 w-3.5" /> {d.likes.length}
                         </button>
                         <button
                           onClick={() => setOpenReplyId(openReplyId === d._id ? null : d._id)}
-                          className="flex items-center gap-1 text-[11.5px] text-[#64748b] hover:text-[#FF5722]"
+                          className="flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground"
                         >
                           <Reply className="h-3.5 w-3.5" /> Reply
                         </button>
@@ -196,7 +196,7 @@ export function DiscussionsTab({
                             disabled={reportedIds.has(d._id)}
                             className={cn(
                               "flex items-center gap-1 text-[11.5px]",
-                              reportedIds.has(d._id) ? "text-[#94a3b8]" : "text-[#64748b] hover:text-[#dc2626]"
+                              reportedIds.has(d._id) ? "text-muted-foreground/70" : "text-muted-foreground hover:text-danger"
                             )}
                           >
                             <Flag className="h-3.5 w-3.5" /> {reportedIds.has(d._id) ? "Reported" : "Report"}
@@ -205,23 +205,23 @@ export function DiscussionsTab({
                       </div>
 
                       {reportOpenId === d._id && (
-                        <div className="ml-12 mt-2.5 rounded-lg border border-[#fce8e8] bg-[#fef7f7] p-3">
-                          <p className="text-[11.5px] font-semibold text-[#dc2626]">Why are you reporting this discussion?</p>
+                        <div className="ml-12 mt-2.5 rounded-lg border border-danger/30 bg-danger/10 p-3">
+                          <p className="text-[11.5px] font-semibold text-danger">Why are you reporting this discussion?</p>
                           <Textarea
                             value={reportReason}
                             onChange={(e) => setReportReason(e.target.value)}
                             placeholder="Optional details for the moderation team..."
-                            className="mt-2 min-h-[56px] bg-white text-[12px]"
+                            className="mt-2 min-h-[56px] bg-card text-[12px]"
                           />
                           <div className="mt-2 flex gap-2">
                             <button
                               onClick={() => reportMutation.mutate(d._id)}
                               disabled={reportMutation.isPending}
-                              className="flex items-center gap-1.5 rounded-lg bg-[#dc2626] px-3 py-1.5 text-[11.5px] font-bold text-white hover:opacity-90"
+                              className="flex items-center gap-1.5 rounded-lg bg-danger px-3 py-1.5 text-[11.5px] font-bold text-danger-foreground hover:opacity-90"
                             >
                               {reportMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Submit Report
                             </button>
-                            <button onClick={() => setReportOpenId(null)} className="rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-[11.5px] font-bold text-[#0f172a] hover:bg-white">
+                            <button onClick={() => setReportOpenId(null)} className="rounded-lg border border-border px-3 py-1.5 text-[11.5px] font-bold text-foreground hover:bg-card">
                               Cancel
                             </button>
                           </div>
@@ -236,7 +236,7 @@ export function DiscussionsTab({
               {filtered.length > 5 && (
                 <button
                   onClick={() => setShowAll((v) => !v)}
-                  className="mt-4 w-full rounded-lg border border-[#e2e8f0] py-2.5 text-[12.5px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
+                  className="mt-4 w-full rounded-lg border border-border py-2.5 text-[12.5px] font-bold text-foreground hover:bg-muted"
                 >
                   {showAll ? "Show Fewer Discussions" : "Load More Discussions"}
                 </button>
@@ -246,8 +246,8 @@ export function DiscussionsTab({
         </div>
 
         <div className="space-y-5">
-          <div className="rounded-xl border border-[#e2e8f0] p-4">
-            <h4 className="text-[13.5px] font-bold text-[#0f172a]">Popular Discussions</h4>
+          <div className="rounded-xl border border-border p-4">
+            <h4 className="text-[13.5px] font-bold text-foreground">Popular Discussions</h4>
             {popularDiscussions.length === 0 ? (
               <EmptyNote text="No discussions yet." />
             ) : (
@@ -256,23 +256,23 @@ export function DiscussionsTab({
                   <div key={d._id} className="flex items-start gap-2.5">
                     <Avatar className="h-8 w-8 shrink-0">
                       <AvatarImage src={d.author.avatar} alt={d.author.name} />
-                      <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
+                      <AvatarFallback className="bg-brand-gradient text-[10px] font-bold text-brand-foreground">
                         {initialsFromName(d.author.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[12px] font-semibold text-[#0f172a]">{d.title}</p>
-                      <p className="text-[10.5px] text-[#94a3b8]">{d.author.name} · {timeAgo(d.createdAt)}</p>
+                      <p className="truncate text-[12px] font-semibold text-foreground">{d.title}</p>
+                      <p className="text-[10.5px] text-muted-foreground/70">{d.author.name} · {timeAgo(d.createdAt)}</p>
                     </div>
-                    <span className="shrink-0 text-[10.5px] font-bold text-[#64748b]">{d.commentCount}</span>
+                    <span className="shrink-0 text-[10.5px] font-bold text-muted-foreground">{d.commentCount}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="rounded-xl border border-[#e2e8f0] p-4">
-            <h4 className="text-[13.5px] font-bold text-[#0f172a]">Community Guidelines</h4>
+          <div className="rounded-xl border border-border p-4">
+            <h4 className="text-[13.5px] font-bold text-foreground">Community Guidelines</h4>
             <ul className="mt-3 space-y-2.5">
               {[
                 [Heart, "Respect everyone in the community"],
@@ -283,8 +283,8 @@ export function DiscussionsTab({
               ].map(([Icon, text], i) => {
                 const IconComp = Icon as typeof Heart;
                 return (
-                  <li key={i} className="flex items-start gap-2 text-[11.5px] text-[#334155]">
-                    <IconComp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FF5722]" /> {text as string}
+                  <li key={i} className="flex items-start gap-2 text-[11.5px] text-foreground/80">
+                    <IconComp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" /> {text as string}
                   </li>
                 );
               })}
@@ -315,7 +315,7 @@ function DiscussionReplies({ discussionId, startupId, canPost }: { discussionId:
   });
 
   return (
-    <div className="ml-12 mt-3 space-y-3 border-l-2 border-[#e2e8f0] pl-4">
+    <div className="ml-12 mt-3 space-y-3 border-l-2 border-border pl-4">
       {isLoading ? (
         <EmptyNote text="Loading replies..." />
       ) : !comments?.length ? (
@@ -325,15 +325,15 @@ function DiscussionReplies({ discussionId, startupId, canPost }: { discussionId:
           <div key={c._id} className="flex items-start gap-2.5">
             <Avatar className="h-7 w-7 shrink-0">
               <AvatarImage src={c.author.avatar} alt={c.author.name} />
-              <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[9.5px] font-bold text-white">
+              <AvatarFallback className="bg-brand-gradient text-[9.5px] font-bold text-brand-foreground">
                 {initialsFromName(c.author.name)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-[11.5px] font-bold text-[#0f172a]">
-                {c.author.name} <span className="ml-1 font-normal text-[#94a3b8]">· {timeAgo(c.createdAt)}</span>
+              <p className="text-[11.5px] font-bold text-foreground">
+                {c.author.name} <span className="ml-1 font-normal text-muted-foreground/70">· {timeAgo(c.createdAt)}</span>
               </p>
-              <p className="mt-0.5 text-[12px] text-[#374151]">{c.body}</p>
+              <p className="mt-0.5 text-[12px] text-foreground/80">{c.body}</p>
             </div>
           </div>
         ))
@@ -353,7 +353,7 @@ function DiscussionReplies({ discussionId, startupId, canPost }: { discussionId:
           <button
             onClick={() => body.trim() && mutation.mutate()}
             disabled={!body.trim() || mutation.isPending}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FF5722] text-white hover:opacity-90 disabled:opacity-50"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {mutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
           </button>

@@ -10,6 +10,7 @@ import { notify } from "../../utils/notify.js";
 import { notifyMatchingAlerts } from "../../utils/jobAlerts.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
 import { assertUnderListingLimit } from "../../utils/planLimits.js";
+import { getJobsEnabled } from "../finance/platformSettings.model.js";
 
 const ATTACHMENTS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000;
 const SIGNED_URL_TTL_SECONDS = 10 * 60;
@@ -39,19 +40,47 @@ async function logAccess(req, job, action, attachmentName) {
 }
 
 export const listJobs = asyncHandler(async (req, res) => {
-  const { search, type, category, isRemote } = req.query;
+  // Deliberately NOT gated by getJobsEnabled() here — this same endpoint is
+  // reused by SearchResults, JobDetails' "related jobs", and existing
+  // job_seeker accounts' dashboard widget, none of which should break just
+  // because the public board's own nav link/route is switched off. The
+  // toggle instead controls the /jobs, /jobs/:id routes and nav link
+  // directly (see App.tsx, Navbar.tsx) via the public /settings/jobs-enabled read.
+  const { search, type, category, isRemote, employer, excludeId, salaryMin, salaryMax, industryType, subIndustry, qualification, companyType } = req.query;
 
   const filter = { status: "open", visibility: { $ne: "invite_only" } };
   if (type) filter.type = String(type).includes(",") ? { $in: String(type).split(",") } : type;
   if (category) filter.category = category;
   if (isRemote === "true") filter.isRemote = true;
   if (search) filter.$text = { $search: search };
+  if (employer) filter.employer = employer;
+  if (excludeId) filter._id = { $ne: excludeId };
+  // industryType is now a fixed naukri.com-style list (see INDUSTRY_TYPE_VALUES
+  // in job.model.js), so this is an exact match, not free-text search.
+  if (industryType) filter.industryType = String(industryType).includes(",") ? { $in: String(industryType).split(",") } : industryType;
+  if (subIndustry) filter.subIndustry = String(subIndustry).includes(",") ? { $in: String(subIndustry).split(",") } : subIndustry;
+  if (companyType) filter.companyType = String(companyType).includes(",") ? { $in: String(companyType).split(",") } : companyType;
+  // Qualification is free text at posting time (see PostJob.tsx's
+  // educationUG/educationPG) — matches against either field since a
+  // candidate's degree could satisfy the UG or PG requirement.
+  if (qualification) {
+    const re = new RegExp(qualification, "i");
+    filter.$or = [...(filter.$or ?? []), { educationUG: re }, { educationPG: re }];
+  }
+  // Powers the salary-range browse cards on JobList — a job "belongs" to a
+  // range if its posted salaryMin falls inside it (mirrors how the range
+  // buckets/counts are computed in getJobSalaryRangeCounts below).
+  if (salaryMin || salaryMax) {
+    filter.salaryMin = {};
+    if (salaryMin) filter.salaryMin.$gte = Number(salaryMin);
+    if (salaryMax) filter.salaryMin.$lte = Number(salaryMax);
+  }
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
 
   const [items, total] = await Promise.all([
     Job.find(filter)
-      .populate("employer", "name avatar")
+      .populate("employer", "name avatar rating reviewCount")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum),
@@ -76,6 +105,35 @@ export const getJobCategoryCounts = asyncHandler(async (req, res) => {
   res.json({ success: true, data: counts.map((c) => ({ category: c._id, count: c.count })) });
 });
 
+// Powers the "₹0-3 Lakhs / ₹3-6 Lakhs / ..." salary browse cards on JobList —
+// real counts of currently open, publicly-listed jobs bucketed by their
+// posted salaryMin, not a fabricated/static list. Unpaid/unposted-salary
+// jobs (salaryMin 0) are excluded since they don't belong in any range.
+const SALARY_RANGES = [
+  { min: 0, max: 300000, label: "₹ 0-3 Lakhs" },
+  { min: 300000, max: 600000, label: "₹ 3-6 Lakhs" },
+  { min: 600000, max: 1000000, label: "₹ 6-10 Lakhs" },
+  { min: 1000000, max: 1500000, label: "₹ 10-15 Lakhs" },
+];
+
+export const getJobSalaryRangeCounts = asyncHandler(async (req, res) => {
+  const buckets = await Job.aggregate([
+    { $match: { status: "open", visibility: { $ne: "invite_only" }, salaryMin: { $gt: 0 } } },
+    {
+      $bucket: {
+        groupBy: "$salaryMin",
+        boundaries: SALARY_RANGES.map((r) => r.min).concat(SALARY_RANGES[SALARY_RANGES.length - 1].max),
+        default: "other",
+        output: { count: { $sum: 1 } },
+      },
+    },
+  ]);
+
+  const countByMin = new Map(buckets.filter((b) => b._id !== "other").map((b) => [b._id, b.count]));
+  const data = SALARY_RANGES.map((r) => ({ min: r.min, max: r.max, label: r.label, count: countByMin.get(r.min) ?? 0 }));
+  res.json({ success: true, data });
+});
+
 export const getMyJobs = asyncHandler(async (req, res) => {
   const filter = req.user.company ? { $or: [{ employer: req.user._id }, { company: req.user.company }] } : { employer: req.user._id };
   const items = await Job.find(filter).sort({ createdAt: -1 });
@@ -84,7 +142,7 @@ export const getMyJobs = asyncHandler(async (req, res) => {
 
 export const getJobById = asyncHandler(async (req, res) => {
   const job = await Job.findById(req.params.id)
-    .populate("employer", "name avatar email")
+    .populate("employer", "name avatar email rating reviewCount")
     .populate("invitedFreelancers", "name avatar email");
   if (!job) throw new ApiError(404, "Job not found");
 
@@ -122,7 +180,7 @@ export const getJobById = asyncHandler(async (req, res) => {
 
 export const getInvitedJobs = asyncHandler(async (req, res) => {
   const jobs = await Job.find({ visibility: "invite_only", invitedFreelancers: req.user._id, status: "open" })
-    .populate("employer", "name avatar")
+    .populate("employer", "name avatar rating reviewCount")
     .sort({ createdAt: -1 });
   res.json({ success: true, data: jobs });
 });
@@ -221,6 +279,8 @@ export const getJobAccessLog = asyncHandler(async (req, res) => {
 });
 
 export const createJob = asyncHandler(async (req, res) => {
+  if (!(await getJobsEnabled())) throw new ApiError(403, "Job postings are temporarily disabled");
+
   await assertUnderListingLimit(req.user, req.user.role, Job, { employer: req.user._id, status: "open" }, "active job posts");
 
   const job = await Job.create({ ...req.body, employer: req.user._id, company: req.user.company || undefined });
@@ -253,6 +313,8 @@ export const deleteJob = asyncHandler(async (req, res) => {
 });
 
 export const applyToJob = asyncHandler(async (req, res) => {
+  if (!(await getJobsEnabled())) throw new ApiError(403, "Job applications are temporarily disabled");
+
   const job = await Job.findById(req.params.id);
   if (!job) throw new ApiError(404, "Job not found");
   if (job.status !== "open") throw new ApiError(400, "This job is no longer accepting applications");
@@ -326,6 +388,81 @@ export const withdrawApplication = asyncHandler(async (req, res) => {
   res.json({ success: true, data: application });
 });
 
+// Freelancer-side edit — only while the employer hasn't acted on it yet
+// (status still "applied", whether or not they've viewed it). Once
+// shortlisted/interview/hired/rejected/withdrawn, the proposal is locked so a
+// freelancer can't change terms out from under a decision already in motion.
+export const editApplication = asyncHandler(async (req, res) => {
+  const application = await Application.findById(req.params.id).populate("job", "title employer");
+  if (!application) throw new ApiError(404, "Application not found");
+  if (application.applicant.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You can only edit your own proposals");
+  }
+  if (application.status !== "applied") {
+    throw new ApiError(400, "This proposal can no longer be edited — the employer has already acted on it");
+  }
+
+  if (req.body.coverLetter !== undefined) application.coverLetter = req.body.coverLetter;
+  if (req.body.proposedRate !== undefined) application.proposedRate = req.body.proposedRate;
+  if (req.body.deliveryDays !== undefined) application.deliveryDays = req.body.deliveryDays;
+  application.lastEditedAt = new Date();
+  // A revised proposal is the applicant's response to any open negotiation
+  // request — clear requestedAt (not the whole nested object: Mongoose
+  // re-applies the sub-fields' own defaults on save/reload, so assigning
+  // `undefined` to the object itself doesn't actually clear it — checking
+  // negotiationRequest?.requestedAt everywhere is what "pending" means).
+  if (application.negotiationRequest) application.negotiationRequest.requestedAt = undefined;
+  await application.save();
+
+  const job = application.job;
+  if (job?.employer) {
+    await notify(req.app, {
+      user: job.employer,
+      type: "job_application",
+      title: "Proposal updated",
+      message: `${req.user.name} updated their proposal for ${job.title}`,
+      link: `/dashboard/employer/jobs/${job._id}/applicants`,
+    });
+  }
+
+  res.json({ success: true, data: application });
+});
+
+// Employer asks the applicant to revise their proposedRate — puts the
+// application back to "applied" so editApplication's own guard (only
+// editable while "applied") allows the applicant to respond, same as any
+// other still-open proposal.
+export const requestRateChange = asyncHandler(async (req, res) => {
+  const application = await Application.findById(req.params.id).populate("job", "title employer company");
+  if (!application) throw new ApiError(404, "Application not found");
+
+  const job = application.job;
+  if (!job || !isJobManager(job, req.user)) {
+    throw new ApiError(403, "You do not have permission to negotiate on this application");
+  }
+  if (!["applied", "shortlisted"].includes(application.status)) {
+    throw new ApiError(400, "You can only request a rate change while this proposal is still under review");
+  }
+
+  application.status = "applied";
+  application.negotiationRequest = {
+    message: req.body.message || "",
+    suggestedRate: req.body.suggestedRate || undefined,
+    requestedAt: new Date(),
+  };
+  await application.save();
+
+  await notify(req.app, {
+    user: application.applicant,
+    type: "job_application",
+    title: "Rate change requested",
+    message: `${req.user.name} asked you to revise your proposal for ${job.title}`,
+    link: "/dashboard/influencer/campaign-invites",
+  });
+
+  res.json({ success: true, data: application });
+});
+
 export const updateApplicationStatus = asyncHandler(async (req, res) => {
   const application = await Application.findById(req.params.id)
     .populate("job")
@@ -348,8 +485,8 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
     application.contract = {
       text:
         `This agreement is between ${req.user.name} (Client) and ${application.applicant.name} (Freelancer) ` +
-        `for the work "${job.title}" on MahaHub. ${rateLine} Payment is held in escrow and released to the ` +
-        `freelancer once the client approves the delivered work, per MahaHub's standard escrow terms. ` +
+        `for the work "${job.title}" on GrowHive. ${rateLine} Payment is held in escrow and released to the ` +
+        `freelancer once the client approves the delivered work, per GrowHive's standard escrow terms. ` +
         `Both parties must sign below before any payment can be made against this agreement.`,
     };
   }
@@ -461,6 +598,21 @@ export const signContract = asyncHandler(async (req, res) => {
   });
 
   res.json({ success: true, data: application });
+});
+
+export const reportJob = asyncHandler(async (req, res) => {
+  const job = await Job.findById(req.params.id);
+  if (!job) throw new ApiError(404, "Job not found");
+
+  const userId = req.user._id.toString();
+  const alreadyReported = job.reports.some((r) => r.user.toString() === userId);
+
+  if (!alreadyReported) {
+    job.reports.push({ user: req.user._id, reason: req.body.reason || "" });
+    await job.save();
+  }
+
+  res.json({ success: true, message: "Thanks — this job has been reported to the moderation team." });
 });
 
 export const getMyJobAnalytics = asyncHandler(async (req, res) => {

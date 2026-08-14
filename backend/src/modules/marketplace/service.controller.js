@@ -217,7 +217,7 @@ export const listFreelancers = asyncHandler(async (req, res) => {
     User.find(filter)
       .select(
         "name avatar coverImage headline location category subCategory skills hourlyRate rating reviewCount yearsOfExperience " +
-          "availabilityStatus level company kycStatus responseTimeLabel languages createdAt"
+          "availabilityStatus level company kycStatus responseTimeLabel languages socialLinks createdAt"
       )
       .populate("company", "name")
       .sort(sortSpec)

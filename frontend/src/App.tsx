@@ -3,6 +3,9 @@ import { Routes, Route } from "react-router-dom";
 import { MarketingLayout } from "@/components/layout/MarketingLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PageLoader } from "@/components/shared/PageLoader";
+import { JobsFeatureGate } from "@/components/shared/JobsFeatureGate";
+import { CookieConsentBanner } from "@/components/shared/CookieConsentBanner";
+import { SkipToContentLink } from "@/components/shared/SkipToContentLink";
 import { ComingSoon } from "@/pages/ComingSoon";
 
 const Home = lazy(() => import("@/pages/Home"));
@@ -36,21 +39,21 @@ const ProjectDetails = lazy(() => import("@/pages/projects/ProjectDetails"));
 const PostJob = lazy(() => import("@/pages/jobs/PostJob"));
 const JobApplicants = lazy(() => import("@/pages/jobs/JobApplicants"));
 const PostProject = lazy(() => import("@/pages/projects/PostProject"));
-const ClientProjectApplicants = lazy(() => import("@/roles/client/pages/ClientProjectApplicants"));
 const CampaignList = lazy(() => import("@/pages/campaigns/CampaignList"));
 const CampaignDetails = lazy(() => import("@/pages/campaigns/CampaignDetails"));
 const PostCampaign = lazy(() => import("@/pages/campaigns/PostCampaign"));
 const MyCampaigns = lazy(() => import("@/pages/campaigns/MyCampaigns"));
+const MyRoster = lazy(() => import("@/pages/campaigns/MyRoster"));
 const CampaignApplicants = lazy(() => import("@/pages/campaigns/CampaignApplicants"));
+const MyClients = lazy(() => import("@/pages/campaigns/MyClients"));
+const MyAgencies = lazy(() => import("@/pages/campaigns/MyAgencies"));
+const CampaignReport = lazy(() => import("@/pages/campaigns/CampaignReport"));
 const ContestList = lazy(() => import("@/pages/contests/ContestList"));
 const SearchResults = lazy(() => import("@/pages/SearchResults"));
 const ContestDetails = lazy(() => import("@/pages/contests/ContestDetails"));
 const PostContest = lazy(() => import("@/pages/contests/PostContest"));
 const MyContests = lazy(() => import("@/pages/contests/MyContests"));
 const ContestEntriesReview = lazy(() => import("@/pages/contests/ContestEntriesReview"));
-const ClientPostContest = lazy(() => import("@/roles/client/pages/ClientPostContest"));
-const ClientMyContests = lazy(() => import("@/roles/client/pages/ClientMyContests"));
-const ClientContestEntries = lazy(() => import("@/roles/client/pages/ClientContestEntries"));
 const MyContestEntries = lazy(() => import("@/pages/contests/MyContestEntries"));
 
 const FreelancerList = lazy(() => import("@/roles/freelancer/pages/FreelancerList"));
@@ -70,6 +73,15 @@ const JobSeekerList = lazy(() => import("@/roles/job-seeker/pages/JobSeekerList"
 const JobSeekerProfile = lazy(() => import("@/roles/job-seeker/pages/JobSeekerProfile"));
 const InfluencerList = lazy(() => import("@/pages/influencers/InfluencerList"));
 const InfluencerProfile = lazy(() => import("@/pages/influencers/InfluencerProfile"));
+const RosterInvites = lazy(() => import("@/pages/influencers/RosterInvites"));
+const CampaignInvites = lazy(() => import("@/pages/influencers/CampaignInvites"));
+const ShortlistedInfluencers = lazy(() => import("@/pages/influencers/ShortlistedInfluencers"));
+const BrandProfile = lazy(() => import("@/pages/profiles/BrandProfile"));
+const AgencyProfile = lazy(() => import("@/pages/profiles/AgencyProfile"));
+const TalentPartnerProfile = lazy(() => import("@/pages/profiles/TalentPartnerProfile"));
+const BrandList = lazy(() => import("@/pages/profiles/BrandList"));
+const AgencyList = lazy(() => import("@/pages/profiles/AgencyList"));
+const TalentPartnerList = lazy(() => import("@/pages/profiles/TalentPartnerList"));
 
 const Messages = lazy(() => import("@/pages/chat/Messages"));
 const Referrals = lazy(() => import("@/pages/dashboard/Referrals"));
@@ -94,7 +106,6 @@ const SkillTests = lazy(() => import("@/pages/dashboard/SkillTests"));
 const FreelancerAlerts = lazy(() => import("@/pages/dashboard/FreelancerAlerts"));
 const MyPayments = lazy(() => import("@/pages/dashboard/MyPayments"));
 const EmployerDashboard = lazy(() => import("@/pages/dashboard/EmployerDashboard"));
-const ClientDashboard = lazy(() => import("@/roles/client/pages/dashboard/ClientDashboard"));
 const InvestorDashboard = lazy(() => import("@/roles/investor/pages/dashboard/InvestorDashboard"));
 const PartnerDashboard = lazy(() => import("@/pages/dashboard/PartnerDashboard"));
 const MentorDashboard = lazy(() => import("@/pages/dashboard/MentorDashboard"));
@@ -109,6 +120,9 @@ const AdminGigs = lazy(() => import("@/roles/admin/pages/AdminGigs"));
 const AdminContests = lazy(() => import("@/roles/admin/pages/AdminContests"));
 const AdminPayments = lazy(() => import("@/roles/admin/pages/AdminPayments"));
 const AdminWithdrawals = lazy(() => import("@/roles/admin/pages/AdminWithdrawals"));
+const AdminGrievances = lazy(() => import("@/roles/admin/pages/AdminGrievances"));
+const AdminStaff = lazy(() => import("@/roles/admin/pages/AdminStaff"));
+const AdminActivity = lazy(() => import("@/roles/admin/pages/AdminActivity"));
 const AdminKyc = lazy(() => import("@/roles/admin/pages/AdminKyc"));
 const AdminProfileVerifications = lazy(() => import("@/roles/admin/pages/AdminProfileVerifications"));
 const AdminRoleVerifications = lazy(() => import("@/roles/admin/pages/AdminRoleVerifications"));
@@ -123,6 +137,8 @@ const withMarketingLayout = (node: React.ReactNode) => <MarketingLayout>{node}</
 export default function App() {
   return (
     <Suspense fallback={<PageLoader />}>
+      <SkipToContentLink />
+      <CookieConsentBanner />
       <Routes>
         <Route path="/" element={withMarketingLayout(<Home />)} />
         <Route path="/demo/overlap-card" element={withMarketingLayout(<OverlapCardDemo />)} />
@@ -130,8 +146,11 @@ export default function App() {
         <Route path="/startups" element={withMarketingLayout(<StartupList />)} />
         <Route path="/startups/:id" element={withMarketingLayout(<StartupDetails />)} />
 
-        <Route path="/jobs" element={withMarketingLayout(<JobList />)} />
-        <Route path="/jobs/:id" element={withMarketingLayout(<JobDetails />)} />
+        {/* Real on/off switch — Platform Settings -> "Jobs Feature"
+            (AdminSettings.tsx) — not a hardcoded disable. JobsFeatureGate
+            renders NotFound instead of the real page while it's off. */}
+        <Route path="/jobs" element={withMarketingLayout(<JobsFeatureGate><JobList /></JobsFeatureGate>)} />
+        <Route path="/jobs/:id" element={withMarketingLayout(<JobsFeatureGate><JobDetails /></JobsFeatureGate>)} />
         <Route path="/campaigns" element={withMarketingLayout(<CampaignList />)} />
         <Route path="/campaigns/:id" element={withMarketingLayout(<CampaignDetails />)} />
         <Route path="/projects/:id" element={withMarketingLayout(<ProjectDetails />)} />
@@ -156,6 +175,12 @@ export default function App() {
         <Route path="/job-seekers/:id" element={withMarketingLayout(<JobSeekerProfile />)} />
         <Route path="/influencers" element={withMarketingLayout(<InfluencerList />)} />
         <Route path="/influencers/:id" element={withMarketingLayout(<InfluencerProfile />)} />
+        <Route path="/brands" element={withMarketingLayout(<BrandList />)} />
+        <Route path="/brands/:id" element={withMarketingLayout(<BrandProfile />)} />
+        <Route path="/agencies" element={withMarketingLayout(<AgencyList />)} />
+        <Route path="/agencies/:id" element={withMarketingLayout(<AgencyProfile />)} />
+        <Route path="/talent-partners" element={withMarketingLayout(<TalentPartnerList />)} />
+        <Route path="/talent-partners/:id" element={withMarketingLayout(<TalentPartnerProfile />)} />
 
         <Route path="/pricing" element={withMarketingLayout(<Pricing />)} />
 
@@ -453,6 +478,30 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/dashboard/influencer/roster-invites"
+          element={
+            <ProtectedRoute allow={["influencer", "super_admin"]}>
+              <RosterInvites />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/influencer/campaign-invites"
+          element={
+            <ProtectedRoute allow={["influencer", "super_admin"]}>
+              <CampaignInvites />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/influencer/earnings"
+          element={
+            <ProtectedRoute allow={["influencer", "super_admin"]}>
+              <FreelancerEarnings />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Employer */}
         <Route
@@ -490,7 +539,7 @@ export default function App() {
         <Route
           path="/dashboard/employer/campaigns"
           element={
-            <ProtectedRoute allow={["employer", "super_admin"]}>
+            <ProtectedRoute allow={["employer", "brand", "agency", "talent_partner", "super_admin"]}>
               <MyCampaigns />
             </ProtectedRoute>
           }
@@ -498,7 +547,7 @@ export default function App() {
         <Route
           path="/dashboard/employer/post-campaign"
           element={
-            <ProtectedRoute allow={["employer", "super_admin"]}>
+            <ProtectedRoute allow={["employer", "brand", "agency", "talent_partner", "super_admin"]}>
               <PostCampaign />
             </ProtectedRoute>
           }
@@ -506,7 +555,7 @@ export default function App() {
         <Route
           path="/dashboard/employer/campaigns/:id/edit"
           element={
-            <ProtectedRoute allow={["employer", "super_admin"]}>
+            <ProtectedRoute allow={["employer", "brand", "agency", "talent_partner", "super_admin"]}>
               <PostCampaign />
             </ProtectedRoute>
           }
@@ -514,8 +563,32 @@ export default function App() {
         <Route
           path="/dashboard/employer/campaigns/:id/applicants"
           element={
-            <ProtectedRoute allow={["employer", "super_admin"]}>
+            <ProtectedRoute allow={["employer", "brand", "agency", "talent_partner", "super_admin"]}>
               <CampaignApplicants />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/campaigns/:id/report"
+          element={
+            <ProtectedRoute allow={["employer", "brand", "agency", "talent_partner", "super_admin"]}>
+              <CampaignReport />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/clients"
+          element={
+            <ProtectedRoute allow={["agency", "super_admin"]}>
+              <MyClients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/agencies"
+          element={
+            <ProtectedRoute allow={["brand", "employer", "client", "super_admin"]}>
+              <MyAgencies />
             </ProtectedRoute>
           }
         />
@@ -552,9 +625,25 @@ export default function App() {
           }
         />
         <Route
+          path="/dashboard/employer/roster"
+          element={
+            <ProtectedRoute allow={["agency", "talent_partner", "super_admin"]}>
+              <MyRoster />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/employer/shortlist"
+          element={
+            <ProtectedRoute allow={["employer", "client", "brand", "agency", "talent_partner", "super_admin"]}>
+              <ShortlistedInfluencers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/employer/company"
           element={
-            <ProtectedRoute allow={["employer", "super_admin"]}>
+            <ProtectedRoute allow={["employer", "brand", "agency", "talent_partner", "super_admin"]}>
               <CompanyTeam />
             </ProtectedRoute>
           }
@@ -562,8 +651,36 @@ export default function App() {
         <Route
           path="/dashboard/employer/payments"
           element={
-            <ProtectedRoute allow={["employer", "super_admin"]}>
-              <MyPayments role="employer" />
+            <ProtectedRoute allow={["employer", "brand", "agency", "talent_partner", "super_admin"]}>
+              <MyPayments />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Brand/Agency/Talent Partner overview — same shared campaign-hiring
+            pages as Employer (basePath stays /dashboard/employer), just each
+            role's own landing page with its own stats. */}
+        <Route
+          path="/dashboard/brand"
+          element={
+            <ProtectedRoute allow={["brand", "super_admin"]}>
+              <EmployerDashboard role="brand" basePath="/dashboard/employer" entityLabel="Campaign" source="campaign" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/agency"
+          element={
+            <ProtectedRoute allow={["agency", "super_admin"]}>
+              <EmployerDashboard role="agency" basePath="/dashboard/employer" entityLabel="Campaign" source="campaign" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/talent-partner"
+          element={
+            <ProtectedRoute allow={["talent_partner", "super_admin"]}>
+              <EmployerDashboard role="talent_partner" basePath="/dashboard/employer" entityLabel="Campaign" source="campaign" />
             </ProtectedRoute>
           }
         />
@@ -573,7 +690,7 @@ export default function App() {
           path="/dashboard/client"
           element={
             <ProtectedRoute allow={["client", "super_admin"]}>
-              <ClientDashboard />
+              <EmployerDashboard role="client" basePath="/dashboard/client" entityLabel="Project" source="project" />
             </ProtectedRoute>
           }
         />
@@ -605,7 +722,7 @@ export default function App() {
           path="/dashboard/client/projects/:id/applicants"
           element={
             <ProtectedRoute allow={["client", "super_admin"]}>
-              <ClientProjectApplicants />
+              <JobApplicants role="client" basePath="/dashboard/client" source="project" />
             </ProtectedRoute>
           }
         />
@@ -613,7 +730,7 @@ export default function App() {
           path="/dashboard/client/contests"
           element={
             <ProtectedRoute allow={["client", "super_admin"]}>
-              <ClientMyContests />
+              <MyContests role="client" basePath="/dashboard/client" />
             </ProtectedRoute>
           }
         />
@@ -621,7 +738,7 @@ export default function App() {
           path="/dashboard/client/post-contest"
           element={
             <ProtectedRoute allow={["client", "super_admin"]}>
-              <ClientPostContest />
+              <PostContest role="client" basePath="/dashboard/client/contests" />
             </ProtectedRoute>
           }
         />
@@ -629,7 +746,7 @@ export default function App() {
           path="/dashboard/client/contests/:id/edit"
           element={
             <ProtectedRoute allow={["client", "super_admin"]}>
-              <ClientPostContest />
+              <PostContest role="client" basePath="/dashboard/client/contests" />
             </ProtectedRoute>
           }
         />
@@ -637,7 +754,7 @@ export default function App() {
           path="/dashboard/client/contests/:id/entries"
           element={
             <ProtectedRoute allow={["client", "super_admin"]}>
-              <ClientContestEntries />
+              <ContestEntriesReview role="client" basePath="/dashboard/client" />
             </ProtectedRoute>
           }
         />
@@ -680,11 +797,16 @@ export default function App() {
           }
         />
 
-        {/* Admin */}
+        {/* Admin — "staff" is a super_admin-created account scoped to a
+            subset of sections via staffPermissions (see AdminStaff.tsx).
+            Routes below pass `permission` wherever a staff account can be
+            granted access; routes with none (Users, Payments, Withdrawals,
+            Settings, Plans, Staff itself) stay allow={["super_admin"]} only
+            — never delegable, matching admin.routes.js on the backend. */}
         <Route
           path="/dashboard/admin"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]}>
               <AdminOverview />
             </ProtectedRoute>
           }
@@ -698,9 +820,25 @@ export default function App() {
           }
         />
         <Route
-          path="/dashboard/admin/flagged-startups"
+          path="/dashboard/admin/staff"
           element={
             <ProtectedRoute allow={["super_admin"]}>
+              <AdminStaff />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/activity"
+          element={
+            <ProtectedRoute allow={["super_admin"]}>
+              <AdminActivity />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/flagged-startups"
+          element={
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="flagged-startups">
               <AdminFlaggedStartups />
             </ProtectedRoute>
           }
@@ -708,7 +846,7 @@ export default function App() {
         <Route
           path="/dashboard/admin/startups"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="startups">
               <AdminStartups />
             </ProtectedRoute>
           }
@@ -716,7 +854,7 @@ export default function App() {
         <Route
           path="/dashboard/admin/gigs"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="gigs">
               <AdminGigs />
             </ProtectedRoute>
           }
@@ -724,7 +862,7 @@ export default function App() {
         <Route
           path="/dashboard/admin/contests"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="contests">
               <AdminContests />
             </ProtectedRoute>
           }
@@ -740,7 +878,7 @@ export default function App() {
         <Route
           path="/dashboard/admin/jobs"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="jobs">
               <AdminJobs />
             </ProtectedRoute>
           }
@@ -754,9 +892,17 @@ export default function App() {
           }
         />
         <Route
+          path="/dashboard/admin/grievances"
+          element={
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="grievances">
+              <AdminGrievances />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/admin/kyc"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="kyc">
               <AdminKyc />
             </ProtectedRoute>
           }
@@ -764,7 +910,7 @@ export default function App() {
         <Route
           path="/dashboard/admin/profile-verifications"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="profile-verifications">
               <AdminProfileVerifications />
             </ProtectedRoute>
           }
@@ -772,7 +918,7 @@ export default function App() {
         <Route
           path="/dashboard/admin/role-verifications"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="role-verifications">
               <AdminRoleVerifications />
             </ProtectedRoute>
           }
@@ -796,7 +942,7 @@ export default function App() {
         <Route
           path="/dashboard/admin/skill-tests"
           element={
-            <ProtectedRoute allow={["super_admin"]}>
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="skill-tests">
               <AdminSkillTests />
             </ProtectedRoute>
           }

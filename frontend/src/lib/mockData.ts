@@ -11,50 +11,88 @@ export const SERVICE_CATEGORIES: Record<string, Record<string, string[]>> = {
     "Branding & Identity": ["Logo Design", "Brand Identity", "Business Card Design", "Brand Guidelines"],
     "Illustration & Art": ["Illustration", "Character Design", "Portrait Art", "Tattoo Design"],
     "UI/UX & Web Design": ["Website Design", "Mobile App Design", "Landing Page Design", "UX Research"],
-    "Print & Packaging": ["Packaging Design", "Brochure Design", "Flyer Design", "Book Cover Design"],
+    "Print & Packaging": [
+      "Packaging Design",
+      "Brochure Design",
+      "Flyer Design",
+      "Book Cover Design",
+      "T-shirt & Merchandise Design",
+      "Invitation & Greeting Card Design",
+    ],
     "3D & Motion": ["3D Modeling", "3D Product Rendering", "Motion Graphics"],
+    "Marketing & Social Media Design": [
+      "Social Media Post Design",
+      "Banner & Ad Design",
+      "Infographic Design",
+      "Presentation Design",
+    ],
   },
   "Programming & Tech": {
-    "Web Development": ["Frontend Development", "Backend Development", "Full-Stack Development", "CMS Development"],
+    "Web Development": [
+      "Frontend Development",
+      "Backend Development",
+      "Full-Stack Development",
+      "CMS Development",
+      "API Development & Integrations",
+    ],
     "Mobile Development": ["iOS App Development", "Android App Development", "Cross-Platform Apps"],
     "Data & AI": ["Data Science", "Machine Learning", "AI Model Integration", "Data Engineering"],
-    "Infrastructure & Security": ["Cloud Architecture", "DevOps", "Cybersecurity Audits", "QA & Testing"],
-    "Emerging Tech": ["Blockchain Development", "Smart Contracts", "Game Development"],
+    "Infrastructure & Security": [
+      "Cloud Architecture",
+      "DevOps",
+      "Cybersecurity Audits",
+      "QA & Testing",
+      "Bug Fixes & Technical Support",
+    ],
+    "Emerging Tech": ["Blockchain Development", "Smart Contracts", "Game Development", "AR/VR Development", "Browser Extension Development"],
+    "Desktop Software Development": ["Windows App Development", "macOS App Development", "Cross-Platform Desktop Apps"],
+    "Automation & Scripting": ["Process Automation (RPA)", "Bot Development", "Script Writing"],
+    "E-Commerce Development": [
+      "Shopify Development",
+      "WooCommerce Development",
+      "Magento Development",
+      "Custom Store Development",
+    ],
   },
   "Digital Marketing": {
-    "Search & SEO": ["SEO Audits", "Keyword Research", "Local SEO", "Technical SEO"],
+    "Search & SEO": ["SEO Audits", "Keyword Research", "Local SEO", "Technical SEO", "App Store Optimization (ASO)"],
     "Social Media": ["Social Media Management", "Social Media Ads", "Influencer Outreach"],
-    "Paid Advertising": ["Google Ads", "Meta Ads", "Ad Copywriting"],
-    "Strategy & Analytics": ["Marketing Strategy", "Analytics & Reporting", "Conversion Optimization"],
+    "Paid Advertising": ["Google Ads", "Meta Ads", "YouTube Ads", "Ad Copywriting"],
+    "Strategy & Analytics": ["Marketing Strategy", "Analytics & Reporting", "Conversion Optimization", "GA4 & Google Tag Manager Setup"],
     "Email & Automation": ["Email Marketing", "Marketing Automation", "Newsletter Design"],
+    "Content & Affiliate Marketing": ["Content Marketing Strategy", "Affiliate Marketing", "Influencer Marketing"],
+    "Marketplace & E-commerce Marketing": ["Amazon Marketing", "Flipkart Listing Optimization", "Marketplace Ads"],
   },
   "Video & Animation": {
-    Editing: ["Video Editing", "Trailer Editing", "Podcast Video Editing"],
-    Animation: ["2D Animation", "3D Animation", "Whiteboard Animation"],
+    Editing: ["Video Editing", "Trailer Editing", "Podcast Video Editing", "Color Grading"],
+    Animation: ["2D Animation", "3D Animation", "Whiteboard Animation", "Stop Motion Animation"],
     "Motion Design": ["Motion Graphics", "Logo Animation", "Title Sequences"],
-    Production: ["Explainer Videos", "Product Demo Videos", "Corporate Videos"],
+    Production: ["Explainer Videos", "Product Demo Videos", "Corporate Videos", "Video Ads & Commercials"],
     Specialty: ["AI Video Generation", "VFX & Compositing"],
+    "Social Media & Content Video": ["Reels & Shorts Editing", "YouTube Video Editing", "Subtitling & Captions"],
   },
   "Writing & Translation": {
     "Content Writing": ["Blog Writing", "Website Copy", "Article Writing"],
     "Editing & Proofreading": ["Copy Editing", "Proofreading", "Manuscript Critique"],
     "Business Writing": ["Resume Writing", "Cover Letters", "Business Proposals"],
     "Creative Writing": ["Ghostwriting", "Scriptwriting", "Book Writing"],
-    Translation: ["Document Translation", "Localization", "Transcription"],
+    Translation: ["Document Translation", "Localization", "Transcription", "Subtitle Translation"],
+    "Technical & Specialized Writing": ["Technical Writing", "SEO Writing", "Academic Writing", "Grant Writing"],
   },
   "Music & Audio": {
-    Production: ["Music Production", "Beat Making", "Mixing & Mastering"],
+    Production: ["Music Production", "Beat Making", "Mixing & Mastering", "DJ Mixing"],
     Voice: ["Voice Over", "Audiobook Narration", "Dubbing"],
-    "Audio Post-Production": ["Sound Design", "Podcast Editing", "Audio Restoration"],
+    "Audio Post-Production": ["Sound Design", "Podcast Editing", "Audio Restoration", "Podcast Production"],
     Composition: ["Jingle Writing", "Film Scoring", "Session Musicians"],
     Lessons: ["Music Lessons", "Music Transcription"],
   },
   Business: {
     Finance: ["Bookkeeping", "Financial Modeling", "Tax Advisory"],
     Legal: ["Contract Drafting", "Trademark Filing", "Legal Consulting"],
-    Operations: ["Business Planning", "Process Documentation", "Virtual Assistance"],
+    Operations: ["Business Planning", "Process Documentation", "Virtual Assistance", "Project Management"],
     "Sales & Support": ["Sales Strategy", "Customer Support Setup", "CRM Management"],
     "E-Commerce": ["Store Setup", "Inventory Management", "Marketplace Management"],
+    "HR & Recruiting": ["Recruitment & Hiring", "HR Policy Consulting", "Resume Screening"],
   },
   Consulting: {
     Strategy: ["Business Strategy", "Market Research", "Growth Consulting"],
@@ -63,21 +101,21 @@ export const SERVICE_CATEGORIES: Record<string, Record<string, string[]>> = {
     Data: ["Data Strategy Consulting", "BI Dashboard Consulting"],
   },
   "AI Services": {
-    Development: ["Custom AI Model Building", "Chatbot Development", "AI Integration"],
-    Content: ["AI Art Generation", "AI Copywriting", "AI Video Generation"],
+    Development: ["Custom AI Model Building", "Chatbot Development", "AI Integration", "LLM Fine-tuning"],
+    Content: ["AI Art Generation", "AI Copywriting", "AI Video Generation", "AI Voice Cloning & Voiceover"],
     Data: ["AI Data Labeling", "Prompt Engineering"],
     "Business Use": ["AI Workflow Automation", "AI for Customer Support"],
   },
   "Personal Growth": {
     Wellness: ["Fitness Coaching", "Nutrition Planning", "Meditation Coaching"],
     Style: ["Personal Styling", "Wardrobe Consulting"],
-    Learning: ["Life Coaching", "Skill Tutoring"],
+    Learning: ["Life Coaching", "Skill Tutoring", "Test Prep & Exam Coaching", "Language Learning"],
     Leisure: ["Gaming Coaching", "Hobby Classes"],
   },
   Photography: {
     Commercial: ["Product Photography", "Real Estate Photography", "Event Photography"],
-    Portrait: ["Portrait Photography", "Fashion Photography"],
-    Editing: ["Photo Retouching", "Photo Editing"],
+    Portrait: ["Portrait Photography", "Fashion Photography", "Wedding Photography"],
+    Editing: ["Photo Retouching", "Photo Editing", "Photo Restoration"],
     Specialty: ["Drone Photography", "Food Photography"],
   },
   Data: {
@@ -85,6 +123,13 @@ export const SERVICE_CATEGORIES: Record<string, Record<string, string[]>> = {
     Engineering: ["Data Pipeline Engineering", "Database Design"],
     Collection: ["Web Scraping", "Data Entry", "Data Cleaning"],
     Visualization: ["Data Visualization", "Dashboard Design"],
+  },
+  "Architecture & Interior Design": {
+    "Architectural Design": ["Building Design", "Floor Plans", "Site Planning", "Structural Layout"],
+    "Interior Design": ["Residential Interior Design", "Commercial Interior Design", "Space Planning", "Furniture Layout"],
+    "Visualization & Modeling": ["3D Architectural Rendering", "Virtual Walkthroughs", "CAD Drafting"],
+    "Landscape & Outdoor": ["Landscape Design", "Garden Planning", "Outdoor Living Spaces"],
+    Consultation: ["Vastu Consultation", "Renovation Planning", "Sustainable Design"],
   },
 };
 
@@ -102,19 +147,57 @@ export const SERVICE_SUBCATEGORIES: Record<string, string[]> = Object.fromEntrie
 // than the freelancer one above, since influencer content categories don't
 // need a middle grouping tier. Powers both the edit-profile Category/Niche
 // selects and the /influencers directory filter pills.
+// Mirrors YouTube's standard content-category taxonomy — the list creators
+// already know from their own channel settings, so it reads as familiar
+// rather than inventing a GrowHive-specific one.
 export const INFLUENCER_CATEGORIES: Record<string, string[]> = {
+  "Autos & Vehicles": ["Car Reviews", "Bike Modifications", "DIY Repair"],
+  Comedy: ["Sketches", "Stand-up", "Parody"],
   Education: ["Academic Tutoring", "Competitive Exams", "Skill Development"],
-  "Food & Cooking": ["Home Cooking", "Baking", "Restaurant Reviews"],
-  Technology: ["Gadget Reviews", "Software & Apps", "Gaming"],
-  "Fashion & Beauty": ["Sustainable Fashion", "Makeup", "Styling"],
-  "Fitness & Health": ["Workout", "Nutrition", "Mental Health"],
-  Automobile: ["Car Reviews", "Bike Modifications", "DIY Repair"],
-  "Electronics & Electrical": ["Circuit DIY", "Home Automation", "Appliance Reviews"],
-  Finance: ["Personal Finance", "Investing", "Business"],
-  Travel: ["Budget Travel", "Luxury Travel", "Local Guides"],
+  Entertainment: ["Reaction", "Celebrity & Pop Culture", "Web Series"],
+  "Film & Animation": ["Short Films", "Animation", "Film Reviews"],
+  Gaming: ["Let's Play", "Esports", "Game Reviews"],
+  "Howto & Style": ["Makeup", "DIY", "Home Decor"],
+  Music: ["Covers", "Original Music", "Music Reviews"],
+  "News & Politics": ["Current Affairs", "Commentary", "Local News"],
+  "Nonprofits & Activism": ["Social Causes", "Environment", "Community Work"],
+  "People & Blogs": ["Vlogs", "Day in the Life", "Personal Stories"],
+  "Pets & Animals": ["Pet Care", "Wildlife", "Training"],
+  "Science & Technology": ["Gadget Reviews", "Software & Apps", "Science Explainers"],
+  Sports: ["Fitness & Training", "Match Analysis", "Sports News"],
+  "Travel & Events": ["Budget Travel", "Luxury Travel", "Local Guides"],
 };
 
 export const INFLUENCER_CATEGORY_NAMES = Object.keys(INFLUENCER_CATEGORIES);
+
+// A brand's business categories (what it sells), distinct from
+// INFLUENCER_CATEGORIES (what content a creator makes) — client-side taxonomy
+// only, same convention as above, no backend enum so it can change without a
+// migration. Brands can also add their own category beyond this list (see
+// BrandDetailsSection.tsx) — publicProfile.controller.js's "other" filter is
+// literally "anything not in this array", so keep the two in sync.
+export const BRAND_CATEGORIES = [
+  "Beauty & Personal Care",
+  "Skincare",
+  "Haircare",
+  "Makeup",
+  "Baby & Kids",
+  "Fashion & Apparel",
+  "Footwear",
+  "Jewellery & Accessories",
+  "Food & Beverage",
+  "Health & Wellness",
+  "Fitness & Nutrition",
+  "Home & Living",
+  "Electronics & Gadgets",
+  "Automotive",
+  "Travel & Hospitality",
+  "Finance & Fintech",
+  "Education & EdTech",
+  "Gaming & Entertainment",
+  "Pet Care",
+  "Sustainability & Eco-friendly",
+];
 
 // Startup industry/sector taxonomy — kept separate from CATEGORIES (used for
 // freelancer service categories) since the two lists serve different purposes.
@@ -198,12 +281,12 @@ export const CATEGORY_GRID = [
 
 export const FAQS = [
   {
-    question: "Is MahaHub free to use?",
+    question: "Is GrowHive free to use?",
     answer:
       "Yes — creating an account, listing a startup, browsing freelancers, and applying to jobs are all free. Paid plans add things like priority visibility, featured placement, and advanced analytics.",
   },
   {
-    question: "How do I list my startup on MahaHub?",
+    question: "How do I list my startup on GrowHive?",
     answer:
       "Sign up as a Founder, then go to your dashboard and select \"Post Startup.\" You'll walk through a guided form covering your story, team, funding needs, and product — it adapts to whichever stage you're at, from Idea to Series A.",
   },
@@ -215,7 +298,7 @@ export const FAQS = [
   {
     question: "Can I hire freelancers directly through the platform?",
     answer:
-      "Yes. You can message freelancers directly, invite them to a project, or post a job/project and receive proposals. Payments and contracts are handled within MahaHub for a clear paper trail.",
+      "Yes. You can message freelancers directly, invite them to a project, or post a job/project and receive proposals. Payments and contracts are handled within GrowHive for a clear paper trail.",
   },
   {
     question: "What's the difference between Projects, Gigs, and Contests?",

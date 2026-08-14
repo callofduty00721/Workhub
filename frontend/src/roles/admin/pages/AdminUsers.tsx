@@ -62,7 +62,7 @@ export default function AdminUsers() {
   });
 
   return (
-    <DashboardLayout role="super_admin" title="Manage Users" subtitle="View, search and moderate all MahaHub users.">
+    <DashboardLayout role="super_admin" title="Manage Users" subtitle="View, search and moderate all GrowHive users.">
       <div className="mb-5 flex flex-wrap gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

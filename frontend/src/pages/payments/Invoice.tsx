@@ -14,6 +14,7 @@ const TYPE_LABELS: Record<PaymentType, string> = {
   job_hire: "Job / Project Hire",
   contest_prize: "Contest Prize",
   campaign: "Influencer Campaign",
+  campaign_facilitation: "Off-Platform Facilitation Fee",
 };
 
 export default function Invoice() {
@@ -81,7 +82,7 @@ export default function Invoice() {
       <div className="rounded-xl border border-border bg-background p-8 print:border-0 print:p-0">
         <div className="flex items-start justify-between border-b border-border pb-6">
           <div>
-            <h1 className="text-xl font-bold text-primary">MahaHub</h1>
+            <h1 className="text-xl font-bold text-primary">GrowHive</h1>
             <p className="text-xs text-muted-foreground">Payment Invoice</p>
           </div>
           <div className="text-right text-xs text-muted-foreground">

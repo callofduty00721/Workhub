@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Bookmark, Briefcase, FolderKanban, Rocket, Heart } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { JobCard } from "@/components/jobs/JobCard";
-import { ProjectCard } from "@/components/projects/ProjectCard";
-import { ServiceCard } from "@/components/gigs/ServiceCard";
+import { JobCard } from "@/pages/jobs/JobCard";
+import { ProjectCard } from "@/pages/projects/ProjectCard";
+import { GigListCard } from "@/pages/gigs/GigListCard";
 import { StartupCard } from "@/roles/founder/components/StartupCard";
 import { userApi } from "@/api/users";
 import { startupApi } from "@/api/startups";
@@ -84,9 +84,9 @@ export default function SavedItems() {
         ) : services.length === 0 ? (
           <EmptyState text="No saved gigs yet — tap the bookmark icon on a gig to save it here." />
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-4">
             {services.map((service) => (
-              <ServiceCard key={service._id} service={service} />
+              <GigListCard key={service._id} service={service} />
             ))}
           </div>
         ))}

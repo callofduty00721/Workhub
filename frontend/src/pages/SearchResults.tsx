@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FreelancerCard } from "@/roles/freelancer/components/FreelancerCard";
-import { ServiceCard } from "@/components/gigs/ServiceCard";
-import { JobCard } from "@/components/jobs/JobCard";
-import { ContestCard } from "@/components/contests/ContestCard";
+import { GigListCard } from "@/pages/gigs/GigListCard";
+import { JobCard } from "@/pages/jobs/JobCard";
+import { ContestCard } from "@/pages/contests/ContestCard";
 import { startupApi } from "@/api/startups";
 import { freelancerApi, serviceApi } from "@/api/freelancers";
 import { jobApi } from "@/api/jobs";
@@ -70,7 +70,7 @@ export default function SearchResults() {
   return (
     <div className="container py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Search MahaHub</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Search GrowHive</h1>
         <p className="mt-1 text-sm text-muted-foreground">Find startups, freelancers, gigs, jobs, projects, and contests — all in one place.</p>
       </div>
 
@@ -79,7 +79,7 @@ export default function SearchResults() {
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Search everything on MahaHub..."
+          placeholder="Search everything on GrowHive..."
           className="pl-9"
           autoFocus
         />
@@ -121,7 +121,7 @@ export default function SearchResults() {
                   <Link key={s._id} to={`/startups/${s._id}`}>
                     <Card className="flex h-full flex-col p-5 transition-all hover:-translate-y-0.5 hover:shadow-card">
                       <div className="mb-3 flex items-center gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white">
                           {s.name[0]}
                         </div>
                         <div className="min-w-0">
@@ -165,9 +165,9 @@ export default function SearchResults() {
             ) : !services?.data.length ? (
               <EmptyState icon={Briefcase} text="No gigs found." />
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="flex flex-col gap-4">
                 {services.data.map((s) => (
-                  <ServiceCard key={s._id} service={s} />
+                  <GigListCard key={s._id} service={s} />
                 ))}
               </div>
             )}

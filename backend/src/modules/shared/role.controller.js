@@ -1,15 +1,19 @@
 import User from "./user.model.js";
 import { CATEGORIES, CATEGORY_ROLES } from "../../utils/roleCategories.js";
+import { getDisabledRoles } from "../finance/platformSettings.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 
 // Only these roles get an embedded profile object initialized on add — every
 // other role (freelancer, employer, client, partner, mentor, investor,
-// founder) already stores its "profile" as flat fields on User that exist
-// from document creation, so there's nothing to lazily create for them.
+// founder) stores its "profile" as flat fields on User that exist from
+// document creation, so there's nothing to lazily create for them.
 const ROLE_PROFILE_FIELD = {
   job_seeker: "jobSeekerProfile",
   influencer: "influencerProfile",
+  brand: "brandProfile",
+  agency: "agencyProfile",
+  talent_partner: "talentPartnerProfile",
 };
 
 function initProfileForRole(user, role) {
@@ -51,6 +55,15 @@ export const addRoles = asyncHandler(async (req, res) => {
   const invalidRoles = roles.filter((role) => !allowedRoles.includes(role));
   if (invalidRoles.length) {
     throw new ApiError(400, `These roles don't belong to the "${req.user.selectedCategory}" category: ${invalidRoles.join(", ")}`);
+  }
+
+  // Only blocks roles the user doesn't already hold — someone who added this
+  // role before it was disabled keeps it, this just closes the door on new
+  // additions.
+  const disabledRoles = await getDisabledRoles();
+  const newlyDisabled = roles.filter((role) => disabledRoles.includes(role) && !req.user.roles?.includes(role));
+  if (newlyDisabled.length) {
+    throw new ApiError(400, `These roles are temporarily disabled: ${newlyDisabled.join(", ")}`);
   }
 
   const merged = new Set(req.user.roles || []);

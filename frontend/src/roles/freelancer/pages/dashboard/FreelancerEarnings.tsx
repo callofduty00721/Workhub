@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Wallet, Briefcase, FolderKanban, Trophy, Megaphone, Lock, Unlock, ArrowDownToLine, Settings, Loader2, ChevronDown, ChevronUp, Receipt } from "lucide-react";
+import { Wallet, Briefcase, FolderKanban, Trophy, Megaphone, HandCoins, Lock, Unlock, ArrowDownToLine, Settings, Loader2, ChevronDown, ChevronUp, Receipt } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import type { DashboardRole } from "@/components/layout/DashboardSidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const TYPE_LABELS: Record<PaymentType, string> = {
   job_hire: "Job / Project",
   contest_prize: "Contest Prize",
   campaign: "Influencer Campaign",
+  campaign_facilitation: "Off-Platform Facilitation Fee",
 };
 
 const TYPE_ICONS: Record<PaymentType, typeof Briefcase> = {
@@ -30,6 +32,7 @@ const TYPE_ICONS: Record<PaymentType, typeof Briefcase> = {
   job_hire: FolderKanban,
   contest_prize: Trophy,
   campaign: Megaphone,
+  campaign_facilitation: HandCoins,
 };
 
 const WITHDRAWAL_STATUS_VARIANT: Record<WithdrawalStatus, "warning" | "success" | "danger"> = {
@@ -40,6 +43,10 @@ const WITHDRAWAL_STATUS_VARIANT: Record<WithdrawalStatus, "warning" | "success" 
 
 export default function FreelancerEarnings() {
   const { user } = useAuth();
+  // Shared by freelancer and influencer — earnings/withdrawal are entirely
+  // payee-based on the backend (see earnings.controller.js's getMyEarnings),
+  // no role check, so the sidebar just needs to match whoever's signed in.
+  const dashboardRole = (user?.role ?? "freelancer") as DashboardRole;
   const withdrawalBlockers = [
     user?.kycStatus !== "verified" && "Government ID verification (KYC)",
     !user?.isEmailVerified && "Email verification",
@@ -102,9 +109,17 @@ export default function FreelancerEarnings() {
   });
 
   const wallet = data?.wallet;
+  const subtitle =
+    dashboardRole === "influencer"
+      ? "Track payments you've received for campaigns."
+      : "Track payments you've received for gigs, projects, and contests.";
+  // An influencer never earns gig_order/job_hire/contest_prize — showing
+  // those as permanent ₹0 tiles would just be confusing filler, not an
+  // honest "nothing here yet" state.
+  const statTypes: PaymentType[] = dashboardRole === "influencer" ? ["campaign"] : ["gig_order", "job_hire", "contest_prize"];
 
   return (
-    <DashboardLayout role="freelancer" title="Earnings" subtitle="Track payments you've received for gigs, projects, and contests.">
+    <DashboardLayout role={dashboardRole} title="Earnings" subtitle={subtitle}>
       {isLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-28 w-full rounded-xl" />
@@ -158,7 +173,7 @@ export default function FreelancerEarnings() {
             </Card>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`grid gap-4 sm:grid-cols-2 ${dashboardRole === "influencer" ? "lg:grid-cols-2" : "lg:grid-cols-4"}`}>
             <Card>
               <CardContent className="flex items-center gap-3 p-5">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
@@ -170,7 +185,7 @@ export default function FreelancerEarnings() {
                 </div>
               </CardContent>
             </Card>
-            {(["gig_order", "job_hire", "contest_prize"] as PaymentType[]).map((type) => {
+            {statTypes.map((type) => {
               const Icon = TYPE_ICONS[type];
               return (
                 <Card key={type}>
@@ -196,7 +211,9 @@ export default function FreelancerEarnings() {
                   <Wallet className="h-8 w-8 text-muted-foreground" />
                   <p className="text-sm font-medium">No payments received yet</p>
                   <p className="max-w-sm text-sm text-muted-foreground">
-                    Earnings from ordered gigs, hired projects, and won contests will show up here.
+                    {dashboardRole === "influencer"
+                      ? "Earnings from hired campaigns will show up here."
+                      : "Earnings from ordered gigs, hired projects, and won contests will show up here."}
                   </p>
                 </div>
               ) : (
@@ -210,7 +227,7 @@ export default function FreelancerEarnings() {
                       <div key={payment._id} className="rounded-lg border border-border p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-semibold text-white">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
                               {payer ? initialsFromName(payer.name) : "?"}
                             </div>
                             <div className="min-w-0">

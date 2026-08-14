@@ -1,0 +1,27 @@
+services:
+  # Production talks to the real MongoDB Atlas cluster (MONGO_URI in
+  # backend/.env — the one with Continuous Backup, not a local container with
+  # no backup at all). There is deliberately no local `mongo` service here
+  # anymore — running your own unbacked-up MongoDB in the same compose stack
+  # as production defeats the whole point of paying for Atlas.
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    # No ports published — only reachable from other containers on this
+    # compose network. nginx proxies /api and /socket.io to it internally as
+    # http://backend:5000 (see frontend/nginx.conf); the public internet
+    # should only ever reach it through that proxy, never directly. Uncomment
+    # below (bound to loopback only, never the public interface) if you need
+    # to hit it directly while debugging on the host itself.
+    # ports:
+    #   - "127.0.0.1:5000:5000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"

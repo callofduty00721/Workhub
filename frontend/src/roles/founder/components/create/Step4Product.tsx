@@ -16,7 +16,7 @@ export function Step4Product() {
 
   return (
     <>
-      <h4 className="text-[13px] font-bold text-[#0f172a]">Products</h4>
+      <h4 className="text-[13px] font-bold text-foreground">Products</h4>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -41,7 +41,7 @@ export function Step4Product() {
           </Button>
         </div>
         {productsArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Product name" {...register(`products.${index}.name` as const)} />
             <Input placeholder="Tags (comma separated, e.g. SaaS, B2B)" {...register(`products.${index}.tagsText` as const)} />
             <Textarea placeholder="Product description" className="min-h-[60px] sm:col-span-2" {...register(`products.${index}.description` as const)} />
@@ -89,7 +89,7 @@ export function Step4Product() {
           <Button onClick={() => howItWorksArray.append({ title: "", description: "" })}>Add Step</Button>
         </div>
         {howItWorksArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Step title" {...register(`howItWorks.${index}.title` as const)} />
             <Input placeholder="Step description" {...register(`howItWorks.${index}.description` as const)} />
             <RemoveRowButton onClick={() => howItWorksArray.remove(index)} />
@@ -97,7 +97,7 @@ export function Step4Product() {
         ))}
       </div>
 
-      <h4 className="border-t border-[#e2e8f0] pt-5 text-[13px] font-bold text-[#0f172a]">Our Plan</h4>
+      <h4 className="border-t border-border pt-5 text-[13px] font-bold text-foreground">Our Plan</h4>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -107,7 +107,7 @@ export function Step4Product() {
           <Button onClick={() => planPhasesArray.append({ title: "", timeframe: "", checklistText: "", estimatedCost: 0 })}>Add Phase</Button>
         </div>
         {planPhasesArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Phase title (e.g. Launch)" {...register(`planPhases.${index}.title` as const)} />
             <Input placeholder="Timeframe (e.g. Month 1-3)" {...register(`planPhases.${index}.timeframe` as const)} />
             <Input type="number" min={0} placeholder="Estimated cost (₹)" {...register(`planPhases.${index}.estimatedCost` as const)} />
@@ -117,7 +117,7 @@ export function Step4Product() {
         ))}
       </div>
 
-      <h4 className="border-t border-[#e2e8f0] pt-5 text-[13px] font-bold text-[#0f172a]">Market Opportunity</h4>
+      <h4 className="border-t border-border pt-5 text-[13px] font-bold text-foreground">Market Opportunity</h4>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>

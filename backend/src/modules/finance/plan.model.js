@@ -23,7 +23,12 @@ const planSchema = new mongoose.Schema(
     role: { type: String, enum: PLAN_ROLES, required: true },
     tier: { type: String, enum: PLAN_TIERS, required: true },
     name: { type: String, required: true },
+    // Monthly price. Yearly is a separate real field (not computed from this
+    // at read time) so an admin can set any discount they want per plan —
+    // seeded at 10x monthly (2 months free), the standard annual-discount
+    // convention, but editable from Admin > Plans like every other field here.
     priceInInr: { type: Number, required: true, min: 0 },
+    priceInInrYearly: { type: Number, required: true, min: 0, default: 0 },
     features: [{ type: String }],
     // Machine-enforced cap on active listings this plan allows (startups for
     // founder, job posts for employer, project posts for client) — -1 means

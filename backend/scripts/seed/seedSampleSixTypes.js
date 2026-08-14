@@ -1,6 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 import Project from "../../src/modules/jobs/project.model.js";
 import Service from "../../src/modules/marketplace/service.model.js";
@@ -15,7 +16,7 @@ const coverUrl = (seed) => `https://picsum.photos/seed/${seed}/1200/400`;
 const FREELANCERS = [
   {
     name: "Aditi Kulkarni",
-    email: "aditi.kulkarni@mahahub.demo",
+    email: "aditi.kulkarni@growhive.demo",
     headline: "Graphic Designer & Brand Identity Specialist",
     bio: "5 years designing logos, branding, and social media creatives for startups.",
     location: "Pune, Maharashtra, India",
@@ -30,7 +31,7 @@ const FREELANCERS = [
   },
   {
     name: "Rohan Sharma",
-    email: "rohan.sharma@mahahub.demo",
+    email: "rohan.sharma@growhive.demo",
     headline: "Full-Stack Web Developer (React & Node.js)",
     bio: "4 years building fast, scalable web apps with React, Node.js, and MongoDB for startups.",
     location: "New Delhi, India",
@@ -45,7 +46,7 @@ const FREELANCERS = [
   },
   {
     name: "Sarah Fernandes",
-    email: "sarah.fernandes@mahahub.demo",
+    email: "sarah.fernandes@growhive.demo",
     headline: "Content Writer & SEO Strategist",
     bio: "I help startups and small businesses tell their story through clear, engaging, SEO-optimized content.",
     location: "Bengaluru, Karnataka, India",
@@ -62,9 +63,9 @@ const FREELANCERS = [
 
 const CLIENT = {
   name: "Priya Deshmukh",
-  email: "priya.deshmukh@mahahub.demo",
-  headline: "Founder, MahaHub Ventures",
-  companyName: "MahaHub Ventures",
+  email: "priya.deshmukh@growhive.demo",
+  headline: "Founder, GrowHive Ventures",
+  companyName: "GrowHive Ventures",
   location: "Mumbai, Maharashtra, India",
   avatar: avatarUrl("priya-deshmukh"),
   coverImage: coverUrl("priya-deshmukh-cover"),
@@ -72,7 +73,7 @@ const CLIENT = {
 
 const EMPLOYER = {
   name: "Vikram Joshi",
-  email: "vikram.joshi@mahahub.demo",
+  email: "vikram.joshi@growhive.demo",
   headline: "HR Manager, TechNova Solutions",
   companyName: "TechNova Solutions",
   location: "Bengaluru, Karnataka, India",
@@ -112,6 +113,7 @@ function daysFromNow(days) {
 }
 
 async function run() {
+  assertNotProduction("seedSampleSixTypes");
   await connectDB();
 
   const [aditi, rohan, sarah] = await Promise.all(FREELANCERS.map((f) => upsertUser(f, "freelancer")));

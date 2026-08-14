@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Users2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Users2, ShieldCheck, MessageSquare, Wallet } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SimpleHero } from "@/components/shared/SimpleHero";
 import { InvestorCard } from "@/roles/investor/components/InvestorCard";
 import { investorApi } from "@/api/investors";
+
+// Real platform capabilities — no fabricated numbers.
+const TRUST_POINTS = [
+  { icon: ShieldCheck, label: "Verified profiles", color: "text-green-500" },
+  { icon: MessageSquare, label: "Direct messaging", color: "text-blue-500" },
+  { icon: Wallet, label: "Transparent ticket sizes", color: "text-purple-500" },
+];
 
 export default function InvestorList() {
   const [search, setSearch] = useState("");
@@ -14,36 +21,42 @@ export default function InvestorList() {
     queryFn: () => investorApi.list({ search: search || undefined, limit: 12 }),
   });
 
+  const total = data?.pagination.total ?? 0;
+
   return (
-    <div className="container py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Investor Directory</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Connect with investors actively looking for their next opportunity.</p>
-      </div>
+    <div>
+      <SimpleHero
+        badgeIcon={Users2}
+        badgeText={total > 0 ? `${total.toLocaleString()} investor${total === 1 ? "" : "s"} to connect with` : "Browse investors"}
+        title="Connect with"
+        accent="investors"
+        description="Connect with investors actively looking for their next opportunity."
+        trustPoints={TRUST_POINTS}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search investors..."
+      />
 
-      <div className="relative mb-6 max-w-lg">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search investors..." className="pl-9" />
+      <div className="container border-t border-border py-10">
+        {isLoading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-48 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : !data?.data.length ? (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+            <Users2 className="h-9 w-9 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">No investors found.</p>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {data.data.map((investor) => (
+              <InvestorCard key={investor._id} investor={investor} />
+            ))}
+          </div>
+        )}
       </div>
-
-      {isLoading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : !data?.data.length ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
-          <Users2 className="h-9 w-9 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No investors found.</p>
-        </div>
-      ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {data.data.map((investor) => (
-            <InvestorCard key={investor._id} investor={investor} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

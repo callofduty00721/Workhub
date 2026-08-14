@@ -3,8 +3,6 @@ import {
   updateMyProfile,
   updateNotificationPreferences,
   submitKyc,
-  sendPhoneOtp,
-  verifyPhoneOtp,
   verifyPhoneFirebaseToken,
   submitFaceVerification,
   submitAddressVerification,
@@ -14,6 +12,8 @@ import {
   toggleSavedService,
   toggleSavedFreelancer,
   toggleSavedContest,
+  toggleSavedInfluencer,
+  toggleSavedCampaign,
   getSavedItems,
   getMyReferrals,
 } from "./user.controller.js";
@@ -24,8 +24,6 @@ const router = Router();
 router.put("/me", protect, updateMyProfile);
 router.put("/me/notification-preferences", protect, updateNotificationPreferences);
 router.post("/me/kyc", protect, submitKyc);
-router.post("/me/phone-otp", protect, sendPhoneOtp);
-router.post("/me/phone-otp/verify", protect, verifyPhoneOtp);
 router.post("/me/phone-otp/verify-firebase", protect, verifyPhoneFirebaseToken);
 router.post("/me/face-verification", protect, submitFaceVerification);
 router.post("/me/address-verification", protect, submitAddressVerification);
@@ -37,5 +35,7 @@ router.put("/me/saved-projects/:projectId", protect, toggleSavedProject);
 router.put("/me/saved-services/:serviceId", protect, toggleSavedService);
 router.put("/me/saved-freelancers/:freelancerId", protect, toggleSavedFreelancer);
 router.put("/me/saved-contests/:contestId", protect, toggleSavedContest);
+router.put("/me/saved-influencers/:influencerId", protect, toggleSavedInfluencer);
+router.put("/me/saved-campaigns/:campaignId", protect, toggleSavedCampaign);
 
 export default router;

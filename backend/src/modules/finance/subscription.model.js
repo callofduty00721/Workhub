@@ -7,6 +7,7 @@ const subscriptionSchema = new mongoose.Schema(
     // so a subscription only makes sense in the context of one.
     role: { type: String, required: true },
     plan: { type: String, enum: ["free", "pro", "enterprise"], default: "free" },
+    billingCycle: { type: String, enum: ["monthly", "yearly"], default: "monthly" },
     provider: { type: String, enum: ["razorpay", "stripe"], required: true },
     providerOrderId: { type: String, default: "" },
     providerPaymentId: { type: String, default: "" },

@@ -13,8 +13,14 @@ import { postLoginPath } from "@/lib/roles";
 import { isAxiosError } from "axios";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
+const EMAIL_RE = /^\S+@\S+\.\S+$/;
+const PHONE_RE = /^\d{10}$/;
+
 const schema = z.object({
-  email: z.string().email("Enter a valid email address"),
+  identifier: z
+    .string()
+    .min(1, "Enter your email or mobile number")
+    .refine((v) => EMAIL_RE.test(v) || PHONE_RE.test(v), "Enter a valid email address or 10-digit mobile number"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -36,7 +42,8 @@ export default function Login() {
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
     try {
-      const user = await login(values.email, values.password);
+      const identifier = EMAIL_RE.test(values.identifier) ? { email: values.identifier } : { phone: values.identifier };
+      const user = await login(identifier, values.password);
       const redirectTo = (location.state as { from?: string } | null)?.from ?? postLoginPath(user.role);
       navigate(redirectTo, { replace: true });
     } catch (err) {
@@ -48,7 +55,7 @@ export default function Login() {
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Log in to your MahaHub account"
+      subtitle="Log in to your GrowHive account"
       footer={
         <>
           Don&apos;t have an account?{" "}
@@ -64,9 +71,14 @@ export default function Login() {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <Input id="email" type="email" placeholder="you@example.com" {...register("email")} aria-invalid={!!errors.email} />
-          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+          <Label htmlFor="identifier">Email or Mobile Number</Label>
+          <Input
+            id="identifier"
+            placeholder="you@example.com or 98765 43210"
+            {...register("identifier")}
+            aria-invalid={!!errors.identifier}
+          />
+          {errors.identifier && <p className="text-xs text-danger">{errors.identifier.message}</p>}
         </div>
 
         <div className="space-y-2">

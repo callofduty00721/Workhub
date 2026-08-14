@@ -1,4 +1,4 @@
-# MahaHub
+# GrowHive
 
 An original SaaS platform (inspired by WorkHub.io) connecting startups, freelancers, investors, mentors, partners, clients and job seekers. Original codebase, design, and copy — no WorkHub source or assets were used.
 

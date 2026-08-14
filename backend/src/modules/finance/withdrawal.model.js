@@ -20,6 +20,7 @@ const withdrawalSchema = new mongoose.Schema(
     providerPayoutId: { type: String, default: "" },
     adminNote: { type: String, default: "" },
     processedAt: { type: Date },
+    processedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

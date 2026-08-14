@@ -1,11 +1,16 @@
 import type {
   JobSeekerProfile,
   InfluencerProfile,
+  BrandProfile,
+  AgencyProfile,
+  TalentPartnerProfile,
   ExperienceEntry,
   EducationEntry,
   AchievementEntry,
   SocialLinks,
   MentorSessionFormat,
+  AvailabilityStatus,
+  InfluencerCollaboration,
 } from "./user";
 import type { StartupStage } from "./startup";
 
@@ -33,7 +38,93 @@ export interface InfluencerSummary {
   location?: string;
   bio?: string;
   influencerProfile?: InfluencerProfile;
+  isVerified?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  socialLinks?: SocialLinks;
+  achievements?: AchievementEntry[];
+  availabilityStatus?: AvailabilityStatus;
   createdAt: string;
+  // Only present on results from the /influencers list (a runtime aggregation) —
+  // not on a single getProfile fetch. See listInfluencers in influencer.controller.js.
+  totalFollowers?: number;
+  // Count of released campaign-escrow payments — a real, platform-verified
+  // transaction count, not a self-reported number. See listInfluencers'
+  // campaignsCompletedStage.
+  campaignsCompleted?: number;
+  matchScore?: number;
+  // Auto-generated from released campaign payments — see getInfluencerProfile.
+  // Only present on a single getProfile fetch, same as campaignsCompleted.
+  verifiedCollaborations?: InfluencerCollaboration[];
+}
+
+// Shared shape across the three /api/public-profiles/:role/:id responses —
+// see publicProfile.controller.js's PUBLIC_FIELDS_BY_ROLE.
+interface PublicProfileBase {
+  _id: string;
+  name: string;
+  avatar?: string;
+  headline?: string;
+  location?: string;
+  bio?: string;
+  isVerified?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  socialLinks?: SocialLinks;
+  achievements?: AchievementEntry[];
+  company?: { _id: string; name: string } | null;
+  createdAt: string;
+  // Auto-generated from released campaign payments this profile paid out —
+  // see getPublicProfile. brand/agency/talent_partner only.
+  verifiedCollaborations?: InfluencerCollaboration[];
+}
+
+export interface BrandSummary extends PublicProfileBase {
+  brandProfile?: BrandProfile;
+}
+
+export interface AgencySummary extends PublicProfileBase {
+  agencyProfile?: AgencyProfile;
+}
+
+export interface TalentPartnerSummary extends PublicProfileBase {
+  talentPartnerProfile?: TalentPartnerProfile;
+}
+
+// Trimmer directory-grid shapes — see publicProfile.controller.js's
+// LIST_FIELDS_BY_ROLE (no bio/achievements/company, just enough for a card).
+interface DirectoryListItemBase {
+  _id: string;
+  name: string;
+  avatar?: string;
+  headline?: string;
+  location?: string;
+  isVerified?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  // Real, computed fresh on every request (see publicProfile.controller.js) —
+  // brand/agency/talent_partner only, since only those roles post campaigns.
+  openCampaignsCount?: number;
+  totalCampaignsCount?: number;
+  // Distinct influencers with status:"hired" on any of this profile's
+  // campaigns — a real headcount, not a claim.
+  hiredInfluencersCount?: number;
+  // Summed follower count of those actually-hired influencers' own
+  // platforms — real aggregate, not an estimated/forecast reach figure.
+  totalReach?: number;
+  createdAt: string;
+}
+
+export interface BrandListItem extends DirectoryListItemBase {
+  brandProfile?: Pick<BrandProfile, "industry" | "categories" | "followerCount" | "website" | "socialLinks">;
+}
+
+export interface AgencyListItem extends DirectoryListItemBase {
+  agencyProfile?: Pick<AgencyProfile, "agencyType" | "teamSize" | "website" | "socialLinks">;
+}
+
+export interface TalentPartnerListItem extends DirectoryListItemBase {
+  talentPartnerProfile?: Pick<TalentPartnerProfile, "partnerType" | "website" | "socialLinks">;
 }
 
 export interface InvestorSummary {

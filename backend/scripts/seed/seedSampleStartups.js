@@ -1,10 +1,11 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 import Startup from "../../src/modules/startup/startup.model.js";
 
-const FOUNDER_EMAIL = "founder.demo@mahahub.test";
+const FOUNDER_EMAIL = "founder.demo@growhive.test";
 const FOUNDER_PASSWORD = "Demo@12345";
 
 const FOUNDER_PROFILE_FIELDS = {
@@ -417,6 +418,7 @@ function buildStartups(founderId) {
 }
 
 async function run() {
+  assertNotProduction("seedSampleStartups");
   await connectDB();
 
   const founder = await getOrCreateFounder();

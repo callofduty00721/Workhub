@@ -18,7 +18,7 @@ export function FilterPills<T extends string>({
           onClick={() => onChange(opt.value)}
           className={cn(
             "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-            value === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+            value === opt.value ? "bg-brand text-brand-foreground shadow-xs" : "bg-muted text-muted-foreground hover:bg-accent"
           )}
         >
           {opt.label}

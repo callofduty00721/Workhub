@@ -36,14 +36,15 @@ export interface TimeEntry {
   createdAt: string;
 }
 
-export type PhoneAuthProvider = "disabled" | "firebase" | "twilio";
+export type PhoneAuthProvider = "disabled" | "firebase";
 
 export interface PlatformSettings {
   _id: string;
   commissionPercent: number;
   phoneAuthProvider: PhoneAuthProvider;
   firebaseConfigured: boolean;
-  twilioConfigured: boolean;
+  allowedEmailDomains: string[];
+  jobsEnabled: boolean;
 }
 
 export type TaskType = "task" | "meeting" | "call" | "deadline";

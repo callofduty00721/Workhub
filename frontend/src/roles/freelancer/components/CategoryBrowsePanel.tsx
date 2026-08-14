@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { SERVICE_CATEGORIES, SERVICE_CATEGORY_NAMES } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,11 @@ interface Props {
   // `popup` makes the grid itself a click-to-open/click-outside-to-close
   // dropdown instead of a permanently-expanded block eating page height.
   popup?: boolean;
+  // "dark": compact pill styling for placing this panel directly on a black
+  // section (the Freelancers page hero area) — every other caller (Navbar
+  // mega-menu, Influencers/Projects/Gigs pages) keeps the default light
+  // underline-tab styling untouched.
+  variant?: "default" | "dark";
 }
 
 // Real 3-level category browse grid (Category -> Section -> skill), shared
@@ -31,7 +36,9 @@ export function CategoryBrowsePanel({
   onViewAll,
   className,
   popup = false,
+  variant = "default",
 }: Props) {
+  const dark = variant === "dark";
   const sections = SERVICE_CATEGORIES[activeCategory] ?? {};
   const sectionEntries = Object.entries(sections);
 
@@ -122,14 +129,17 @@ export function CategoryBrowsePanel({
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 py-5 sm:grid-cols-3 lg:grid-cols-4">
         {sectionEntries.map(([section, skills]) => (
           <div key={section} className="min-w-0">
-            <p className="mb-1.5 truncate text-[12.5px] font-bold text-neutral-900">{section}</p>
+            <p className={cn("mb-1.5 truncate text-[12px] font-normal", dark ? "text-white" : "text-neutral-900")}>{section}</p>
             <div className="flex flex-col">
               {skills.map((skill) => (
                 <button
                   key={skill}
                   type="button"
                   onClick={() => handleSelectSubCategory(activeCategory, skill)}
-                  className="truncate rounded-md px-2 py-1 text-left text-[13px] text-neutral-600 transition-colors hover:bg-primary/5 hover:text-primary"
+                  className={cn(
+                    "truncate rounded-md px-2 py-1 text-left text-[13px] transition-colors",
+                    dark ? "text-[#A1A1AA] hover:bg-white/5 hover:text-white" : "text-neutral-600 hover:bg-[#F5F5F5] hover:text-[#171717]"
+                  )}
                 >
                   {skill}
                 </button>
@@ -142,7 +152,10 @@ export function CategoryBrowsePanel({
       <button
         type="button"
         onClick={() => handleViewAll(activeCategory)}
-        className="mb-1 inline-flex items-center gap-1 text-[12.5px] font-semibold text-primary hover:underline"
+        className={cn(
+          "mb-1 inline-flex items-center gap-1 text-[12.5px] font-semibold hover:underline",
+          dark ? "text-[#65d838]" : "text-[#171717]"
+        )}
       >
         View all {activeCategory} freelancers <ArrowRight className="h-3 w-3" />
       </button>
@@ -152,49 +165,72 @@ export function CategoryBrowsePanel({
   return (
     <div ref={wrapperRef} className={cn("w-full", popup && "relative", className)}>
       <div className="relative">
-        {canScrollLeft && (
-          <button
-            type="button"
-            aria-label="Scroll categories left"
-            onClick={() => scrollTabsBy(-240)}
-            className="absolute left-0 top-0 z-10 flex h-full w-8 shrink-0 items-center justify-center bg-gradient-to-r from-white via-white/90 to-transparent text-neutral-500 hover:text-primary"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          aria-label="Scroll categories left"
+          disabled={!canScrollLeft}
+          onClick={() => scrollTabsBy(-240)}
+          className={cn(
+            "absolute left-0 top-0 z-10 flex h-full w-8 shrink-0 items-center justify-center",
+            dark ? "bg-gradient-to-r from-black via-black/90 to-transparent" : "bg-gradient-to-r from-white via-white/90 to-transparent",
+            canScrollLeft
+              ? dark
+                ? "text-[#A1A1AA] hover:text-white"
+                : "text-neutral-500 hover:text-[#171717]"
+              : dark
+                ? "text-white/10"
+                : "text-neutral-200"
+          )}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
 
         <div
           ref={tabsRowRef}
           onScroll={updateScrollButtons}
-          className="flex items-center gap-1 overflow-x-auto border-b border-neutral-200 scrollbar-hide"
+          className={cn(
+            "flex items-center overflow-x-auto scrollbar-hide",
+            dark ? "gap-2 py-3 pl-7" : "gap-1 border-b border-neutral-200 pl-7"
+          )}
         >
-          <button
-            type="button"
-            onClick={handleAllClick}
-            className={cn(
-              "shrink-0 border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
-              activeCategory === "all"
-                ? "border-primary text-primary"
-                : "border-transparent text-neutral-500 hover:text-neutral-900"
-            )}
-          >
-            All Categories
-          </button>
-          {SERVICE_CATEGORY_NAMES.map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => handleTabClick(name)}
-              className={cn(
-                "shrink-0 border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors",
-                activeCategory === name
-                  ? "border-primary text-primary"
-                  : "border-transparent text-neutral-500 hover:text-neutral-900"
-              )}
-            >
-              {name}
-            </button>
-          ))}
+          {dark ? (
+            <>
+              <CategoryPill active={activeCategory === "all"} onClick={handleAllClick}>
+                All Categories
+              </CategoryPill>
+              {SERVICE_CATEGORY_NAMES.map((name) => (
+                <CategoryPill key={name} active={activeCategory === name} onClick={() => handleTabClick(name)}>
+                  {name}
+                </CategoryPill>
+              ))}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleAllClick}
+                className={cn(
+                  "shrink-0 border-b-2 px-3.5 py-2.5 text-[15px] font-semibold transition-colors",
+                  activeCategory === "all" ? "border-[#171717] text-[#171717]" : "border-transparent text-neutral-500 hover:text-neutral-900"
+                )}
+              >
+                All Categories
+              </button>
+              {SERVICE_CATEGORY_NAMES.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => handleTabClick(name)}
+                  className={cn(
+                    "shrink-0 border-b-2 px-3.5 py-2.5 text-[15px] font-medium transition-colors",
+                    activeCategory === name ? "border-[#171717] text-[#171717]" : "border-transparent text-neutral-500 hover:text-neutral-900"
+                  )}
+                >
+                  {name}
+                </button>
+              ))}
+            </>
+          )}
         </div>
 
         {canScrollRight && (
@@ -202,7 +238,12 @@ export function CategoryBrowsePanel({
             type="button"
             aria-label="Scroll categories right"
             onClick={() => scrollTabsBy(240)}
-            className="absolute right-0 top-0 z-10 flex h-full w-8 shrink-0 items-center justify-center bg-gradient-to-l from-white via-white/90 to-transparent text-neutral-500 hover:text-primary"
+            className={cn(
+              "absolute right-0 top-0 z-10 flex h-full w-8 shrink-0 items-center justify-center",
+              dark
+                ? "bg-gradient-to-l from-black via-black/90 to-transparent text-[#A1A1AA] hover:text-white"
+                : "bg-gradient-to-l from-white via-white/90 to-transparent text-neutral-500 hover:text-[#171717]"
+            )}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -211,7 +252,12 @@ export function CategoryBrowsePanel({
 
       {popup ? (
         sectionsOpen && (
-          <div className="absolute left-0 right-0 top-full z-40 rounded-b-2xl border border-t-0 border-neutral-200 bg-white px-5 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.2)]">
+          <div
+            className={cn(
+              "absolute left-0 right-0 top-full z-40 rounded-b-2xl border border-t-0 px-5 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.2)]",
+              dark ? "border-white/[0.08] bg-[#0A0A0A]" : "border-neutral-200 bg-white"
+            )}
+          >
             {grid}
           </div>
         )
@@ -219,5 +265,26 @@ export function CategoryBrowsePanel({
         grid
       )}
     </div>
+  );
+}
+
+// Compact pill — icon + name, used only in the dark/premium variant. No
+// per-category icon or live count exists in SERVICE_CATEGORIES yet, so this
+// stays a generic marker rather than inventing data the API doesn't have.
+function CategoryPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-[13.5px] font-medium transition-all duration-200",
+        active
+          ? "border-[#22C55E]/30 bg-[#22C55E]/10 text-[#65d838]"
+          : "border-white/[0.08] bg-white/[0.03] text-[#A1A1AA] hover:border-white/20 hover:text-white"
+      )}
+    >
+      <Sparkles className={cn("h-3.5 w-3.5", active ? "text-[#65d838]" : "text-[#71717A]")} />
+      {children}
+    </button>
   );
 }

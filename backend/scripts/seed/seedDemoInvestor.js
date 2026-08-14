@@ -1,12 +1,14 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 
-const INVESTOR_EMAIL = "investor.demo@mahahub.test";
+const INVESTOR_EMAIL = "investor.demo@growhive.test";
 const INVESTOR_PASSWORD = "Demo@12345";
 
 async function run() {
+  assertNotProduction("seedDemoInvestor");
   await connectDB();
 
   let investor = await User.findOne({ email: INVESTOR_EMAIL });

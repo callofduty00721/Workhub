@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Trophy, Clock, Users, CheckCircle2, Loader2 } from "lucide-react";
+import { Trophy, Clock, Users, CheckCircle2, Loader2, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { FileUpload } from "@/components/shared/FileUpload";
 import { SaveButton } from "@/components/shared/SaveButton";
+import { usePageMeta } from "@/lib/usePageMeta";
 
 export default function ContestDetails() {
   const { id = "" } = useParams();
@@ -28,6 +29,8 @@ export default function ContestDetails() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: contest, isLoading } = useQuery({ queryKey: ["contests", id], queryFn: () => contestApi.getById(id), enabled: !!id });
+
+  usePageMeta(contest ? contest.title : "Contest", contest ? contest.description.slice(0, 160) : undefined);
 
   const { data: myEntries } = useQuery({
     queryKey: ["contests", "entries", "mine"],
@@ -71,6 +74,14 @@ export default function ContestDetails() {
 
   return (
     <div className="container py-10">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="group mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+        Back to Contests
+      </button>
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <Card>

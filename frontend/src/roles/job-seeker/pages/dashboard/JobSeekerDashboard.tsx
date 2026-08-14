@@ -145,7 +145,7 @@ export default function JobSeekerDashboard() {
         </Button>
       }
     >
-      <Card className="mb-6 overflow-hidden border-none bg-gradient-to-r from-primary to-secondary text-primary-foreground">
+      <Card className="mb-6 overflow-hidden border-none bg-primary text-primary-foreground">
         <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold sm:text-base">Let&apos;s find your dream job today</p>
@@ -543,7 +543,7 @@ export default function JobSeekerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden border-none bg-gradient-to-br from-primary to-secondary text-primary-foreground">
+          <Card className="overflow-hidden border-none bg-primary text-primary-foreground">
             <CardContent className="p-5 text-center">
               <Crown className="mx-auto h-6 w-6" />
               <p className="mt-2 text-sm font-semibold">Upgrade to Premium</p>

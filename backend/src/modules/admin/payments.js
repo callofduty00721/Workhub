@@ -4,6 +4,7 @@ import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 import { refreshFreelancerLevel } from "../../utils/freelancerLevel.js";
+import { earningsLinkForPaymentType } from "../../utils/earningsLink.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
 
 export const listPayments = asyncHandler(async (req, res) => {
@@ -57,6 +58,7 @@ export const resolveDispute = asyncHandler(async (req, res) => {
     payment.disputeStatus = "rejected";
   }
   payment.disputeResolutionNote = note || "";
+  payment.disputeResolvedBy = req.user._id;
   await payment.save();
   refreshFreelancerLevel(payment.payee).catch(() => {});
 
@@ -79,7 +81,7 @@ export const resolveDispute = asyncHandler(async (req, res) => {
         ? `A dispute on your payment was resolved with a ₹${payment.refundedAmount} refund`
         : "A dispute on your payment was rejected — no refund issued",
     message: note || "",
-    link: "/dashboard/freelancer/earnings",
+    link: earningsLinkForPaymentType(payment.type),
   });
 
   res.json({ success: true, data: payment });

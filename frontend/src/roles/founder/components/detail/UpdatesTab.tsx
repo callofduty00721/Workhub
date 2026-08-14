@@ -48,8 +48,8 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-[19px] font-extrabold text-[#0f172a]">Updates</h3>
-          <p className="mt-1 text-[12.5px] text-[#64748b]">Stay updated with the latest progress, milestones and activities.</p>
+          <h3 className="text-[19px] font-extrabold text-foreground">Updates</h3>
+          <p className="mt-1 text-[12.5px] text-muted-foreground">Stay updated with the latest progress, milestones and activities.</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Select value={filter} onValueChange={(v) => { setFilter(v); setShowAll(false); }}>
@@ -62,7 +62,7 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
             </SelectContent>
           </Select>
           {isFounder && (
-            <button onClick={() => setShowForm((v) => !v)} className="flex items-center gap-1.5 rounded-lg bg-[#FF5722] px-4 py-2 text-[12.5px] font-bold text-white hover:opacity-90">
+            <button onClick={() => setShowForm((v) => !v)} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[12.5px] font-bold text-primary-foreground hover:opacity-90">
               <Plus className="h-3.5 w-3.5" /> Add New Update
             </button>
           )}
@@ -70,7 +70,7 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
       </div>
 
       {showForm && (
-        <div className="mt-4 space-y-2 rounded-xl border border-[#e2e8f0] p-4">
+        <div className="mt-4 space-y-2 rounded-xl border border-border p-4">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Update title" />
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What happened?" className="min-h-[70px]" />
           <Select value={category} onValueChange={(v) => setCategory(v as (typeof UPDATE_CATEGORIES)[number])}>
@@ -81,7 +81,7 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
               ))}
             </SelectContent>
           </Select>
-          <button onClick={() => title.trim() && mutation.mutate()} disabled={!title.trim() || mutation.isPending} className="flex items-center gap-1.5 rounded-lg bg-[#FF5722] px-3.5 py-2 text-[12px] font-bold text-white">
+          <button onClick={() => title.trim() && mutation.mutate()} disabled={!title.trim() || mutation.isPending} className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-[12px] font-bold text-primary-foreground">
             {mutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Post Update
           </button>
         </div>
@@ -100,7 +100,7 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
                   const meta = UPDATE_CATEGORY_META[u.category] ?? UPDATE_CATEGORY_META.Other;
                   const Icon = meta.icon;
                   return (
-                    <div key={u._id} className="flex gap-3 rounded-xl border border-[#e2e8f0] p-4">
+                    <div key={u._id} className="flex gap-3 rounded-xl border border-border p-4">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: meta.bg, color: meta.fg }}>
                         <Icon className="h-4 w-4" />
                       </span>
@@ -109,15 +109,15 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
                           <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: meta.bg, color: meta.fg }}>
                             {u.category}
                           </span>
-                          <span className="text-[11px] text-[#94a3b8]">{new Date(u.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}</span>
+                          <span className="text-[11px] text-muted-foreground/70">{new Date(u.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}</span>
                         </div>
-                        <p className="mt-1.5 text-[14px] font-bold text-[#0f172a]">{u.title}</p>
-                        {u.description && <p className="mt-1 text-[12.5px] text-[#64748b]">{u.description}</p>}
-                        <div className="mt-2.5 flex items-center gap-4 text-[11.5px] text-[#64748b]">
+                        <p className="mt-1.5 text-[14px] font-bold text-foreground">{u.title}</p>
+                        {u.description && <p className="mt-1 text-[12.5px] text-muted-foreground">{u.description}</p>}
+                        <div className="mt-2.5 flex items-center gap-4 text-[11.5px] text-muted-foreground">
                           <button
                             onClick={() => canPost && likeMutation.mutate(u._id)}
                             disabled={!canPost}
-                            className="flex items-center gap-1 hover:text-[#FF5722] disabled:cursor-default disabled:hover:text-[#64748b]"
+                            className="flex items-center gap-1 hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
                           >
                             <ThumbsUp className="h-3.5 w-3.5" /> {u.likes.length}
                           </button>
@@ -134,7 +134,7 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
               {filtered.length > 4 && (
                 <button
                   onClick={() => setShowAll((v) => !v)}
-                  className="mt-4 w-full rounded-lg border border-[#e2e8f0] py-2.5 text-[12.5px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
+                  className="mt-4 w-full rounded-lg border border-border py-2.5 text-[12.5px] font-bold text-foreground hover:bg-muted"
                 >
                   {showAll ? "Show Fewer Updates" : "Load More Updates"}
                 </button>
@@ -144,12 +144,12 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
         </div>
 
         <div className="space-y-5">
-          <div className="rounded-xl border border-[#e2e8f0] p-4">
-            <h4 className="text-[13.5px] font-bold text-[#0f172a]">Update Categories</h4>
+          <div className="rounded-xl border border-border p-4">
+            <h4 className="text-[13.5px] font-bold text-foreground">Update Categories</h4>
             <div className="mt-3 space-y-1">
               <button
                 onClick={() => { setFilter("All Updates"); setShowAll(false); }}
-                className={cn("flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[12px] font-semibold", filter === "All Updates" ? "bg-[#ffece5] text-[#FF5722]" : "text-[#334155] hover:bg-[#f8fafc]")}
+                className={cn("flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[12px] font-semibold", filter === "All Updates" ? "bg-brand text-brand-foreground" : "text-foreground/80 hover:bg-muted")}
               >
                 All Updates <span className="text-[11px] font-bold">{(updates ?? []).length}</span>
               </button>
@@ -160,7 +160,7 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
                   <button
                     key={c}
                     onClick={() => { setFilter(c); setShowAll(false); }}
-                    className={cn("flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[12px] font-semibold", filter === c ? "bg-[#ffece5] text-[#FF5722]" : "text-[#334155] hover:bg-[#f8fafc]")}
+                    className={cn("flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[12px] font-semibold", filter === c ? "bg-brand text-brand-foreground" : "text-foreground/80 hover:bg-muted")}
                   >
                     <span className="flex items-center gap-2">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: meta.bg, color: meta.fg }}>
@@ -175,11 +175,11 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
             </div>
           </div>
 
-          <div className="rounded-xl border border-[#e2e8f0] p-4">
-            <h4 className="text-[13.5px] font-bold text-[#0f172a]">Subscribe for Updates</h4>
-            <p className="mt-1.5 text-[11.5px] text-[#64748b]">Get notified about the latest updates from this startup.</p>
+          <div className="rounded-xl border border-border p-4">
+            <h4 className="text-[13.5px] font-bold text-foreground">Subscribe for Updates</h4>
+            <p className="mt-1.5 text-[11.5px] text-muted-foreground">Get notified about the latest updates from this startup.</p>
             {subscribed ? (
-              <p className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold text-[#FF5722]">
+              <p className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold text-success">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Thanks, we&apos;ll keep you posted!
               </p>
             ) : (
@@ -194,11 +194,11 @@ export function UpdatesTab({ startupId, isFounder, canPost }: { startupId: strin
                 <button
                   onClick={() => subscribeEmail.trim() && setSubscribed(true)}
                   disabled={!subscribeEmail.trim()}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#FF5722] py-2 text-[12.5px] font-bold text-white hover:opacity-90 disabled:opacity-50"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-[12.5px] font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
                 >
                   <Mail className="h-3.5 w-3.5" /> Subscribe
                 </button>
-                <p className="mt-2 text-[10.5px] text-[#94a3b8]">No spam. Unsubscribe anytime.</p>
+                <p className="mt-2 text-[10.5px] text-muted-foreground/70">No spam. Unsubscribe anytime.</p>
               </>
             )}
           </div>

@@ -36,7 +36,7 @@ export function Pagination({ page, pages, onChange }: { page: number; pages: num
             aria-current={p === page ? "page" : undefined}
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors",
-              p === page ? "bg-primary text-primary-foreground" : "text-foreground/80 hover:bg-accent"
+              p === page ? "bg-brand text-brand-foreground shadow-xs" : "text-foreground/80 hover:bg-accent"
             )}
           >
             {p}

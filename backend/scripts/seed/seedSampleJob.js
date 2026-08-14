@@ -1,6 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../src/config/db.js";
+import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 import Job from "../../src/modules/jobs/job.model.js";
 
@@ -10,7 +11,7 @@ const DEMO_PASSWORD = "Demo@12345";
 // can run standalone without duplicating that employer if it already exists.
 const EMPLOYER = {
   name: "Vikram Joshi",
-  email: "vikram.joshi@mahahub.demo",
+  email: "vikram.joshi@growhive.demo",
   headline: "HR Manager, TechNova Solutions",
   companyName: "TechNova Solutions",
   location: "Bengaluru, Karnataka, India",
@@ -48,6 +49,7 @@ async function upsertUser(data, role) {
 }
 
 async function run() {
+  assertNotProduction("seedSampleJob");
   await connectDB();
 
   const employer = await upsertUser(EMPLOYER, "employer");

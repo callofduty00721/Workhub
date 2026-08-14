@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, ClipboardList, Plus, Users, Eye } from "lucide-react";
+import { Briefcase, ClipboardList, Plus, Users, Eye, Wallet, UserCheck, Handshake } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,11 @@ import { useAuth } from "@/context/AuthContext";
 import { VerificationBanner } from "@/components/shared/VerificationBanner";
 import { jobApi } from "@/api/jobs";
 import { projectApi } from "@/api/projects";
-import type { ApplicationStatus, Job, Project } from "@/types";
+import { campaignApi } from "@/api/campaigns";
+import { agencyClientApi } from "@/api/agencyClients";
+import { talentRosterApi } from "@/api/talentRoster";
+import { formatCurrency } from "@/lib/utils";
+import type { ApplicationStatus, Job, Project, Campaign } from "@/types";
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   applied: "Applied",
@@ -27,24 +31,83 @@ export default function EmployerDashboard({
   entityLabel = "Job",
   source = "job",
 }: {
-  role?: "employer" | "client";
+  role?: "employer" | "client" | "brand" | "agency" | "talent_partner";
   basePath?: string;
-  entityLabel?: "Job" | "Project";
-  source?: "job" | "project";
+  entityLabel?: "Job" | "Project" | "Campaign";
+  source?: "job" | "project" | "campaign";
 }) {
   const { user } = useAuth();
-  const routeSegment = source === "project" ? "projects" : "jobs";
-  const { data: jobs, isLoading } = useQuery<(Job | Project)[]>({
+  const isCampaign = source === "campaign";
+  const routeSegment = source === "project" ? "projects" : source === "campaign" ? "campaigns" : "jobs";
+  const postPath = isCampaign ? `${basePath}/post-campaign` : `${basePath}/post-job`;
+  const { data: jobs, isLoading } = useQuery<(Job | Project | Campaign)[]>({
     queryKey: [routeSegment, "mine"],
-    queryFn: () => (source === "project" ? projectApi.mine() : jobApi.mine()),
+    queryFn: () => (source === "project" ? projectApi.mine() : isCampaign ? campaignApi.mine() : jobApi.mine()),
   });
-  const { data: analytics } = useQuery<{ totalViews: number; totalApplications: number; byStatus: Partial<Record<ApplicationStatus, number>> }>({
+  const { data: analytics } = useQuery<{
+    totalViews: number;
+    totalApplications: number;
+    byStatus: Partial<Record<ApplicationStatus, number>>;
+    totalSpent?: number;
+    hiredInfluencersCount?: number;
+  }>({
     queryKey: [routeSegment, "analytics", "mine"],
-    queryFn: () => (source === "project" ? projectApi.myAnalytics() : jobApi.myAnalytics()),
+    queryFn: () => (source === "project" ? projectApi.myAnalytics() : isCampaign ? campaignApi.myAnalytics() : jobApi.myAnalytics()),
+  });
+
+  // Only one of these three is ever non-empty for a given role — each query
+  // just stays idle (enabled: false) for the other two roles.
+  const { data: myAgencies } = useQuery({
+    queryKey: ["agency-clients", "mine"],
+    queryFn: agencyClientApi.mine,
+    enabled: role === "brand",
+  });
+  const { data: myClients } = useQuery({
+    queryKey: ["agency-clients", "managed"],
+    queryFn: agencyClientApi.managed,
+    enabled: role === "agency",
+  });
+  const { data: myRoster } = useQuery({
+    queryKey: ["talent-roster", "mine"],
+    queryFn: talentRosterApi.mine,
+    enabled: role === "agency" || role === "talent_partner",
   });
 
   const totalApplicants = jobs?.reduce((sum, j) => sum + j.applicationsCount, 0) ?? 0;
   const openJobs = jobs?.filter((j) => j.status === "open").length ?? 0;
+
+  // One flat list so every stat card sits in a single row instead of
+  // wrapping into a visually separate second block — count varies by role
+  // (4 for job/project, up to 7 for brand/agency), so the column count below
+  // is picked to match rather than hardcoded.
+  const stats = [
+    { icon: Briefcase, color: "text-primary bg-primary/10", value: jobs?.length ?? 0, label: `Total ${entityLabel}s Posted` },
+    { icon: ClipboardList, color: "text-success bg-success/10", value: openJobs, label: `Open ${entityLabel}s` },
+    { icon: Users, color: "text-secondary bg-secondary/10", value: totalApplicants, label: "Total Applicants" },
+    { icon: Eye, color: "text-warning bg-warning/10", value: analytics?.totalViews ?? 0, label: "Total Views" },
+    // Campaign-only — real numbers a brand/agency/talent_partner can't get
+    // anywhere else on their dashboard (see getMyCampaignAnalytics/
+    // agencyClientApi/talentRosterApi — nothing here is estimated or cached).
+    ...(isCampaign
+      ? [
+          { icon: Wallet, color: "text-success bg-success/10", value: formatCurrency(analytics?.totalSpent ?? 0), label: "Total Spent" },
+          { icon: UserCheck, color: "text-primary bg-primary/10", value: analytics?.hiredInfluencersCount ?? 0, label: "Hired Influencers" },
+          ...(role === "brand" ? [{ icon: Handshake, color: "text-secondary bg-secondary/10", value: myAgencies?.length ?? 0, label: "My Agencies" }] : []),
+          ...(role === "agency" ? [{ icon: Handshake, color: "text-secondary bg-secondary/10", value: myClients?.length ?? 0, label: "My Clients" }] : []),
+          ...(role === "agency" || role === "talent_partner"
+            ? [{ icon: Users, color: "text-warning bg-warning/10", value: myRoster?.length ?? 0, label: "Roster" }]
+            : []),
+        ]
+      : []),
+  ];
+  // Tailwind needs literal class names (not a template string) to pick them
+  // up — same lookup pattern as DirectoryCard's STATS_GRID_COLS.
+  const STATS_GRID_LG_COLS: Record<number, string> = {
+    4: "lg:grid-cols-4",
+    5: "lg:grid-cols-5",
+    6: "lg:grid-cols-6",
+    7: "lg:grid-cols-7",
+  };
 
   return (
     <DashboardLayout
@@ -53,42 +116,23 @@ export default function EmployerDashboard({
       subtitle={`Manage your ${entityLabel.toLowerCase()} postings and applicants.`}
       actions={
         <Button variant="gradient" asChild>
-          <Link to={`${basePath}/post-job`}>
+          <Link to={postPath}>
             <Plus className="h-4 w-4" /> Post a {entityLabel}
           </Link>
         </Button>
       }
     >
       <VerificationBanner />
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-5">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Briefcase className="h-5 w-5" />
-          </div>
-          <p className="text-2xl font-bold">{jobs?.length ?? 0}</p>
-          <p className="text-xs text-muted-foreground">Total {entityLabel}s Posted</p>
-        </Card>
-        <Card className="p-5">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
-            <ClipboardList className="h-5 w-5" />
-          </div>
-          <p className="text-2xl font-bold">{openJobs}</p>
-          <p className="text-xs text-muted-foreground">Open {entityLabel}s</p>
-        </Card>
-        <Card className="p-5">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
-            <Users className="h-5 w-5" />
-          </div>
-          <p className="text-2xl font-bold">{totalApplicants}</p>
-          <p className="text-xs text-muted-foreground">Total Applicants</p>
-        </Card>
-        <Card className="p-5">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
-            <Eye className="h-5 w-5" />
-          </div>
-          <p className="text-2xl font-bold">{analytics?.totalViews ?? 0}</p>
-          <p className="text-xs text-muted-foreground">Total Views</p>
-        </Card>
+      <div className={`grid gap-5 sm:grid-cols-2 ${STATS_GRID_LG_COLS[stats.length] ?? "lg:grid-cols-4"}`}>
+        {stats.map(({ icon: Icon, color, value, label }) => (
+          <Card key={label} className="p-5">
+            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${color}`}>
+              <Icon className="h-5 w-5" />
+            </div>
+            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-xs text-muted-foreground">{label}</p>
+          </Card>
+        ))}
       </div>
 
       {analytics && !!analytics.totalApplications && (
@@ -121,7 +165,7 @@ export default function EmployerDashboard({
               <Briefcase className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-medium">You haven&apos;t posted any {entityLabel.toLowerCase()}s yet</p>
               <Button variant="gradient" asChild size="sm" className="mt-1">
-                <Link to={`${basePath}/post-job`}>Post Your First {entityLabel}</Link>
+                <Link to={postPath}>Post Your First {entityLabel}</Link>
               </Button>
             </div>
           ) : (

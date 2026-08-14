@@ -37,6 +37,7 @@ import { SaveButton } from "@/components/shared/SaveButton";
 import { ToggleSwitch } from "@/components/shared/ToggleSwitch";
 import { HorizontalSlider } from "@/components/shared/HorizontalSlider";
 import { serviceApi } from "@/api/freelancers";
+import { usePageMeta } from "@/lib/usePageMeta";
 import { chatApi } from "@/api/chat";
 import { paymentApi } from "@/api/payments";
 import { payWithRazorpay } from "@/lib/razorpay";
@@ -87,6 +88,8 @@ export default function GigProfile() {
   const [extraQuantities, setExtraQuantities] = useState<Record<string, number>>({});
 
   const { data: service, isLoading } = useQuery({ queryKey: ["services", id], queryFn: () => serviceApi.getById(id), enabled: !!id });
+
+  usePageMeta(service ? service.title : "Gig", service ? service.description.slice(0, 160) : undefined);
 
   const freelancer = service && typeof service.freelancer === "object" ? service.freelancer : null;
 
@@ -196,9 +199,13 @@ export default function GigProfile() {
           .gig-layout { grid-template-columns: 1fr 400px; grid-template-areas: "gallery sidebar" "about sidebar"; }
         }
       `}</style>
-      <Link to="/freelancers" className="mb-4 flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="mb-4 flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-3.5 w-3.5" /> Back to Marketplace
-      </Link>
+      </button>
       <div className="gig-layout grid items-start gap-6">
         {/* Media gallery */}
         <div className="gig-gallery min-w-0">
@@ -235,7 +242,7 @@ export default function GigProfile() {
                 )}
               </div>
             ) : (
-              <div className="flex h-full items-center justify-center rounded-xl bg-gradient-to-br from-[#4C2FD6] to-[#5B3DF5]">
+              <div className="flex h-full items-center justify-center rounded-xl bg-gradient-to-br from-brand-light to-brand">
                 <span className="text-5xl font-bold text-white/30">{service.title[0]}</span>
               </div>
             )}
@@ -245,7 +252,7 @@ export default function GigProfile() {
                 href={service.liveDemoUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-[#5B3DF5] px-3 py-1.5 text-xs font-medium text-white shadow hover:bg-[#4C2FD6]"
+                className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-brand-foreground shadow hover:bg-brand/90"
               >
                 <ExternalLink className="h-3.5 w-3.5" /> View Live Demo
               </a>
@@ -259,9 +266,9 @@ export default function GigProfile() {
                   key={url}
                   type="button"
                   onClick={() => setActiveImage(i)}
-                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${i === activeImage ? "border-[#5B3DF5]" : "border-transparent"}`}
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${i === activeImage ? "border-brand" : "border-transparent"}`}
                 >
-                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
                 </button>
               ))}
               {service.images.length > 5 && (
@@ -292,7 +299,7 @@ export default function GigProfile() {
           <Card>
             <CardContent className="p-6">
               <div className="mb-3 flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3F0FF] text-[#5B3DF5]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
                   <ClipboardList className="h-4 w-4" />
                 </span>
                 <h3 className="text-base font-semibold">About This Gig</h3>
@@ -313,7 +320,7 @@ export default function GigProfile() {
                       <button
                         type="button"
                         onClick={() => setDescriptionExpanded((v) => !v)}
-                        className="mt-1.5 text-xs font-medium text-[#5B3DF5] hover:underline"
+                        className="mt-1.5 text-xs font-medium text-brand hover:underline"
                       >
                         {descriptionExpanded ? "Show less" : "Read more"}
                       </button>
@@ -393,7 +400,7 @@ export default function GigProfile() {
                   <h3 className="text-base font-semibold">Portfolio ({freelancer.portfolioItems.length})</h3>
                   <Link
                     to={`/freelancers/${freelancer._id}`}
-                    className="flex items-center gap-1 text-xs font-medium text-[#5B3DF5] hover:underline"
+                    className="flex items-center gap-1 text-xs font-medium text-brand hover:underline"
                   >
                     View All Portfolio <ArrowRight className="h-3 w-3" />
                   </Link>
@@ -403,7 +410,7 @@ export default function GigProfile() {
                     <div key={i} className="overflow-hidden rounded-lg border border-border">
                       <div className="flex h-32 w-full items-center justify-center bg-muted">
                         {item.images?.[0] ? (
-                          <img src={item.images[0]} alt={item.title} className="h-full w-full object-cover" />
+                          <img src={item.images[0]} alt={item.title} loading="lazy" className="h-full w-full object-cover" />
                         ) : (
                           <span className="text-2xl font-bold text-muted-foreground/30">{item.title[0]}</span>
                         )}
@@ -425,7 +432,7 @@ export default function GigProfile() {
         {/* Info + price panel */}
         <div className="gig-sidebar space-y-5 lg:sticky lg:top-6 lg:self-start">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 text-sm font-medium text-[#5B3DF5]">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-brand">
               <span>{service.category}</span>
               {service.subCategory && (
                 <>
@@ -448,15 +455,15 @@ export default function GigProfile() {
               <Link to={`/freelancers/${freelancer._id}`} className="group flex items-center gap-2.5">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={freelancer.avatar} alt={freelancer.name} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#4C2FD6] to-[#5B3DF5] text-xs font-semibold text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-brand-light to-brand text-xs font-semibold text-brand-foreground">
                     {initialsFromName(freelancer.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-sm font-semibold group-hover:text-[#5B3DF5]">{freelancer.name}</span>
+                    <span className="text-sm font-semibold group-hover:text-brand">{freelancer.name}</span>
                     {freelancer.level === "top_rated" && (
-                      <Badge className="gap-1 border-transparent bg-[#5B3DF5] text-[10px] text-white">
+                      <Badge className="gap-1 border-transparent bg-brand text-[10px] text-brand-foreground">
                         <Crown className="h-2.5 w-2.5" /> Top Rated
                       </Badge>
                     )}
@@ -531,7 +538,7 @@ export default function GigProfile() {
                       onClick={() => setSelectedPackage(pkg.name)}
                       className={cn(
                         "rounded-lg border p-3 text-center transition-colors",
-                        selectedPackage === pkg.name ? "border-[#5B3DF5] bg-[#F3F0FF]" : "border-border hover:border-[#5B3DF5]/40"
+                        selectedPackage === pkg.name ? "border-brand bg-brand/10" : "border-border hover:border-brand/40"
                       )}
                     >
                       <p className="text-xs font-semibold capitalize">{pkg.name}</p>
@@ -642,7 +649,7 @@ export default function GigProfile() {
                         <label className="flex min-w-0 flex-1 items-center gap-2 text-sm">
                           <input
                             type="checkbox"
-                            className="h-3.5 w-3.5 shrink-0 rounded border-border accent-[#5B3DF5]"
+                            className="h-3.5 w-3.5 shrink-0 rounded border-border accent-brand"
                             checked={quantity > 0}
                             onChange={(e) => setExtraQuantities((prev) => ({ ...prev, [extra.label]: e.target.checked ? 1 : 0 }))}
                           />
@@ -694,7 +701,7 @@ export default function GigProfile() {
             </div>
           ) : (
             <Button
-              className="w-full bg-[#5B3DF5] text-white hover:bg-[#4C2FD6]"
+              className="w-full bg-brand-gradient text-brand-foreground shadow-glow hover:brightness-105"
               disabled={!user || user.id === freelancer?._id || orderMutation.isPending}
               onClick={() => (user ? orderMutation.mutate() : navigate("/login"))}
             >

@@ -28,6 +28,31 @@ export function formatCompactNumber(value: number) {
   return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
+/** "05d : 12h : 45m" countdown to a future ISO date, or null once it's passed. Computed once per render — good enough, doesn't need to tick live. */
+export function timeUntil(iso: string) {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return null;
+  const days = Math.floor(ms / 86_400_000);
+  const hours = Math.floor((ms % 86_400_000) / 3_600_000);
+  const mins = Math.floor((ms % 3_600_000) / 60_000);
+  return `${String(days).padStart(2, "0")}d : ${String(hours).padStart(2, "0")}h : ${String(mins).padStart(2, "0")}m`;
+}
+
+// Same brackets as InfluencerFilterSidebar's FOLLOWER_RANGE_OPTIONS — kept
+// here too (not imported from there) since that file is filter-UI-specific
+// and this is used on cards/profiles that don't need the rest of it.
+const FOLLOWER_TIERS = [
+  { min: 1_000_000, label: "Mega" },
+  { min: 500_000, label: "Macro" },
+  { min: 100_000, label: "Mid" },
+  { min: 10_000, label: "Micro" },
+  { min: 1_000, label: "Nano" },
+];
+
+export function getFollowerTier(totalFollowers: number): string | null {
+  return FOLLOWER_TIERS.find((t) => totalFollowers >= t.min)?.label ?? null;
+}
+
 export function initialsFromName(name: string) {
   return name
     .split(" ")

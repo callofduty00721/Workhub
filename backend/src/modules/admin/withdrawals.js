@@ -4,6 +4,7 @@ import { getRazorpayClient, isRazorpayXConfigured } from "../../config/payments.
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
+import { earningsLinkForRole } from "../../utils/earningsLink.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
 
 export const listWithdrawals = asyncHandler(async (req, res) => {
@@ -70,7 +71,7 @@ async function attemptRazorpayXPayout(withdrawal, freelancer) {
     purpose: "payout",
     queue_if_low_balance: true,
     reference_id: withdrawal._id.toString(),
-    narration: `MahaHub withdrawal ${withdrawal._id}`,
+    narration: `GrowHive withdrawal ${withdrawal._id}`,
   });
 }
 
@@ -82,11 +83,15 @@ export const resolveWithdrawal = asyncHandler(async (req, res) => {
   if (!withdrawal) throw new ApiError(404, "Withdrawal request not found");
   if (withdrawal.status !== "pending") throw new ApiError(400, "This withdrawal request has already been processed");
 
+  // Fetched regardless of action — "reject" needs it too, just to route the
+  // notification's link at the recipient's own Earnings/Wallet page (see
+  // earningsLinkForRole) rather than always assuming "freelancer".
+  const recipient = await User.findById(withdrawal.freelancer);
+
   let payout = null;
   if (action === "complete") {
-    const freelancer = await User.findById(withdrawal.freelancer);
     try {
-      payout = await attemptRazorpayXPayout(withdrawal, freelancer);
+      payout = await attemptRazorpayXPayout(withdrawal, recipient);
     } catch (err) {
       throw new ApiError(502, `RazorpayX payout failed: ${err.error?.description || err.message}`);
     }
@@ -97,6 +102,7 @@ export const resolveWithdrawal = asyncHandler(async (req, res) => {
   withdrawal.providerPayoutId = payout?.id || "";
   withdrawal.adminNote = note || "";
   withdrawal.processedAt = new Date();
+  withdrawal.processedBy = req.user._id;
   await withdrawal.save();
 
   const destinationLabel =
@@ -113,7 +119,7 @@ export const resolveWithdrawal = asyncHandler(async (req, res) => {
       action === "complete"
         ? `Sent to ${destinationLabel}${payout ? " via RazorpayX" : ""}.${note ? ` Note: ${note}` : ""}`
         : note || "Contact support if you have questions.",
-    link: "/dashboard/freelancer/earnings",
+    link: earningsLinkForRole(recipient.role),
   });
 
   res.json({ success: true, data: withdrawal });

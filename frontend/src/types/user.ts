@@ -5,6 +5,7 @@ import type { PartnerType } from "./summaries";
 
 export type UserRole =
   | "super_admin"
+  | "staff"
   | "founder"
   | "freelancer"
   | "job_seeker"
@@ -13,7 +14,53 @@ export type UserRole =
   | "investor"
   | "mentor"
   | "partner"
-  | "client";
+  | "client"
+  | "brand"
+  | "agency"
+  | "talent_partner";
+
+// Delegable slices of the admin panel a "staff" account can be scoped to —
+// mirrors backend/src/modules/shared/user.model.js's PERMISSIONS list
+// exactly. Money-moving and global-config areas (withdrawals, payment
+// disputes, settings, plans, user management) are deliberately absent —
+// those stay super_admin-only regardless of what's in staffPermissions.
+export type AdminPermission =
+  | "grievances"
+  | "kyc"
+  | "profile-verifications"
+  | "role-verifications"
+  | "flagged-startups"
+  | "startups"
+  | "jobs"
+  | "gigs"
+  | "contests"
+  | "skill-tests";
+
+export const ADMIN_PERMISSION_VALUES: AdminPermission[] = [
+  "grievances",
+  "kyc",
+  "profile-verifications",
+  "role-verifications",
+  "flagged-startups",
+  "startups",
+  "jobs",
+  "gigs",
+  "contests",
+  "skill-tests",
+];
+
+export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
+  grievances: "Grievances",
+  kyc: "KYC Requests",
+  "profile-verifications": "Profile Verifications",
+  "role-verifications": "Role Verifications",
+  "flagged-startups": "Flagged Startups",
+  startups: "Startups",
+  jobs: "Jobs & Projects",
+  gigs: "Gigs",
+  contests: "Contests",
+  "skill-tests": "Skill Tests",
+};
 
 export type RoleCategory = "talent" | "hiring" | "startup";
 export type MentorSessionFormat = "video" | "chat" | "in_person";
@@ -38,11 +85,79 @@ export interface InfluencerCollaboration {
   brandName: string;
   description?: string;
   resultMetric?: string;
+  logoUrl?: string;
+  // Set only on entries auto-generated from a real released campaign
+  // payment (see getInfluencerProfile) — never present on a manually-typed
+  // entry, which is how the UI tells the two apart.
+  verified?: boolean;
 }
 
 export interface InfluencerContentSample {
   url: string;
   caption?: string;
+  thumbnailUrl?: string;
+}
+
+export interface BrandProduct {
+  name: string;
+  description?: string;
+  imageUrl?: string;
+}
+
+export interface InfluencerRequirement {
+  category?: string;
+  minFollowers?: number;
+  platforms?: string[];
+  location?: string;
+  notes?: string;
+}
+
+// A brand/agency/talent-partner's own marketing handles — free-form
+// (platform name + URL), not fixed fields, so any platform can be added
+// without a code change. Same idea as InfluencerPlatform, distinct from the
+// generic top-level SocialLinks (twitter/github/website).
+export interface ProfileSocialLink {
+  platform: string;
+  url: string;
+}
+
+export interface BrandProfile {
+  industry?: string;
+  categories?: string[];
+  website?: string;
+  socialLinks?: ProfileSocialLink[];
+  followerCount?: number;
+  products?: BrandProduct[];
+  influencerRequirements?: InfluencerRequirement[];
+  pastCollaborations?: InfluencerCollaboration[];
+}
+
+export type AgencyService = "influencer_marketing" | "social_media_marketing" | "performance_marketing" | "brand_campaigns" | "ugc" | "content_production" | "pr";
+
+// Shared by Agency's "Clients" and Talent Partner's "Brand Partnerships" —
+// a free-text showcase, not the consent-gated creator roster.
+export interface PartnerClient {
+  clientName: string;
+  logoUrl?: string;
+  description?: string;
+}
+
+export interface AgencyProfile {
+  agencyType?: string;
+  website?: string;
+  socialLinks?: ProfileSocialLink[];
+  teamSize?: number;
+  services?: AgencyService[];
+  clients?: PartnerClient[];
+  pastCampaigns?: InfluencerCollaboration[];
+}
+
+export interface TalentPartnerProfile {
+  partnerType?: string;
+  website?: string;
+  socialLinks?: ProfileSocialLink[];
+  services?: string[];
+  brandPartnerships?: PartnerClient[];
 }
 
 export interface JobSeekerProfile {
@@ -53,15 +168,23 @@ export interface JobSeekerProfile {
   willingToRelocate?: boolean;
 }
 
+export const LANGUAGE_LEVELS = ["beginner", "conversational", "fluent", "native"] as const;
+export type LanguageLevel = (typeof LANGUAGE_LEVELS)[number];
+
+export interface InfluencerLanguage {
+  name: string;
+  level: LanguageLevel;
+}
+
 export interface InfluencerProfile {
   category?: string;
   niche?: string;
   mediaKitUrl?: string;
-  avgEngagementRate?: number;
   platforms?: InfluencerPlatform[];
   rateCard?: InfluencerRate[];
   pastCollaborations?: InfluencerCollaboration[];
   contentSamples?: InfluencerContentSample[];
+  languages?: InfluencerLanguage[];
 }
 
 export interface ExperienceEntry {
@@ -126,9 +249,14 @@ export interface User {
   email: string;
   role: UserRole | null;
   roles?: UserRole[];
+  // Only meaningful when role === "staff" — see lib/adminPermissions.ts.
+  staffPermissions?: AdminPermission[];
   selectedCategory?: RoleCategory | null;
   jobSeekerProfile?: JobSeekerProfile;
   influencerProfile?: InfluencerProfile;
+  brandProfile?: BrandProfile;
+  agencyProfile?: AgencyProfile;
+  talentPartnerProfile?: TalentPartnerProfile;
   founderStage?: FounderStage;
   isVerified?: boolean;
   verificationStatus?: VerificationStatus;
@@ -166,8 +294,11 @@ export interface User {
   savedServices?: string[];
   savedFreelancers?: string[];
   savedContests?: string[];
+  savedInfluencers?: string[];
+  savedCampaigns?: string[];
   portfolioItems?: PortfolioItem[];
   payoutDetails?: PayoutDetails;
+  storageUsedBytes?: number;
   kycStatus?: KycStatus;
   kycDocuments?: { url: string; name: string }[];
   kycSubmittedAt?: string;

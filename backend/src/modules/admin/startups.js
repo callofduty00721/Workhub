@@ -102,6 +102,8 @@ export const resolveFlaggedStartup = asyncHandler(async (req, res) => {
 
   startup.reports = [];
   if (action === "suspend") startup.isSuspended = true;
+  startup.lastFlagReviewedBy = req.user._id;
+  startup.lastFlagReviewedAt = new Date();
   await startup.save();
 
   res.json({ success: true, data: { startupId: startup._id, isSuspended: startup.isSuspended } });
@@ -189,6 +191,7 @@ export const reviewVerificationRequest = asyncHandler(async (req, res) => {
   request.status = action === "approve" ? "approved" : "rejected";
   request.reviewedAt = new Date();
   request.reviewNote = reviewNote || "";
+  request.reviewedBy = req.user._id;
 
   if (action === "approve") {
     if (request.type === "founder") startup.founderVerified = true;

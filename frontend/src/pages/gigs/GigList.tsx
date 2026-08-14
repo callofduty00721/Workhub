@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Briefcase } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GigListCard } from "@/components/gigs/GigListCard";
+import { GigListCard } from "@/pages/gigs/GigListCard";
 import { Pagination } from "@/components/shared/Pagination";
 import { CategoryBrowsePanel } from "@/roles/freelancer/components/CategoryBrowsePanel";
 import GigFilterSidebar from "@/roles/freelancer/components/GigFilterSidebar";
+import { SERVICE_CATEGORY_NAMES } from "@/lib/mockData";
 import { serviceApi, type ServiceSort } from "@/api/freelancers";
 
 // Self-contained Gigs browsing tab — only loaded (code-split) once someone
@@ -13,8 +15,32 @@ import { serviceApi, type ServiceSort } from "@/api/freelancers";
 // gig-search logic into FreelancerList.tsx itself. Owns its own category
 // and price filter state, independent from the Freelancers tab's filters.
 export default function GigList({ search }: { search: string }) {
-  const [category, setCategory] = useState<string>("all");
-  const [subCategory, setSubCategory] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  // URL-synced (not just local state) so the selection survives a back-nav
+  // from a gig's details page or a tab switch away and back — matching how
+  // the Freelancers tab's own category filter already behaves.
+  const initialCategory = searchParams.get("category");
+  const [category, setCategoryState] = useState<string>(
+    initialCategory && SERVICE_CATEGORY_NAMES.includes(initialCategory) ? initialCategory : "all"
+  );
+  const [subCategory, setSubCategoryState] = useState<string>(searchParams.get("subCategory") ?? "all");
+
+  // Both fields update together in one setSearchParams call — calling it
+  // twice back-to-back (once for category, once for subCategory) would have
+  // each read the same stale `prev`, so the second call would silently
+  // clobber the first.
+  const applyCategory = (cat: string, sub: string) => {
+    setCategoryState(cat);
+    setSubCategoryState(sub);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (cat === "all") next.delete("category");
+      else next.set("category", cat);
+      if (sub === "all") next.delete("subCategory");
+      else next.set("subCategory", sub);
+      return next;
+    });
+  };
   const [budget, setBudget] = useState<string>("any");
   const [maxDeliveryDays, setMaxDeliveryDays] = useState<string>("any");
   const [level, setLevel] = useState<string>("any");
@@ -27,13 +53,11 @@ export default function GigList({ search }: { search: string }) {
     budget === "any" ? [undefined, undefined] : budget.split("-").map((v) => (v ? Number(v) : undefined));
 
   const selectCategory = (v: string) => {
-    setCategory(v);
-    setSubCategory("all");
+    applyCategory(v, "all");
     setPage(1);
   };
   const selectSubCategory = (cat: string, sub: string) => {
-    setCategory(cat);
-    setSubCategory(sub);
+    applyCategory(cat, sub);
     setPage(1);
   };
 
@@ -63,7 +87,7 @@ export default function GigList({ search }: { search: string }) {
   return (
     <div>
       {/* Category browse panel */}
-      <div className="-mx-4 mb-6 border-b border-neutral-200 bg-white px-4 sm:mx-0 sm:rounded-xl sm:border">
+      <div className="-mx-4 mb-6 border-b border-border bg-card px-4 sm:mx-0 sm:rounded-xl sm:border lg:sticky lg:top-[136px] lg:z-[25]">
         <CategoryBrowsePanel activeCategory={category} onSelectCategory={selectCategory} onSelectSubCategory={selectSubCategory} onViewAll={selectCategory} popup />
       </div>
 
@@ -73,7 +97,7 @@ export default function GigList({ search }: { search: string }) {
           setCategory={selectCategory}
           subCategory={subCategory}
           setSubCategory={(v) => {
-            setSubCategory(v);
+            applyCategory(category, v);
             resetPage();
           }}
           budget={budget}

@@ -59,7 +59,7 @@ export function Step3Funding() {
           <Button onClick={() => fundUsageArray.append({ category: "", description: "", estimatedCost: 0 })}>Add Item</Button>
         </div>
         {fundUsageArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Category (e.g. Equipment)" {...register(`fundUsagePlan.${index}.category` as const)} />
             <Input type="number" min={0} placeholder="Estimated cost (₹)" {...register(`fundUsagePlan.${index}.estimatedCost` as const)} />
             <Textarea placeholder="Description" className="min-h-[60px] sm:col-span-2" {...register(`fundUsagePlan.${index}.description` as const)} />

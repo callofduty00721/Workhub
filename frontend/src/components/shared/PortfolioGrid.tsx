@@ -30,7 +30,7 @@ export function PortfolioGrid({ items }: { items: PortfolioItem[] }) {
                 className="group relative block h-36 w-full overflow-hidden"
                 aria-label={`Zoom ${item.title}`}
               >
-                <img src={item.images[0]} alt={item.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                <img src={item.images[0]} alt={item.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/30 group-hover:opacity-100">
                   <ZoomIn className="h-6 w-6 text-white" />
                 </span>

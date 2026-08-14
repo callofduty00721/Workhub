@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { MapPin, Wifi, Users2, Timer, CheckCircle2, Loader2, Lock, ShieldCheck, FileText, Download } from "lucide-react";
+import { MapPin, Wifi, Users2, Timer, CheckCircle2, Loader2, Lock, ShieldCheck, FileText, Download, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,12 +96,20 @@ export default function ProjectDetails() {
 
   return (
     <div className="container py-10">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="group mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+        Back to Projects
+      </button>
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg font-bold text-white">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">
                   {project.companyName[0]}
                 </div>
                 <div className="min-w-0 flex-1">

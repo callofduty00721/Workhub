@@ -1,4 +1,4 @@
-import type { UserRole } from "./user";
+import type { UserRole, AdminPermission } from "./user";
 import type { VerificationRequestType, VerificationRequestDoc } from "./startup";
 
 export interface AdminStats {
@@ -21,6 +21,14 @@ export interface FlaggedStartup {
   autoFlagged: boolean;
   autoReason: string | null;
   autoCount?: number;
+}
+
+export interface AdminActivityEntry {
+  type: AdminPermission | "withdrawals" | "payments";
+  target: string;
+  detail: string;
+  at: string;
+  actor: { name: string; role: UserRole | null } | null;
 }
 
 export interface AdminVerificationRequest {

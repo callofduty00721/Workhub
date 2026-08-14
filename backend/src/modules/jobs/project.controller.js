@@ -258,8 +258,8 @@ export const directHire = asyncHandler(async (req, res) => {
     contract: {
       text:
         `This agreement is between ${req.user.name} (Client) and ${freelancer.name} (Freelancer) ` +
-        `for the work "${scopeTitle.trim()}" on MahaHub. Scope: ${scopeDescription.trim()} ${rateLine} Payment is held in ` +
-        `escrow and released to the freelancer once the client approves the delivered work, per MahaHub's standard ` +
+        `for the work "${scopeTitle.trim()}" on GrowHive. Scope: ${scopeDescription.trim()} ${rateLine} Payment is held in ` +
+        `escrow and released to the freelancer once the client approves the delivered work, per GrowHive's standard ` +
         `escrow terms. Both parties must sign below before any payment can be made against this agreement.`,
     },
   });

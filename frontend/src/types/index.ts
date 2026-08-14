@@ -15,3 +15,6 @@ export * from "./notification";
 export * from "./subscription";
 export * from "./payment";
 export * from "./withdrawal";
+export * from "./grievance";
+export * from "./talentRoster";
+export * from "./agencyClient";

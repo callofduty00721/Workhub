@@ -1,4 +1,4 @@
-import type { UserRole, AvailabilityStatus, KycStatus } from "./user";
+import type { UserRole, AvailabilityStatus, KycStatus, SocialLinks } from "./user";
 
 export interface FreelancerSummary {
   _id: string;
@@ -22,6 +22,7 @@ export interface FreelancerSummary {
   languages?: string[];
   jobsCompleted?: number;
   jobSuccessPercent?: number;
+  socialLinks?: SocialLinks;
   createdAt?: string;
 }
 

@@ -22,7 +22,7 @@ export function Step2Team() {
           <Button onClick={() => teamArray.append({ name: "", role: "", bio: "", linkedin: "", skills: "", joinedDate: "" })}>Add Member</Button>
         </div>
         {teamArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Full name" {...register(`team.${index}.name` as const)} />
             <Input placeholder="Role (e.g. CTO)" {...register(`team.${index}.role` as const)} />
             <Input placeholder="LinkedIn URL" className="sm:col-span-2" {...register(`team.${index}.linkedin` as const)} />
@@ -57,9 +57,9 @@ export function Step2Team() {
             Add Role
           </Button>
         </div>
-        {openRolesArray.fields.length === 0 && <p className="text-[12.5px] text-[#94a3b8]">No open roles yet — add roles you're hiring for.</p>}
+        {openRolesArray.fields.length === 0 && <p className="text-[12.5px] text-muted-foreground/70">No open roles yet — add roles you're hiring for.</p>}
         {openRolesArray.fields.map((field, index) => (
-          <div key={field.id} className="grid gap-3 rounded-lg border border-[#e2e8f0] p-4 sm:grid-cols-2">
+          <div key={field.id} className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
             <Input placeholder="Role title (e.g. Marketing Lead)" {...register(`openRoles.${index}.title` as const)} />
             <div className="grid grid-cols-2 gap-3">
               <Controller control={control} name={`openRoles.${index}.type` as const} render={({ field: f }) => (

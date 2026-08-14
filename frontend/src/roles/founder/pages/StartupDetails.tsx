@@ -39,12 +39,14 @@ import {
   Pencil,
   MoreHorizontal,
   ArrowLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { startupApi } from "@/api/startups";
+import { usePageMeta } from "@/lib/usePageMeta";
 import { startupUpdateApi } from "@/api/startupUpdates";
 import { discussionApi } from "@/api/discussions";
 import { chatApi } from "@/api/chat";
@@ -52,7 +54,7 @@ import { formatCurrency, formatCompactNumber, cn, initialsFromName } from "@/lib
 import { useAuth } from "@/context/AuthContext";
 import { JoinTeamModal } from "@/roles/founder/components/JoinTeamModal";
 import { RoleDetailsModal } from "@/roles/founder/components/RoleDetailsModal";
-import { SectionCard, EmptyNote, DocRow, UPDATE_CATEGORY_META, timeAgo, isRecentAccount } from "@/roles/founder/components/detail/shared";
+import { DocRow, UPDATE_CATEGORY_META, timeAgo } from "@/roles/founder/components/detail/shared";
 import { ProductCarousel, ProductDetailModal } from "@/roles/founder/components/detail/ProductCarousel";
 import { InvestmentsSection } from "@/roles/founder/components/detail/InvestmentsSection";
 import { UpdatesTab } from "@/roles/founder/components/detail/UpdatesTab";
@@ -72,26 +74,26 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const TAG_COLORS = [
-  { bg: "#ffece5", fg: "#FF5722" },
-  { bg: "#f1ebfc", fg: "#7c3aed" },
-  { bg: "#ffece5", fg: "#FF5722" },
-  { bg: "#fdf1de", fg: "#d97706" },
+  { bg: "#F5F5F5", fg: "#171717" },
+  { bg: "#f3edfb", fg: "#7c3aed" },
+  { bg: "#F5F5F5", fg: "#171717" },
+  { bg: "#fef6e8", fg: "#d97706" },
 ];
 
 const FUND_ITEM_COLORS = [
-  { bg: "#ffece5", fg: "#FF5722" },
-  { bg: "#ffece5", fg: "#FF5722" },
-  { bg: "#fdf1de", fg: "#d97706" },
-  { bg: "#f1ebfc", fg: "#7c3aed" },
+  { bg: "#F5F5F5", fg: "#171717" },
+  { bg: "#F5F5F5", fg: "#171717" },
+  { bg: "#fef6e8", fg: "#d97706" },
+  { bg: "#f3edfb", fg: "#7c3aed" },
   { bg: "#fce8e8", fg: "#dc2626" },
 ];
 
 function FundStat({ icon: Icon, color, value, label }: { icon: typeof Briefcase; color: string; value: string; label: string }) {
   return (
-    <div className="rounded-lg border border-[#e2e8f0] p-3">
+    <div className="group rounded-xl bg-muted p-4 transition-all duration-300 hover:bg-accent">
       <Icon className="h-4 w-4" style={{ color }} />
-      <p className="mt-1.5 text-[13px] font-bold">{value}</p>
-      <p className="text-[10.5px] text-[#64748b]">{label}</p>
+      <p className="mt-2 text-[15px] font-semibold text-foreground">{value}</p>
+      <p className="text-[12px] text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -99,21 +101,9 @@ function FundStat({ icon: Icon, color, value, label }: { icon: typeof Briefcase;
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <span className="text-[#64748b]">{label}</span>
-      <span className="text-right font-semibold text-[#0f172a]">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium text-foreground">{value}</span>
     </>
-  );
-}
-
-function MiniStat({ icon: Icon, value, label }: { icon: typeof Briefcase; value: string; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] px-2 py-1.5">
-      <Icon className="h-3.5 w-3.5 shrink-0 text-[#FF5722]" />
-      <div className="min-w-0 leading-tight">
-        <p className="truncate text-[11.5px] font-bold text-[#0f172a]">{value}</p>
-        <p className="truncate text-[9px] uppercase tracking-wide text-[#94a3b8]">{label}</p>
-      </div>
-    </div>
   );
 }
 
@@ -125,9 +115,9 @@ function daysLeft(dateStr: string) {
 const TABS = [
   ["overview", "Overview"],
   ["team", "Team"],
-  ["funding", "Funding & Needs"],
+  ["funding", "Funding"],
   ["investments", "Investments"],
-  ["product", "Product / Plan"],
+  ["product", "Product"],
   ["discussions", "Discussions"],
   ["updates", "Updates"],
   ["documents", "Documents"],
@@ -159,11 +149,10 @@ export default function StartupDetails() {
     enabled: !!id,
   });
 
+  usePageMeta(startup ? startup.name : "Startup", startup ? startup.tagline || startup.description : undefined);
+
   const followMutation = useMutation({
     mutationFn: () => startupApi.toggleFollow(id),
-    // Patch the cached startup directly instead of invalidating — refetching getById
-    // increments the server-side view count on every call, so an invalidate here would
-    // silently inflate "Views" every time someone clicks Save/Follow.
     onSuccess: (data) => {
       queryClient.setQueryData<Startup>(["startups", id], (prev) => {
         if (!prev || !user) return prev;
@@ -177,7 +166,6 @@ export default function StartupDetails() {
 
   const interestMutation = useMutation({
     mutationFn: () => startupApi.toggleInterest(id),
-    // Same reasoning as followMutation — patch the cache, don't invalidate/refetch.
     onSuccess: (data) => {
       queryClient.setQueryData<Startup>(["startups", id], (prev) => {
         if (!prev || !user) return prev;
@@ -213,20 +201,32 @@ export default function StartupDetails() {
 
   if (isLoading) {
     return (
-      <div className="container space-y-4 py-8">
-        <Skeleton className="h-64 w-full rounded-2xl" />
-        <Skeleton className="h-96 w-full rounded-2xl" />
+      <div className="min-h-screen bg-muted">
+        <div className="mx-auto max-w-[1600px] px-6 py-12">
+          <div className="space-y-6">
+            <Skeleton className="h-[400px] w-full rounded-3xl" />
+            <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+              <Skeleton className="h-[600px] w-full rounded-3xl" />
+              <Skeleton className="h-[600px] w-full rounded-3xl" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!startup) {
     return (
-      <div className="container py-20 text-center">
-        <p className="text-lg font-semibold">Startup not found</p>
-        <Link to="/startups" className="mt-4 inline-block rounded-lg border border-[#e2e8f0] px-4 py-2 text-sm font-semibold">
-          Back to Startups
-        </Link>
+      <div className="min-h-screen bg-muted">
+        <div className="container py-32 text-center">
+          <p className="text-lg font-semibold text-foreground">Startup not found</p>
+          <Link 
+            to="/startups" 
+            className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          >
+            Back to Startups <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
     );
   }
@@ -238,21 +238,12 @@ export default function StartupDetails() {
   const isInterested = user ? interestedIds.includes(user.id) : false;
   const interestedUsers = startup.interested.filter((i): i is InterestedUser => typeof i === "object");
   const investorPartners = interestedUsers.filter((i) => i.role === "investor" || i.role === "partner");
-  // Confirmed Investment records, not the older "interested" toggle — this is what
-  // actually changes when a founder confirms/declines an investor's report.
   const confirmedInvestorCount = startup.confirmedInvestorCount ?? 0;
   const fundingPct = Math.min(100, Math.round((startup.fundingRaised / (startup.fundingNeeded || 1)) * 100));
 
   const recentActivity = [...(allDiscussions ?? [])]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 4);
-
-  const ctaContent =
-    tab === "product"
-      ? { icon: Package, title: "Believe in our product and vision?", subtitle: "Invest in our plan and help us build a strong future." }
-      : tab === "updates" || tab === "documents"
-      ? { icon: Rocket, title: "Support our journey and be a part of our growth!", subtitle: "Stay connected and help us make this vision a reality." }
-      : { icon: Lightbulb, title: "This idea excites you?", subtitle: "Invest now and help the founder build something amazing." };
 
   const handleMessageFounder = () => {
     if (!user) return navigate("/login");
@@ -266,113 +257,194 @@ export default function StartupDetails() {
   };
 
   return (
-    <div className="bg-[#f8fafc]">
-      <div className="container py-6">
-        <Link to="/startups" className="mb-4 flex w-fit items-center gap-1.5 text-[12.5px] font-semibold text-[#64748b] hover:text-[#0f172a]">
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to Startups
+    <div className="min-h-screen bg-muted">
+      <div className="mx-auto max-w-[1600px] px-6 py-8 lg:py-12">
+        {/* Back button - Apple style */}
+        <Link 
+          to="/startups" 
+          className="group mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+          Back to Startups
         </Link>
-        <div className="grid gap-5 lg:grid-cols-[1fr_340px] lg:items-start">
+
+        <div className="grid gap-8 lg:grid-cols-[1fr_380px] lg:gap-10">
           {/* MAIN COLUMN */}
-          <div className="min-w-0 space-y-5">
-            {/* Header card */}
-            <div className="flex flex-col gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-4 sm:flex-row">
-              <div className="flex shrink-0 flex-col gap-2 sm:w-60">
-                <div className="relative h-32 overflow-hidden rounded-xl bg-gradient-to-br from-[#16324a] via-[#2a6b56] to-[#7fae7a]">
-                  {startup.coverImage && <img src={startup.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-                  <span className="absolute left-2.5 top-2.5 rounded-full bg-[#FF5722] px-2.5 py-1 text-[10px] font-bold text-white">
-                    {STAGE_LABELS[startup.stage]}
-                  </span>
+          <div className="min-w-0 space-y-8">
+            {/* Header Hero Card - Apple Style */}
+            <div className="relative overflow-hidden rounded-3xl bg-card border border-border shadow-sm">
+              {/* Soft ambient glow — a single subtle accent, not the full multi-blob treatment */}
+
+              <div className="relative px-6 py-5 sm:px-8 sm:py-6">
+                {/* Verification badges + Save — badges left, Save right, at the top of the card */}
+                <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3.5 py-1.5 text-xs font-medium text-foreground">
+                      {STAGE_LABELS[startup.stage]}
+                    </span>
+
+                    {startup.isVerified && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3.5 py-1.5 text-xs font-medium text-green-700 border border-green-200/50">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Verified
+                      </span>
+                    )}
+
+                    {startup.founderVerified && !startup.isVerified && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3.5 py-1.5 text-xs font-medium text-foreground">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Founder Verified
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Save button - Apple style */}
                   <button
                     onClick={() => user && followMutation.mutate()}
                     disabled={!user || followMutation.isPending}
                     className={cn(
-                      "absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold backdrop-blur-sm",
-                      isFollowing ? "bg-red-500/80 text-white" : "bg-black/50 text-white hover:bg-black/60"
+                      "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-300",
+                      isFollowing
+                        ? "bg-brand/10 text-brand border border-brand/30"
+                        : "bg-muted text-foreground hover:bg-accent"
                     )}
                   >
-                    <Heart className={cn("h-3 w-3", isFollowing && "fill-white")} /> {isFollowing ? "Saved" : "Save"}
+                    <Heart className={cn("h-4 w-4 transition-all", isFollowing && "fill-brand text-brand")} />
+                    {isFollowing ? "Saved" : "Save"}
+                    <span className="ml-0.5 text-xs text-muted-foreground">{startup.followers.length}</span>
                   </button>
                 </div>
 
-                {(startup.website || Object.values(startup.socialLinks ?? {}).some(Boolean)) && (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {startup.website && (
-                      <a
-                        href={startup.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] px-2.5 py-1.5 text-[11px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
-                      >
-                        <Globe className="h-3.5 w-3.5 text-[#FF5722]" /> Website
-                      </a>
-                    )}
-                    <div className="flex items-center gap-1.5">
-                      {startup.socialLinks?.linkedin && (
-                        <a href={startup.socialLinks.linkedin} target="_blank" rel="noreferrer" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722] hover:opacity-80">
-                          <Linkedin className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      {startup.socialLinks?.twitter && (
-                        <a href={startup.socialLinks.twitter} target="_blank" rel="noreferrer" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722] hover:opacity-80">
-                          <Twitter className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      {startup.socialLinks?.facebook && (
-                        <a href={startup.socialLinks.facebook} target="_blank" rel="noreferrer" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722] hover:opacity-80">
-                          <Facebook className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      {startup.socialLinks?.instagram && (
-                        <a href={startup.socialLinks.instagram} target="_blank" rel="noreferrer" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722] hover:opacity-80">
-                          <Instagram className="h-3.5 w-3.5" />
-                        </a>
+                <div className="flex flex-col items-center text-center">
+                  {/* Logo */}
+                  <div className="relative mt-4">
+                    <div className="relative h-20 w-20 rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
+                      {startup.logo ? (
+                        <img src={startup.logo} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-2xl font-black text-foreground">
+                          {initialsFromName(startup.name)}
+                        </span>
                       )}
                     </div>
                   </div>
-                )}
 
-                {/* Compact stat strip — key numbers visible without switching tabs */}
-                <div className="grid grid-cols-2 gap-1.5">
-                  <MiniStat icon={PieChart} value={`${fundingPct}%`} label="Funded" />
-                  <MiniStat icon={Users2} value={String(startup.followers.length)} label="Followers" />
-                  <MiniStat icon={Eye} value={formatCompactNumber(startup.viewCount)} label="Views" />
-                  <MiniStat
-                    icon={CalendarDays}
-                    value={new Date(startup.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short" })}
-                    label="Posted"
-                  />
-                </div>
-              </div>
+                  {/* Name - Premium typography */}
+                  <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                    {startup.name}
+                  </h1>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-2.5">
-                  <div>
-                    <h1 className="flex flex-wrap items-center gap-2 text-[20px] font-extrabold leading-tight text-[#0f172a]">
-                      {startup.name}
-                      {startup.isVerified ? (
-                        <span className="flex items-center gap-1 rounded-full bg-[#ffece5] px-2 py-0.5 text-[10px] font-bold text-[#FF5722]">
-                          <ShieldCheck className="h-3 w-3" /> MahaHub Verified
-                        </span>
-                      ) : startup.founderVerified ? (
-                        <span className="flex items-center gap-1 rounded-full bg-[#ffece5] px-2 py-0.5 text-[10px] font-bold text-[#FF5722]">
-                          <ShieldCheck className="h-3 w-3" /> Founder Verified
-                        </span>
-                      ) : null}
-                    </h1>
-                    <span className="mt-1 flex items-center gap-1.5 text-[12px] text-[#64748b]">
-                      <MapPin className="h-3.5 w-3.5" /> {startup.location}
-                    </span>
+                  {/* Tagline - Subdued elegance */}
+                  <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
+                    {startup.tagline}
+                  </p>
+
+                  {/* Location - Clean pill */}
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3" />
+                    {startup.location}
                   </div>
-                  <div className="flex shrink-0 items-start gap-1.5">
-                    {isOwner && (
+
+                  {/* Tags - merged in with the identity block instead of its own separated section */}
+                  <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                    {[startup.industry, ...(startup.subIndustry ? [startup.subIndustry] : []), ...startup.fundingType].slice(0, 4).map((tag, i) => (
+                      <span
+                        key={tag + i}
+                        className="rounded-full px-3 py-1 text-xs font-medium"
+                        style={{ background: TAG_COLORS[i % TAG_COLORS.length].bg, color: TAG_COLORS[i % TAG_COLORS.length].fg }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stats Bar - Apple style with separators */}
+                <div className="mt-4 flex items-center justify-center gap-4 border-t border-border pt-4 sm:gap-8">
+                  {[
+                    { icon: Users2, value: String(startup.followers.length), label: "Followers" },
+                    { icon: Eye, value: formatCompactNumber(startup.viewCount), label: "Views" },
+                    { icon: CalendarDays, value: new Date(startup.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short" }), label: "Posted" },
+                  ].map((stat, i, arr) => (
+                    <div key={stat.label} className="flex items-center gap-4 sm:gap-8">
+                      <div className="text-center">
+                        <p className="text-base font-semibold text-foreground tracking-tight">{stat.value}</p>
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                      </div>
+                      {i < arr.length - 1 && (
+                        <div className="h-6 w-px bg-muted" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Founder & Actions - Apple style row */}
+                <div className="mt-4 flex flex-col items-center gap-3 border-t border-border pt-4 sm:flex-row sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9 ring-2 ring-white ring-offset-2">
+                      <AvatarImage src={founder?.avatar} alt={founder?.name} />
+                      <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
+                        {founder ? initialsFromName(founder.name) : "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      {founder ? (
+                        <Link to={`/founders/${founder._id}`} className="text-sm font-medium text-foreground hover:text-brand transition-colors">
+                          {founder.name}
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-medium text-foreground">Unknown</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">Founder</p>
+                    </div>
+
+                    {(startup.website || Object.values(startup.socialLinks ?? {}).some(Boolean)) && (
+                      <div className="ml-1 flex items-center gap-1 border-l border-border pl-3">
+                        {startup.website && (
+                          <a
+                            href={startup.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="Website"
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                          >
+                            <Globe className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        {startup.socialLinks?.linkedin && (
+                          <a href={startup.socialLinks.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                            <Linkedin className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        {startup.socialLinks?.twitter && (
+                          <a href={startup.socialLinks.twitter} target="_blank" rel="noreferrer" aria-label="Twitter" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                            <Twitter className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        {startup.socialLinks?.facebook && (
+                          <a href={startup.socialLinks.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                            <Facebook className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        {startup.socialLinks?.instagram && (
+                          <a href={startup.socialLinks.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                            <Instagram className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 col-span-2">
+                    {isOwner ? (
                       <Link
                         to={`/dashboard/founder/startup/${startup._id}`}
-                        className="flex items-center gap-1.5 rounded-lg bg-[#FF5722] px-3 py-1.5 text-[12px] font-bold text-white hover:opacity-90"
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
                       >
-                        <Pencil className="h-3.5 w-3.5" /> Edit
+                        <Pencil className="h-4 w-4" />
+                        Edit Startup
                       </Link>
-                    )}
-                    {!isOwner && (
+                    ) : (
                       <>
                         <button
                           onClick={() => {
@@ -380,35 +452,40 @@ export default function StartupDetails() {
                             if (!isInterested) interestMutation.mutate();
                             setTab("investments");
                           }}
-                          className="flex items-center gap-1.5 rounded-lg bg-[#FF5722] px-3 py-1.5 text-[12px] font-bold text-white hover:opacity-90"
+                          className="group relative inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors duration-300"
                         >
-                          <Wallet className="h-3.5 w-3.5" /> Invest
+                          <Wallet className="h-4 w-4 transition-transform group-hover:scale-110" />
+                          Invest
+                          <span className="absolute inset-0 rounded-full bg-card/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
+                        
                         <button
                           onClick={() => {
                             if (!isInterested) user && interestMutation.mutate();
                             handleMessageFounder();
                           }}
                           disabled={!user || messageFounderMutation.isPending}
-                          className="flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-[12px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
+                          className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-all duration-300"
                         >
-                          <MessageSquare className="h-3.5 w-3.5" /> Message
+                          <MessageSquare className="h-4 w-4" />
+                          Message
                         </button>
                       </>
                     )}
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-[#e2e8f0] text-[#0f172a] hover:bg-[#f8fafc]">
+                        <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground hover:bg-muted transition-colors">
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleShare}>
-                          <Share2 className="h-3.5 w-3.5" /> {copied ? "Copied!" : "Share"}
+                      <DropdownMenuContent align="end" className="rounded-2xl border-border shadow-elevated p-1">
+                        <DropdownMenuItem onClick={handleShare} className="rounded-xl text-sm gap-2 py-2.5 px-4">
+                          <Share2 className="h-4 w-4" /> {copied ? "Copied!" : "Share"}
                         </DropdownMenuItem>
                         {user && !isOwner && (
-                          <DropdownMenuItem onClick={() => setReportOpen((v) => !v)} className="text-danger focus:text-danger">
-                            <Flag className="h-3.5 w-3.5" /> Report
+                          <DropdownMenuItem onClick={() => setReportOpen((v) => !v)} className="rounded-xl text-sm gap-2 py-2.5 px-4 text-red-600 focus:text-red-600">
+                            <Flag className="h-4 w-4" /> Report
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -416,63 +493,29 @@ export default function StartupDetails() {
                   </div>
                 </div>
 
-                <p className="mt-2 line-clamp-2 text-[12.5px] leading-snug text-[#374151]">{startup.tagline}</p>
-
-                <div className="mt-2.5 flex items-center gap-2.5 border-t border-[#f1f5f9] pt-2.5">
-                  <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarImage src={founder?.avatar} alt={founder?.name} />
-                    <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                      {founder ? initialsFromName(founder.name) : "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    {founder ? (
-                      <Link to={`/founders/${founder._id}`} className="truncate text-[12px] font-bold text-[#0f172a] hover:underline">
-                        {founder.name}
-                      </Link>
-                    ) : (
-                      <p className="truncate text-[12px] font-bold text-[#0f172a]">Unknown</p>
-                    )}
-                    <p className="flex items-center gap-1.5 text-[10.5px] text-[#64748b]">
-                      Founder
-                      {founder?.createdAt && isRecentAccount(founder.createdAt) && (
-                        <span className="rounded-full bg-[#fce8e8] px-1.5 py-0.5 text-[9px] font-bold text-[#dc2626]">New Founder Account</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {[startup.industry, ...(startup.subIndustry ? [startup.subIndustry] : []), ...startup.fundingType].slice(0, 4).map((tag, i) => (
-                    <span
-                      key={tag + i}
-                      className="rounded-full px-2 py-0.5 text-[10.5px] font-bold"
-                      style={{ background: TAG_COLORS[i % TAG_COLORS.length].bg, color: TAG_COLORS[i % TAG_COLORS.length].fg }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
+                {/* Report section - Clean design */}
                 {reportOpen && (
-                  <div className="mt-3 rounded-lg border border-[#fce8e8] bg-[#fef7f7] p-3">
-                    <p className="text-[11.5px] font-semibold text-[#dc2626]">Why are you reporting this startup?</p>
+                  <div className="mt-4 rounded-2xl bg-red-50/50 border border-red-200/50 p-4 text-left">
+                    <p className="text-sm font-medium text-red-700">Why are you reporting this startup?</p>
                     <Textarea
                       value={reportReason}
                       onChange={(e) => setReportReason(e.target.value)}
                       placeholder="e.g. fake funding claims, misleading info, spam..."
-                      className="mt-2 min-h-[56px] bg-white text-[12px]"
+                      className="mt-2 min-h-[60px] bg-card/80 text-sm border-border rounded-xl focus:border-red-300 focus:ring-red-200"
                     />
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => reportMutation.mutate()}
                         disabled={reportMutation.isPending || reportMutation.isSuccess}
-                        className="flex items-center gap-1.5 rounded-lg bg-[#dc2626] px-3 py-1.5 text-[11.5px] font-bold text-white hover:opacity-90 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
                       >
-                        {reportMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        {reportMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                         {reportMutation.isSuccess ? "Reported" : "Submit Report"}
                       </button>
-                      <button onClick={() => setReportOpen(false)} className="rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-[11.5px] font-bold text-[#0f172a] hover:bg-white">
+                      <button 
+                        onClick={() => setReportOpen(false)} 
+                        className="rounded-full border border-border px-5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                      >
                         Cancel
                       </button>
                     </div>
@@ -481,152 +524,40 @@ export default function StartupDetails() {
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="rounded-2xl border border-[#e2e8f0] bg-white">
-              <div className="flex flex-wrap gap-6 overflow-x-auto border-b border-[#e2e8f0] px-5">
+            {/* Tabs - Apple style with elegant underline */}
+            <div className="rounded-3xl border border-border bg-card">
+              <div className="flex gap-1 overflow-x-auto border-b border-border px-4 scrollbar-hide sm:justify-between">
                 {TABS.map(([value, label]) => (
                   <button
                     key={value}
                     onClick={() => setTab(value)}
                     className={cn(
-                      "whitespace-nowrap border-b-2 py-3.5 text-[13px] font-semibold",
-                      tab === value ? "border-[#FF5722] text-[#FF5722]" : "border-transparent text-[#64748b] hover:text-[#0f172a]"
+                      "relative whitespace-nowrap px-4 py-4 text-sm font-medium transition-all duration-300",
+                      tab === value
+                        ? "text-brand"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {label}
+                    {tab === value && (
+                      <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-brand" />
+                    )}
                   </button>
                 ))}
               </div>
 
-              <div className="space-y-5 p-5">
+              <div className="p-6 sm:p-8">
                 {tab === "overview" && (
-                  <>
-                    <div className="flex flex-wrap gap-5">
-                      <div className="min-w-[240px] flex-1 basis-72">
-                        <SectionCard title="About the Idea">
-                          <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#374151]">{startup.description}</p>
-                          {startup.targetAudience && (
-                            <p className="mt-3 flex items-start gap-2 text-[12.5px] text-[#64748b]">
-                              <Target className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FF5722]" />
-                              <span><span className="font-semibold text-[#0f172a]">Target Audience:</span> {startup.targetAudience}</span>
-                            </p>
-                          )}
-                        </SectionCard>
-                      </div>
-                      {startup.highlights.length > 0 && (
-                        <div className="min-w-[240px] flex-1 basis-72">
-                          <SectionCard title="Highlights">
-                            <ul className="space-y-2.5">
-                              {startup.highlights.map((h, i) => (
-                                <li key={i} className="flex items-start gap-2 text-[12.5px] text-[#334155]">
-                                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5722]" /> {h}
-                                </li>
-                              ))}
-                            </ul>
-                          </SectionCard>
-                        </div>
-                      )}
-                    </div>
-
-                    {startup.missionStatement && (
-                      <SectionCard title="Our Mission" icon={Lightbulb} iconColor="#FF5722">
-                        <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#374151]">{startup.missionStatement}</p>
-                      </SectionCard>
-                    )}
-
-                    {(startup.problemStatement || startup.solution) && (
-                      <div className="flex flex-wrap gap-5">
-                        {startup.problemStatement && (
-                          <div className="min-w-[240px] flex-1 basis-72">
-                            <SectionCard title="Problem" titleColor="#dc2626" icon={XCircle} iconColor="#dc2626">
-                              <ul className="space-y-2">
-                                {startup.problemStatement.split("\n").filter(Boolean).map((line, i) => (
-                                  <li key={i} className="flex items-start gap-2 text-[12.5px] text-[#334155]">
-                                    <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" /> {line}
-                                  </li>
-                                ))}
-                              </ul>
-                            </SectionCard>
-                          </div>
-                        )}
-                        {startup.solution && (
-                          <div className="min-w-[240px] flex-1 basis-72">
-                            <SectionCard title="Solution" titleColor="#FF5722" icon={CheckCircle2} iconColor="#FF5722">
-                              <ul className="space-y-2">
-                                {startup.solution.split("\n").filter(Boolean).map((line, i) => (
-                                  <li key={i} className="flex items-start gap-2 text-[12.5px] text-[#334155]">
-                                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600" /> {line}
-                                  </li>
-                                ))}
-                              </ul>
-                            </SectionCard>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {startup.businessPlan.length > 0 && (
-                      <SectionCard title="Business Plan Summary">
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                          {startup.businessPlan.map((item, i) => {
-                            const icons = [Target, TrendingUp, Layers, Users];
-                            const Icon = icons[i % icons.length];
-                            return (
-                              <div key={i} className="flex items-start gap-2.5">
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f1f5f9] text-[#FF5722]">
-                                  <Icon className="h-4 w-4" />
-                                </span>
-                                <div>
-                                  <p className="text-[12.5px] font-bold text-[#FF5722]">{item.label}</p>
-                                  <p className="text-[11.5px] text-[#64748b]">{item.value}</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </SectionCard>
-                    )}
-
-                    {startup.tractionStats.length > 0 && (
-                      <SectionCard title="Traction">
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                          {startup.tractionStats.map((item, i) => {
-                            const icons = [TrendingUp, Users2, CheckCircle2, PieChart];
-                            const Icon = icons[i % icons.length];
-                            return (
-                              <div key={i} className="rounded-lg border border-[#e2e8f0] p-3">
-                                <Icon className="h-4 w-4 text-[#FF5722]" />
-                                <p className="mt-1.5 text-[14px] font-extrabold text-[#0f172a]">{item.value}</p>
-                                <p className="text-[10.5px] text-[#64748b]">{item.label}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </SectionCard>
-                    )}
-
-                    {startup.milestones.length > 0 && (
-                      <SectionCard title="Milestones">
-                        <div className="space-y-0">
-                          {[...startup.milestones]
-                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                            .map((m, i, arr) => (
-                              <div key={i} className="flex gap-3">
-                                <div className="flex flex-col items-center">
-                                  <span className="mt-1.5 h-2 w-2 rounded-full bg-[#FF5722]" />
-                                  {i < arr.length - 1 && <span className="mt-1 w-px flex-1 bg-[#e2e8f0]" />}
-                                </div>
-                                <div className={cn("pb-5", i === arr.length - 1 && "pb-0")}>
-                                  <p className="text-[13px] font-bold">{m.title}</p>
-                                  <p className="text-[11px] text-[#94a3b8]">{new Date(m.date).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}</p>
-                                  {m.description && <p className="mt-1 text-[12px] text-[#64748b]">{m.description}</p>}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </SectionCard>
-                    )}
-                  </>
+                  <OverviewContent 
+                    startup={startup}
+                    fundingPct={fundingPct}
+                    confirmedInvestorCount={confirmedInvestorCount}
+                    onMessageFounder={handleMessageFounder}
+                    user={user}
+                    isInterested={isInterested}
+                    interestMutation={interestMutation}
+                    setTab={setTab}
+                  />
                 )}
 
                 {tab === "team" && (
@@ -639,147 +570,14 @@ export default function StartupDetails() {
                 )}
 
                 {tab === "funding" && (
-                  <div className="space-y-5">
-                  <div className="grid gap-5 lg:grid-cols-2">
-                    <SectionCard title="Funding Overview">
-                      <div className="flex items-center gap-5">
-                        <svg width="88" height="88" viewBox="0 0 88 88" className="shrink-0">
-                          <circle cx="44" cy="44" r="37" fill="none" stroke="#e2e8f0" strokeWidth="9" />
-                          <circle
-                            cx="44"
-                            cy="44"
-                            r="37"
-                            fill="none"
-                            stroke="#FF5722"
-                            strokeWidth="9"
-                            strokeLinecap="round"
-                            strokeDasharray={2 * Math.PI * 37}
-                            strokeDashoffset={2 * Math.PI * 37 * (1 - fundingPct / 100)}
-                            transform="rotate(-90 44 44)"
-                          />
-                          <text x="44" y="48" textAnchor="middle" fontSize="16" fontWeight="800" fill="#0f172a">{fundingPct}%</text>
-                        </svg>
-                        <div>
-                          <p className="text-[20px] font-extrabold text-[#FF5722]">{formatCurrency(startup.fundingNeeded)}</p>
-                          <p className="text-[11.5px] text-[#64748b]">Funding Goal</p>
-                          <p className="mt-2 text-[17px] font-extrabold text-[#0f172a]">{formatCurrency(startup.fundingRaised)}</p>
-                          <p className="text-[11.5px] text-[#64748b]">Raised Amount</p>
-                        </div>
-                      </div>
-                      <div className="mt-5 grid grid-cols-2 gap-3">
-                        <FundStat icon={Briefcase} color="#FF5722" value={formatCurrency(startup.fundingNeeded)} label="Goal Amount" />
-                        <FundStat icon={CheckCircle2} color="#FF5722" value={formatCurrency(startup.fundingRaised)} label="Raised Amount" />
-                        <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining Amount" />
-                        <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
-                      </div>
-                    </SectionCard>
-
-                    <SectionCard title="Funding Details">
-                      <div className="grid grid-cols-2 gap-y-3 text-[12.5px]">
-                        <DetailRow label="Funding Type" value={startup.fundingType[0] || "—"} />
-                        <DetailRow label="Investment Type" value={startup.investmentType || "—"} />
-                        <DetailRow label="Minimum Investment" value={startup.minimumInvestment ? formatCurrency(startup.minimumInvestment) : "—"} />
-                        <DetailRow label="Funding Duration" value={startup.fundingDurationMonths ? `${startup.fundingDurationMonths} Months` : "—"} />
-                        <DetailRow
-                          label="Expected Closing"
-                          value={startup.expectedClosingDate ? new Date(startup.expectedClosingDate).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }) : "—"}
-                        />
-                        <DetailRow label="Location" value={startup.location} />
-                      </div>
-                    </SectionCard>
-                  </div>
-
-                    {startup.fundUsagePlan.length > 0 && (
-                      <SectionCard title="Fund Usage Plan">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-[12.5px]">
-                              <thead>
-                                <tr className="border-b border-[#e2e8f0] text-[11px] uppercase tracking-wide text-[#94a3b8]">
-                                  <th className="pb-2 pr-3 font-semibold">Category</th>
-                                  <th className="pb-2 pr-3 font-semibold">Description</th>
-                                  <th className="pb-2 pr-3 text-right font-semibold">Estimated Cost</th>
-                                  <th className="pb-2 font-semibold">Percentage</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {startup.fundUsagePlan.map((item, i) => {
-                                  const pct = startup.fundingNeeded ? Math.round((item.estimatedCost / startup.fundingNeeded) * 100) : 0;
-                                  const color = FUND_ITEM_COLORS[i % FUND_ITEM_COLORS.length];
-                                  return (
-                                    <tr key={i} className="border-b border-[#f1f5f9] last:border-0">
-                                      <td className="py-2.5 pr-3">
-                                        <span className="flex items-center gap-2 font-semibold">
-                                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md" style={{ background: color.bg, color: color.fg }}>
-                                            <Package className="h-3 w-3" />
-                                          </span>
-                                          {item.category}
-                                        </span>
-                                      </td>
-                                      <td className="py-2.5 pr-3 text-[#64748b]">{item.description}</td>
-                                      <td className="py-2.5 pr-3 text-right font-semibold">{formatCurrency(item.estimatedCost)}</td>
-                                      <td className="w-40 py-2.5">
-                                        <div className="flex items-center gap-2">
-                                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e2e8f0]">
-                                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color.fg }} />
-                                          </div>
-                                          <span className="w-9 shrink-0 text-right text-[11px] font-bold">{pct}%</span>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                                <tr>
-                                  <td className="pt-3 font-bold" colSpan={2}>Total</td>
-                                  <td className="pt-3 text-right font-bold">
-                                    {formatCurrency(startup.fundUsagePlan.reduce((sum, i) => sum + i.estimatedCost, 0))}
-                                  </td>
-                                  <td className="pt-3 font-bold">100%</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                        </div>
-                      </SectionCard>
-                    )}
-
-                    {(startup.expectedOutcomes.length > 0 || !!startup.pitchDeckUrl || !!startup.documents?.length) && (
-                      <div className="flex flex-wrap gap-5">
-                        {startup.expectedOutcomes.length > 0 && (
-                          <div className="min-w-[240px] flex-1 basis-72">
-                            <SectionCard title="Expected Outcomes">
-                              <div className="space-y-3">
-                                {startup.expectedOutcomes.map((o, i) => {
-                                  const icons = [Clock, TrendingUp, PieChart, Users2, Briefcase];
-                                  const Icon = icons[i % icons.length];
-                                  return (
-                                    <div key={i} className="flex items-start justify-between gap-3">
-                                      <span className="flex items-center gap-2 text-[12px] text-[#64748b]">
-                                        <Icon className="h-3.5 w-3.5 shrink-0 text-[#FF5722]" /> {o.label}
-                                      </span>
-                                      <span className="shrink-0 text-[12.5px] font-bold text-[#0f172a]">{o.value}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </SectionCard>
-                          </div>
-                        )}
-
-                        {(!!startup.pitchDeckUrl || !!startup.documents?.length) && (
-                          <div className="min-w-[240px] flex-1 basis-72">
-                            <SectionCard title="Documents">
-                              <div className="divide-y divide-[#f1f5f9]">
-                                {startup.pitchDeckUrl && <DocRow name="Pitch Deck" url={startup.pitchDeckUrl} />}
-                                {startup.documents?.map((d, i) => <DocRow key={i} name={d.name} url={d.url} />)}
-                              </div>
-                              <button onClick={() => setTab("documents")} className="mt-2 text-[11.5px] font-bold text-[#FF5722]">
-                                View All Documents
-                              </button>
-                            </SectionCard>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <FundingContent 
+                    startup={startup}
+                    fundingPct={fundingPct}
+                    confirmedInvestorCount={confirmedInvestorCount}
+                    isOwner={isOwner}
+                    investorPartners={investorPartners}
+                    setTab={setTab}
+                  />
                 )}
 
                 {tab === "investments" && (
@@ -794,136 +592,17 @@ export default function StartupDetails() {
                 )}
 
                 {tab === "investments" && isOwner && (
-                  <SectionCard title="Interested Investors & Partners">
-                    <p className="mb-3 text-[11.5px] text-[#94a3b8]">Only visible to you as the founder.</p>
-                    {investorPartners.length === 0 ? (
-                      <EmptyNote text="No investors or partners have connected yet." />
-                    ) : (
-                      <div className="divide-y divide-[#f1f5f9]">
-                        {investorPartners.map((p) => (
-                          <div key={p._id} className="flex items-center gap-3 py-3">
-                            <Avatar className="h-12 w-12 shrink-0">
-                              <AvatarImage src={p.avatar} alt={p.name} />
-                              <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-xs font-bold text-white">
-                                {initialsFromName(p.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <p className="text-[13px] font-bold">{p.name}</p>
-                              <p className="text-[11.5px] capitalize text-[#64748b]">{p.role}</p>
-                            </div>
-                            <span className="rounded-full bg-[#ffece5] px-2.5 py-1 text-[10.5px] font-bold text-[#FF5722]">Interested</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </SectionCard>
+                  <div className="mt-8">
+                    <InvestorsSection investorPartners={investorPartners} />
+                  </div>
                 )}
 
                 {tab === "product" && (
-                  <>
-                    {(startup.products.length > 0 || startup.productHighlights.length > 0) && (
-                      <div className="flex flex-wrap gap-5">
-                        {startup.products.length > 0 && (
-                          <div className="min-w-[300px] flex-[2] basis-[420px]">
-                            <SectionCard title="Our Product">
-                              <ProductCarousel products={startup.products} onSelect={setProductModal} />
-                            </SectionCard>
-                          </div>
-                        )}
-
-                        {startup.productHighlights.length > 0 && (
-                          <div className="min-w-[240px] flex-1 basis-72">
-                            <SectionCard title="Product Highlights">
-                              <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
-                                {startup.productHighlights.map((h, i) => (
-                                  <li key={i} className="flex items-start gap-2 text-[12px] text-[#334155]">
-                                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FF5722]" /> {h}
-                                  </li>
-                                ))}
-                              </ul>
-                            </SectionCard>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {startup.planPhases.length > 0 && (
-                      <SectionCard title="Our Plan">
-                        <div className="grid gap-4 sm:grid-cols-3">
-                          {startup.planPhases.map((phase, i) => {
-                            const icons = [Rocket, TrendingUp, Award];
-                            const Icon = icons[i % icons.length];
-                            return (
-                              <div key={i} className="flex flex-col rounded-xl border border-[#e2e8f0] p-4">
-                                <div className="flex items-start justify-between gap-2">
-                                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#ffece5] text-[#FF5722]">
-                                    <Icon className="h-4 w-4" />
-                                  </span>
-                                  {phase.timeframe && (
-                                    <span className="shrink-0 rounded-full bg-[#f1f5f9] px-2 py-0.5 text-[10px] font-bold text-[#64748b]">{phase.timeframe}</span>
-                                  )}
-                                </div>
-                                <p className="mt-2.5 text-[13px] font-bold">{phase.title}</p>
-                                {phase.checklist.length > 0 && (
-                                  <ul className="mt-2 flex-1 space-y-1.5">
-                                    {phase.checklist.map((c, ci) => (
-                                      <li key={ci} className="flex items-start gap-1.5 text-[11.5px] text-[#64748b]">
-                                        <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-[#FF5722]" /> {c}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                                {phase.estimatedCost > 0 && (
-                                  <p className="mt-3 border-t border-[#f1f5f9] pt-2.5 text-[11.5px] font-bold text-[#FF5722]">
-                                    Est. Cost: {formatCurrency(phase.estimatedCost)}
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </SectionCard>
-                    )}
-
-                    {(startup.marketStats.length > 0 || startup.competitiveAdvantage.length > 0) && (
-                      <div className="flex flex-wrap gap-5">
-                        {startup.marketStats.length > 0 && (
-                          <div className="min-w-[240px] flex-1 basis-72">
-                            <SectionCard title="Market Opportunity">
-                              <div className="grid grid-cols-2 gap-3">
-                                {startup.marketStats.map((s, i) => {
-                                  const icons = [Globe, Users2, TrendingUp, PieChart];
-                                  const Icon = icons[i % icons.length];
-                                  return (
-                                    <div key={i} className="rounded-lg border border-[#e2e8f0] p-3">
-                                      <Icon className="h-4 w-4 text-[#FF5722]" />
-                                      <p className="mt-1.5 text-[14px] font-extrabold text-[#0f172a]">{s.value}</p>
-                                      <p className="text-[10.5px] text-[#64748b]">{s.label}</p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </SectionCard>
-                          </div>
-                        )}
-
-                        {startup.competitiveAdvantage.length > 0 && (
-                          <div className="min-w-[240px] flex-1 basis-72">
-                            <SectionCard title="Our Competitive Advantage">
-                              <ul className="space-y-2.5">
-                                {startup.competitiveAdvantage.map((c, i) => (
-                                  <li key={i} className="flex items-start gap-2 text-[12.5px] text-[#334155]">
-                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5722]" /> {c}
-                                  </li>
-                                ))}
-                              </ul>
-                            </SectionCard>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
+                  <ProductContent 
+                    startup={startup}
+                    setProductModal={setProductModal}
+                    setTab={setTab}
+                  />
                 )}
 
                 {tab === "discussions" && (
@@ -934,7 +613,14 @@ export default function StartupDetails() {
                     onOpenChange={setDiscussionComposerOpen}
                   />
                 )}
-                {tab === "updates" && <UpdatesTab startupId={id} isFounder={!!user && !!founder && user.id === founder._id} canPost={!!user} />}
+
+                {tab === "updates" && (
+                  <UpdatesTab 
+                    startupId={id} 
+                    isFounder={!!user && !!founder && user.id === founder._id} 
+                    canPost={!!user} 
+                  />
+                )}
 
                 {tab === "documents" && (
                   <>
@@ -952,541 +638,84 @@ export default function StartupDetails() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-5 sm:flex-row sm:justify-between">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722]">
-                  <ctaContent.icon className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-[14px] font-bold text-[#0f172a]">{ctaContent.title}</p>
-                  <p className="text-[12px] text-[#64748b]">{ctaContent.subtitle}</p>
-                </div>
-              </div>
-              <div className="flex shrink-0 flex-wrap gap-2">
-                <button
-                  onClick={() => {
-                    if (!user) return navigate("/login");
-                    if (!isInterested) interestMutation.mutate();
-                    setTab("investments");
-                  }}
-                  className="flex items-center gap-1.5 rounded-lg bg-[#FF5722] px-4 py-2.5 text-[12.5px] font-bold text-white hover:opacity-90"
-                >
-                  <Wallet className="h-4 w-4" /> Invest
-                </button>
-                <button
-                  onClick={handleMessageFounder}
-                  disabled={!user || messageFounderMutation.isPending}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] px-4 py-2.5 text-[12.5px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
-                >
-                  <MessageSquare className="h-4 w-4" /> Message Founder
-                </button>
-                <button
-                  onClick={handleShare}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] px-4 py-2.5 text-[12.5px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
-                >
-                  <Share2 className="h-4 w-4" /> {copied ? "Copied!" : "Share Startup"}
-                </button>
-              </div>
-            </div>
-            {interestMutation.isError && (
-              <p className="text-[12.5px] text-danger">
-                {isAxiosError(interestMutation.error) ? interestMutation.error.response?.data?.message : "Something went wrong."}
-              </p>
-            )}
-          </div>
-
-          {/* RIGHT RAIL */}
-          <aside className="space-y-5">
-            {tab === "team" ? (
-              <>
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722]">
-                    <Users2 className="h-5 w-5" />
-                  </span>
-                  <h4 className="mt-3 text-[15px] font-bold text-[#0f172a]">Join the Team</h4>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-[#64748b]">
-                    Like this idea? Use your skills to help build this startup — join the team.
-                  </p>
-                  <button
-                    onClick={() => setJoinModal({ open: true, role: null })}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90"
-                  >
-                    <Users2 className="h-4 w-4" /> Join Team
-                  </button>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">How It Works?</h4>
-                  <div className="mt-4 space-y-4">
-                    {[
-                      ["Choose a Role", "Pick the role that matches your skills."],
-                      ["Submit Application", "Fill in your info and experience, and apply."],
-                      ["Founder Review", "The founder reviews your application and reaches out."],
-                      ["Join the Team", "Once selected, join the team and start working."],
-                    ].map(([title, desc], i) => (
-                      <div key={title} className="flex items-start gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#ffece5] text-[11px] font-bold text-[#FF5722]">
-                          {i + 1}
-                        </span>
-                        <div>
-                          <p className="text-[12.5px] font-bold text-[#0f172a]">{title}</p>
-                          <p className="text-[11.5px] text-[#64748b]">{desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="mt-4 text-[12px] font-medium text-[#0f172a]">Your skills can build a great startup! 💡</p>
-                </div>
-              </>
-            ) : tab === "product" ? (
-              <>
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Investment Summary</h4>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <FundStat icon={Briefcase} color="#FF5722" value={formatCurrency(startup.fundingNeeded)} label="Funding Goal" />
-                    <FundStat icon={CheckCircle2} color="#FF5722" value={formatCurrency(startup.fundingRaised)} label="Raised Amount" />
-                    <FundStat icon={PieChart} color="#FF5722" value={`${fundingPct}%`} label="Percent Funded" />
-                    <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining Amount" />
-                    <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
-                    <FundStat
-                      icon={CalendarDays}
-                      color="#FF5722"
-                      value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)} Days` : "—"}
-                      label="Days Left"
-                    />
-                  </div>
-                  <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90">
-                    View Funding Details
-                  </button>
-                </div>
-
-                {startup.whyProduct.length > 0 && (
-                  <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                    <h4 className="text-[14px] font-bold text-[#0f172a]">Why Our Product?</h4>
-                    <ul className="mt-3 space-y-2.5">
-                      {startup.whyProduct.map((w, i) => (
-                        <li key={i} className="flex items-start gap-2 text-[12px] text-[#334155]">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5722]" /> {w}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722]">
-                    <Truck className="h-5 w-5" />
-                  </span>
-                  <h4 className="mt-3 text-[15px] font-bold text-[#0f172a]">Want to Distribute Our Products?</h4>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-[#64748b]">
-                    Partner with us to distribute our products in your region.
-                  </p>
-                  <button
-                    onClick={handleMessageFounder}
-                    disabled={!user || messageFounderMutation.isPending}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90"
-                  >
-                    <Truck className="h-4 w-4" /> Become Distributor
-                  </button>
-                </div>
-
-                {(!!startup.pitchDeckUrl || !!startup.documents?.length) && (
-                  <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                    <h4 className="text-[14px] font-bold text-[#0f172a]">Documents</h4>
-                    <div className="mt-2 divide-y divide-[#f1f5f9]">
-                      {startup.pitchDeckUrl && <DocRow name="Pitch Deck" url={startup.pitchDeckUrl} />}
-                      {startup.documents?.map((d, i) => <DocRow key={i} name={d.name} url={d.url} />)}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : tab === "documents" ? (
-              <>
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Investment Summary</h4>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <FundStat icon={Briefcase} color="#FF5722" value={formatCurrency(startup.fundingNeeded)} label="Funding Goal" />
-                    <FundStat icon={CheckCircle2} color="#FF5722" value={formatCurrency(startup.fundingRaised)} label="Raised Amount" />
-                    <FundStat icon={PieChart} color="#FF5722" value={`${fundingPct}%`} label="Percent Funded" />
-                    <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining Amount" />
-                    <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Total Investors" />
-                    <FundStat
-                      icon={CalendarDays}
-                      color="#FF5722"
-                      value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)} Days` : "—"}
-                      label="Days Left"
-                    />
-                  </div>
-                  <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90">
-                    View Funding Details
-                  </button>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Document Highlights</h4>
-                  <ul className="mt-3 space-y-2.5">
-                    {[
-                      "All documents are verified and authentic",
-                      "Regularly updated for transparency",
-                      "Helps investors understand the startup better",
-                      "Secure and easy access to important files",
-                    ].map((w, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[12px] text-[#334155]">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5722]" /> {w}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Need More Information?</h4>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-[#64748b]">Can&apos;t find what you are looking for?</p>
-                  <button
-                    onClick={handleMessageFounder}
-                    disabled={!user || messageFounderMutation.isPending}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90"
-                  >
-                    <FilePlus2 className="h-4 w-4" /> Request Document
-                  </button>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-gradient-to-br from-[#ffece5] to-[#f1ebfc] p-5">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#FF5722]">
-                    <FolderCheck className="h-5 w-5" />
-                  </span>
-                  <h4 className="mt-3 text-[14px] font-bold text-[#0f172a]">Transparency builds trust</h4>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-[#374151]">
-                    We believe in complete transparency with our investors and community.
+            {/* Bottom CTA - Apple style */}
+            <div className="relative overflow-hidden rounded-3xl bg-muted/50 border border-border p-8">
+              <div className="relative flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
+                <div className="text-center sm:text-left">
+                  <h3 className="text-xl font-semibold text-foreground">
+                    {tab === "product" 
+                      ? "Believe in our product?" 
+                      : "This idea excites you?"}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tab === "product" 
+                      ? "Invest in our plan and help us build a strong future."
+                      : "Invest now and help the founder build something amazing."}
                   </p>
                 </div>
-              </>
-            ) : tab === "updates" ? (
-              <>
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Investment Summary</h4>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <FundStat icon={Briefcase} color="#FF5722" value={formatCurrency(startup.fundingNeeded)} label="Funding Goal" />
-                    <FundStat icon={CheckCircle2} color="#FF5722" value={formatCurrency(startup.fundingRaised)} label="Raised Amount" />
-                    <FundStat icon={PieChart} color="#FF5722" value={`${fundingPct}%`} label="Percent Funded" />
-                    <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining Amount" />
-                    <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Total Investors" />
-                    <FundStat
-                      icon={CalendarDays}
-                      color="#FF5722"
-                      value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)} Days` : "—"}
-                      label="Days Left"
-                    />
-                  </div>
-                  <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90">
-                    View Funding Details
-                  </button>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Why Regular Updates?</h4>
-                  <ul className="mt-3 space-y-2.5">
-                    {[
-                      "Builds transparency and trust",
-                      "Shows real progress to investors",
-                      "Helps attract partners and supporters",
-                      "Keeps the community engaged",
-                    ].map((w, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[12px] text-[#334155]">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5722]" /> {w}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-[14px] font-bold text-[#0f172a]">Recent Updates</h4>
-                  </div>
-                  {!updatesList?.length ? (
-                    <EmptyNote text="No updates posted yet." />
-                  ) : (
-                    <div className="mt-3 space-y-3">
-                      {updatesList.slice(0, 4).map((u) => {
-                        const meta = UPDATE_CATEGORY_META[u.category] ?? UPDATE_CATEGORY_META.Other;
-                        const Icon = meta.icon;
-                        return (
-                          <div key={u._id} className="flex items-start gap-2.5">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: meta.bg, color: meta.fg }}>
-                              <Icon className="h-3.5 w-3.5" />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="line-clamp-2 text-[12px] font-semibold text-[#0f172a]">{u.title}</p>
-                              <p className="text-[10.5px] text-[#94a3b8]">{new Date(u.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : tab === "discussions" ? (
-              <>
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Investment Summary</h4>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <FundStat icon={Briefcase} color="#FF5722" value={formatCurrency(startup.fundingNeeded)} label="Funding Goal" />
-                    <FundStat icon={CheckCircle2} color="#FF5722" value={formatCurrency(startup.fundingRaised)} label="Raised Amount" />
-                    <FundStat icon={PieChart} color="#FF5722" value={`${fundingPct}%`} label="Percent Funded" />
-                    <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining Amount" />
-                    <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Total Investors" />
-                    <FundStat
-                      icon={CalendarDays}
-                      color="#FF5722"
-                      value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)} Days` : "—"}
-                      label="Days Left"
-                    />
-                  </div>
-                  <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90">
-                    View Funding Details
-                  </button>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ffece5] text-[#FF5722]">
-                    <MessageSquare className="h-5 w-5" />
-                  </span>
-                  <h4 className="mt-3 text-[15px] font-bold text-[#0f172a]">Start a Discussion</h4>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-[#64748b]">
-                    Have a question or suggestion? Start a discussion with the community.
-                  </p>
-                  <button
-                    onClick={() => (user ? setDiscussionComposerOpen(true) : navigate("/login"))}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90"
-                  >
-                    <Plus className="h-4 w-4" /> Start New Discussion
-                  </button>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Why Discussions Matter?</h4>
-                  <ul className="mt-3 space-y-2.5">
-                    {[
-                      "Get expert advice from community",
-                      "Find potential partners & supporters",
-                      "Improve your business with feedback",
-                      "Build trust and transparency",
-                      "Grow your network",
-                    ].map((w, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[12px] text-[#334155]">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5722]" /> {w}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Recent Activity</h4>
-                  {recentActivity.length === 0 ? (
-                    <EmptyNote text="No activity yet." />
-                  ) : (
-                    <div className="mt-3 space-y-3">
-                      {recentActivity.map((d) => (
-                        <div key={d._id} className="flex items-center gap-2.5">
-                          <Avatar className="h-8 w-8 shrink-0">
-                            <AvatarImage src={d.author.avatar} alt={d.author.name} />
-                            <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                              {initialsFromName(d.author.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <p className="min-w-0 flex-1 truncate text-[11.5px] text-[#334155]">
-                            <span className="font-semibold text-[#0f172a]">{d.author.name}</span> started a discussion
-                          </p>
-                          <span className="shrink-0 text-[10.5px] text-[#94a3b8]">{timeAgo(d.createdAt)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : tab === "funding" || tab === "investments" ? (
-              <>
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Quick Summary</h4>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <FundStat icon={Briefcase} color="#FF5722" value={formatCurrency(startup.fundingNeeded)} label="Funding Goal" />
-                    <FundStat icon={CheckCircle2} color="#FF5722" value={formatCurrency(startup.fundingRaised)} label="Raised Amount" />
-                    <FundStat icon={PieChart} color="#FF5722" value={`${fundingPct}%`} label="Percent Funded" />
-                    <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining Amount" />
-                    <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
-                    <FundStat
-                      icon={CalendarDays}
-                      color="#FF5722"
-                      value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)} Days` : "—"}
-                      label="Days Left"
-                    />
-                  </div>
-                  <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90">
-                    View Funding Details
-                  </button>
-                </div>
-
-                {startup.whyInvest.length > 0 && (
-                  <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                    <h4 className="text-[14px] font-bold text-[#0f172a]">Why Invest In This Startup?</h4>
-                    <ul className="mt-3 space-y-2.5">
-                      {startup.whyInvest.map((w, i) => (
-                        <li key={i} className="flex items-start gap-2 text-[12px] text-[#334155]">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#FF5722]" /> {w}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                  <h4 className="text-[14px] font-bold text-[#0f172a]">Become an Investor</h4>
-                  <p className="mt-1.5 text-[12px] leading-relaxed text-[#64748b]">Invest in this idea and be a part of the journey.</p>
+                <div className="flex flex-wrap justify-center gap-3">
                   <button
                     onClick={() => {
                       if (!user) return navigate("/login");
                       if (!isInterested) interestMutation.mutate();
                       setTab("investments");
                     }}
-                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90"
+                    className="group relative inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors duration-300"
                   >
-                    <Wallet className="h-4 w-4" /> Invest
+                    <Wallet className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    Invest Now
+                    <span className="absolute inset-0 rounded-full bg-card/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
+                  
                   <button
                     onClick={handleMessageFounder}
                     disabled={!user || messageFounderMutation.isPending}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[#e2e8f0] py-2.5 text-[12.5px] font-bold text-[#0f172a] hover:bg-[#f8fafc]"
+                    className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3 text-sm font-medium text-foreground hover:bg-muted transition-all duration-300"
                   >
-                    <MessageSquare className="h-4 w-4" /> Message Founder
+                    <MessageSquare className="h-4 w-4" />
+                    Message Founder
+                  </button>
+                  
+                  <button
+                    onClick={handleShare}
+                    className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3 text-sm font-medium text-foreground hover:bg-muted transition-all duration-300"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    {copied ? "Copied!" : "Share"}
                   </button>
                 </div>
-
-                {isOwner && (
-                  <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-                    <h4 className="text-[14px] font-bold text-[#0f172a]">Recent Investors</h4>
-                    <p className="mt-0.5 text-[10.5px] text-[#94a3b8]">Only visible to you as the founder.</p>
-                    <div className="mt-3 space-y-3">
-                      {investorPartners.length === 0 ? (
-                        <EmptyNote text="None yet." />
-                      ) : (
-                        investorPartners.slice(0, 4).map((p) => (
-                          <div key={p._id} className="flex items-center gap-2.5">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={p.avatar} alt={p.name} />
-                              <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                                {initialsFromName(p.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-[12.5px] font-semibold text-[#0f172a]">{p.name}</p>
-                              <p className="truncate text-[10.5px] capitalize text-[#64748b]">{p.role}</p>
-                            </div>
-                            <span className="shrink-0 rounded-full bg-[#ffece5] px-2 py-0.5 text-[10px] font-bold text-[#FF5722]">Interested</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-            <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-              <h4 className="text-[14px] font-bold text-[#0f172a]">Funding &amp; Needs</h4>
-              <p className="mt-3 text-[22px] font-extrabold text-[#0f172a]">{formatCurrency(startup.fundingRaised)}</p>
-              <p className="text-[11.5px] text-[#64748b]">of {formatCurrency(startup.fundingNeeded)} Goal</p>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#e2e8f0]">
-                <div className="h-full rounded-full bg-[#FF5722]" style={{ width: `${fundingPct}%` }} />
-              </div>
-              <p className="mt-1.5 text-[11.5px] font-semibold text-[#FF5722]">{fundingPct}% Funded</p>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-[#e2e8f0] p-3">
-                  <Briefcase className="h-4 w-4 text-[#FF5722]" />
-                  <p className="mt-1.5 text-[13px] font-bold">{formatCurrency(startup.fundingNeeded)}</p>
-                  <p className="text-[10.5px] text-[#64748b]">Needed</p>
-                </div>
-                <div className="rounded-xl border border-[#e2e8f0] p-3">
-                  <Users2 className="h-4 w-4 text-[#FF5722]" />
-                  <p className="mt-1.5 text-[13px] font-bold">{confirmedInvestorCount}</p>
-                  <p className="text-[10.5px] text-[#64748b]">Investors</p>
-                </div>
-              </div>
-
-              <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90">
-                View Funding Details
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-              <div className="flex items-center justify-between">
-                <h4 className="text-[14px] font-bold text-[#0f172a]">Team (Looking For)</h4>
-                <button onClick={() => setTab("team")} className="text-[11.5px] font-bold text-[#FF5722]">View All</button>
-              </div>
-              <div className="mt-3 space-y-3">
-                {startup.openRoles.length === 0 ? (
-                  <EmptyNote text="No open roles right now." />
-                ) : (
-                  startup.openRoles.slice(0, 5).map((role, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f1f5f9] text-[#94a3b8]">
-                        <Users2 className="h-4 w-4" />
-                      </div>
-                      <p className="flex-1 text-[12.5px] font-semibold text-[#0f172a]">{role.title}</p>
-                      <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", role.type === "full_time" ? "bg-[#ffece5] text-[#FF5722]" : "bg-[#fdf1de] text-[#d97706]")}>
-                        {role.type === "full_time" ? "Full Time" : "Part Time"}
-                      </span>
-                    </div>
-                  ))
-                )}
               </div>
             </div>
 
-            {isOwner && (
-            <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-              <h4 className="text-[14px] font-bold text-[#0f172a]">Interested Investors / Partners</h4>
-              <p className="mt-0.5 text-[10.5px] text-[#94a3b8]">Only visible to you as the founder.</p>
-              <div className="mt-3 space-y-3">
-                {investorPartners.length === 0 ? (
-                  <EmptyNote text="None yet." />
-                ) : (
-                  investorPartners.map((p) => (
-                    <div key={p._id} className="flex items-center gap-2.5">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={p.avatar} alt={p.name} />
-                        <AvatarFallback className="bg-gradient-to-br from-[#7c3aed] to-[#4c1d95] text-[10px] font-bold text-white">
-                          {initialsFromName(p.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="truncate text-[12.5px] font-semibold text-[#0f172a]">{p.name}</p>
-                        <p className="truncate text-[10.5px] capitalize text-[#64748b]">{p.role}</p>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-[#ffece5] px-2 py-0.5 text-[10px] font-bold text-[#FF5722]">Interested</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            {interestMutation.isError && (
+              <p className="text-sm text-red-600 text-center">
+                {isAxiosError(interestMutation.error) ? interestMutation.error.response?.data?.message : "Something went wrong."}
+              </p>
             )}
+          </div>
 
-            <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
-              <h4 className="text-[14px] font-bold text-[#0f172a]">Let&apos;s Connect</h4>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-[#64748b]">Interested in this idea? Let&apos;s build something amazing together.</p>
-              <button
-                onClick={handleMessageFounder}
-                disabled={!user || messageFounderMutation.isPending}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF5722] py-2.5 text-[12.5px] font-bold text-white hover:opacity-90"
-              >
-                {messageFounderMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />} Send Message
-              </button>
-            </div>
-              </>
+          {/* RIGHT RAIL - Floating Premium Panel */}
+          <aside className="lg:sticky lg:top-24 lg:self-start space-y-6">
+            {tab === "team" ? (
+              <TeamSidebar startup={startup} setJoinModal={setJoinModal} />
+            ) : tab === "product" ? (
+              <ProductSidebar startup={startup} fundingPct={fundingPct} confirmedInvestorCount={confirmedInvestorCount} setTab={setTab} onMessageFounder={handleMessageFounder} user={user} messageFounderMutation={messageFounderMutation} />
+            ) : tab === "documents" ? (
+              <DocumentsSidebar startup={startup} fundingPct={fundingPct} confirmedInvestorCount={confirmedInvestorCount} setTab={setTab} onMessageFounder={handleMessageFounder} user={user} messageFounderMutation={messageFounderMutation} />
+            ) : tab === "updates" ? (
+              <UpdatesSidebar startup={startup} fundingPct={fundingPct} confirmedInvestorCount={confirmedInvestorCount} setTab={setTab} updatesList={updatesList} />
+            ) : tab === "discussions" ? (
+              <DiscussionsSidebar startup={startup} fundingPct={fundingPct} confirmedInvestorCount={confirmedInvestorCount} setTab={setTab} recentActivity={recentActivity} user={user} setDiscussionComposerOpen={setDiscussionComposerOpen} />
+            ) : tab === "funding" || tab === "investments" ? (
+              <FundingSidebar startup={startup} fundingPct={fundingPct} confirmedInvestorCount={confirmedInvestorCount} setTab={setTab} investorPartners={investorPartners} isOwner={isOwner} onMessageFounder={handleMessageFounder} user={user} messageFounderMutation={messageFounderMutation} isInterested={isInterested} interestMutation={interestMutation} />
+            ) : (
+              <DefaultSidebar startup={startup} fundingPct={fundingPct} confirmedInvestorCount={confirmedInvestorCount} setTab={setTab} investorPartners={investorPartners} isOwner={isOwner} onMessageFounder={handleMessageFounder} user={user} messageFounderMutation={messageFounderMutation} />
             )}
           </aside>
         </div>
       </div>
 
+      {/* Modals */}
       <JoinTeamModal
         startupId={id}
         role={joinModal.role}
@@ -1506,5 +735,994 @@ export default function StartupDetails() {
 
       <ProductDetailModal product={productModal} onOpenChange={(open) => !open && setProductModal(null)} />
     </div>
+  );
+}
+
+// ============================================
+// SUB-COMPONENTS (Split for better readability)
+// ============================================
+
+function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }: any) {
+  return (
+    <div className="space-y-8">
+      {/* About & Highlights Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="group rounded-2xl bg-muted p-6 transition-all duration-300 hover:bg-accent">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">About the Idea</h3>
+          <p className="mt-3 text-sm leading-relaxed text-foreground/80">{startup.description}</p>
+          {startup.targetAudience && (
+            <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
+              <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
+              <span><span className="font-medium text-foreground">Target Audience:</span> {startup.targetAudience}</span>
+            </p>
+          )}
+        </div>
+
+        {startup.highlights.length > 0 && (
+          <div className="group rounded-2xl bg-muted p-6 transition-all duration-300 hover:bg-accent">
+            <h3 className="text-sm font-semibold text-foreground tracking-tight">Highlights</h3>
+            <ul className="mt-3 space-y-2.5">
+              {startup.highlights.map((h: string, i: number) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {h}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Mission Statement */}
+      {startup.missionStatement && (
+        <div className="group rounded-2xl bg-muted/40 p-6 border border-border/30">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-foreground" />
+            <h3 className="text-sm font-semibold text-foreground tracking-tight">Our Mission</h3>
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-foreground/80">{startup.missionStatement}</p>
+        </div>
+      )}
+
+      {/* Problem & Solution Grid */}
+      {(startup.problemStatement || startup.solution) && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {startup.problemStatement && (
+            <div className="group rounded-2xl bg-red-50/40 p-6 border border-red-100/30 transition-all duration-300 hover:bg-red-50/60">
+              <div className="flex items-center gap-2">
+                <XCircle className="h-4 w-4 text-red-500" />
+                <h3 className="text-sm font-semibold text-foreground tracking-tight">Problem</h3>
+              </div>
+              <ul className="mt-3 space-y-2">
+                {startup.problemStatement.split("\n").filter(Boolean).map((line: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                    <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" /> {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {startup.solution && (
+            <div className="group rounded-2xl bg-green-50/40 p-6 border border-green-100/30 transition-all duration-300 hover:bg-green-50/60">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <h3 className="text-sm font-semibold text-foreground tracking-tight">Solution</h3>
+              </div>
+              <ul className="mt-3 space-y-2">
+                {startup.solution.split("\n").filter(Boolean).map((line: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" /> {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Business Plan */}
+      {startup.businessPlan.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Business Plan</h3>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(160px,200px))]">
+            {startup.businessPlan.map((item: any, i: number) => {
+              const icons = [Target, TrendingUp, Layers, Users];
+              const Icon = icons[i % icons.length];
+              return (
+                <div key={i} className="rounded-2xl bg-muted p-4 text-center transition-all duration-300 hover:bg-accent">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <p className="mt-2 text-sm font-medium text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.value}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Traction */}
+      {startup.tractionStats.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Traction</h3>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(160px,200px))]">
+            {startup.tractionStats.map((item: any, i: number) => {
+              const icons = [TrendingUp, Users2, CheckCircle2, PieChart];
+              const Icon = icons[i % icons.length];
+              return (
+                <div key={i} className="rounded-2xl bg-muted p-4 text-center transition-all duration-300 hover:bg-accent">
+                  <Icon className="mx-auto h-5 w-5 text-foreground" />
+                  <p className="mt-2 text-lg font-semibold text-foreground">{item.value}</p>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Milestones */}
+      {startup.milestones.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Milestones</h3>
+          <div className="space-y-0">
+            {[...startup.milestones]
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .map((m: any, i: number, arr: any[]) => (
+                <div key={i} className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <span className="mt-1.5 h-3 w-3 rounded-full bg-primary ring-2 ring-border" />
+                    {i < arr.length - 1 && <span className="mt-1 w-px flex-1 bg-muted" />}
+                  </div>
+                  <div className={cn("pb-6", i === arr.length - 1 && "pb-0")}>
+                    <p className="text-sm font-medium text-foreground">{m.title}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(m.date).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}</p>
+                    {m.description && <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Funding Mini Card */}
+      <div className="rounded-2xl bg-muted/40 border border-border/30 p-6">
+        <div className="flex items-center gap-4">
+          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+            <svg className="h-20 w-20 -rotate-90">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="#E5E5EA" strokeWidth="4" />
+              <circle
+                cx="40"
+                cy="40"
+                r="34"
+                fill="none"
+                stroke="url(#fundingGradient)"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 34}
+                strokeDashoffset={2 * Math.PI * 34 * (1 - fundingPct / 100)}
+                className="transition-all duration-1000 ease-out"
+              />
+            </svg>
+            <span className="absolute text-lg font-bold text-foreground">{fundingPct}%</span>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground">{formatCurrency(startup.fundingRaised)}</p>
+            <p className="text-sm text-muted-foreground">raised of {formatCurrency(startup.fundingNeeded)} goal</p>
+            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+              <span>{confirmedInvestorCount} investors</span>
+              {startup.expectedClosingDate && (
+                <>
+                  <span>•</span>
+                  <span>{daysLeft(startup.expectedClosingDate)} days left</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <button 
+          onClick={() => setTab("funding")}
+          className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+        >
+          View Funding Details
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }: any) {
+  return (
+    <div className="space-y-8">
+      {/* Funding Overview */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl bg-muted p-6">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Funding Overview</h3>
+          <div className="mt-4 flex items-center gap-6">
+            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
+              <svg className="h-24 w-24 -rotate-90">
+                <circle cx="48" cy="48" r="40" fill="none" stroke="#E5E5EA" strokeWidth="4" />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  fill="none"
+                  stroke="url(#fundingGradient)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 40}
+                  strokeDashoffset={2 * Math.PI * 40 * (1 - fundingPct / 100)}
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <span className="absolute text-xl font-bold text-foreground">{fundingPct}%</span>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(startup.fundingNeeded)}</p>
+              <p className="text-sm text-muted-foreground">Funding Goal</p>
+              <p className="mt-2 text-xl font-bold text-foreground">{formatCurrency(startup.fundingRaised)}</p>
+              <p className="text-sm text-muted-foreground">Raised Amount</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-muted p-6">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Funding Details</h3>
+          <div className="mt-4 grid grid-cols-2 gap-y-3 text-sm">
+            <DetailRow label="Funding Type" value={startup.fundingType[0] || "—"} />
+            <DetailRow label="Investment Type" value={startup.investmentType || "—"} />
+            <DetailRow label="Minimum Investment" value={startup.minimumInvestment ? formatCurrency(startup.minimumInvestment) : "—"} />
+            <DetailRow label="Funding Duration" value={startup.fundingDurationMonths ? `${startup.fundingDurationMonths} Months` : "—"} />
+            <DetailRow
+              label="Expected Closing"
+              value={startup.expectedClosingDate ? new Date(startup.expectedClosingDate).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+            />
+            <DetailRow label="Location" value={startup.location} />
+          </div>
+        </div>
+      </div>
+
+      {/* Fund Stats Grid */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal Amount" />
+        <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised Amount" />
+        <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining" />
+        <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
+      </div>
+
+      {/* Fund Usage Plan */}
+      {startup.fundUsagePlan.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Fund Usage Plan</h3>
+          <div className="overflow-x-auto rounded-2xl bg-muted p-4">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="pb-3 pr-4 text-left font-semibold">Category</th>
+                  <th className="pb-3 pr-4 text-left font-semibold">Description</th>
+                  <th className="pb-3 pr-4 text-right font-semibold">Cost</th>
+                  <th className="pb-3 text-right font-semibold">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {startup.fundUsagePlan.map((item: any, i: number) => {
+                  const pct = startup.fundingNeeded ? Math.round((item.estimatedCost / startup.fundingNeeded) * 100) : 0;
+                  const color = FUND_ITEM_COLORS[i % FUND_ITEM_COLORS.length];
+                  return (
+                    <tr key={i} className="border-b border-border last:border-0">
+                      <td className="py-3 pr-4">
+                        <span className="flex items-center gap-2 font-medium">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: color.bg, color: color.fg }}>
+                            <Package className="h-3.5 w-3.5" />
+                          </span>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-muted-foreground">{item.description}</td>
+                      <td className="py-3 pr-4 text-right font-medium">{formatCurrency(item.estimatedCost)}</td>
+                      <td className="py-3">
+                        <div className="flex items-center justify-end gap-3">
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color.fg }} />
+                          </div>
+                          <span className="w-9 text-right text-xs font-medium">{pct}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td className="pt-3 font-semibold" colSpan={2}>Total</td>
+                  <td className="pt-3 text-right font-semibold">
+                    {formatCurrency(startup.fundUsagePlan.reduce((sum: number, i: any) => sum + i.estimatedCost, 0))}
+                  </td>
+                  <td className="pt-3 text-right font-semibold">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Expected Outcomes & Documents */}
+      {(startup.expectedOutcomes.length > 0 || !!startup.pitchDeckUrl || !!startup.documents?.length) && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {startup.expectedOutcomes.length > 0 && (
+            <div className="rounded-2xl bg-muted p-6">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Expected Outcomes</h3>
+              <div className="mt-3 space-y-3">
+                {startup.expectedOutcomes.map((o: any, i: number) => {
+                  const icons = [Clock, TrendingUp, PieChart, Users2, Briefcase];
+                  const Icon = icons[i % icons.length];
+                  return (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground" /> {o.label}
+                      </span>
+                      <span className="font-medium text-foreground">{o.value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {(!!startup.pitchDeckUrl || !!startup.documents?.length) && (
+            <div className="rounded-2xl bg-muted p-6">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Documents</h3>
+              <div className="mt-3 divide-y divide-border">
+                {startup.pitchDeckUrl && <DocRow name="Pitch Deck" url={startup.pitchDeckUrl} />}
+                {startup.documents?.map((d: any, i: number) => <DocRow key={i} name={d.name} url={d.url} />)}
+              </div>
+              <button onClick={() => setTab("documents")} className="mt-3 text-sm font-medium text-foreground hover:text-brand transition-colors">
+                View All Documents →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProductContent({ startup, setProductModal }: any) {
+  return (
+    <div className="space-y-8">
+      {(startup.products.length > 0 || startup.productHighlights.length > 0) && (
+        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+          {startup.products.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Our Product</h3>
+              <ProductCarousel products={startup.products} onSelect={setProductModal} />
+            </div>
+          )}
+
+          {startup.productHighlights.length > 0 && (
+            <div className="rounded-2xl bg-muted p-6">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Product Highlights</h3>
+              <ul className="mt-3 space-y-2.5">
+                {startup.productHighlights.map((h: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {h}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Plan Phases */}
+      {startup.planPhases.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">Our Plan</h3>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {startup.planPhases.map((phase: any, i: number) => {
+              const icons = [Rocket, TrendingUp, Award];
+              const Icon = icons[i % icons.length];
+              return (
+                <div key={i} className="rounded-2xl bg-muted p-5 transition-all duration-300 hover:bg-accent">
+                  <div className="flex items-start justify-between">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    {phase.timeframe && (
+                      <span className="rounded-full bg-card/80 px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border">
+                        {phase.timeframe}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-foreground">{phase.title}</p>
+                  {phase.checklist.length > 0 && (
+                    <ul className="mt-2 space-y-1.5">
+                      {phase.checklist.map((c: string, ci: number) => (
+                        <li key={ci} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                          <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-foreground" /> {c}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {phase.estimatedCost > 0 && (
+                    <p className="mt-3 border-t border-border pt-2.5 text-xs font-medium text-foreground">
+                      Est. Cost: {formatCurrency(phase.estimatedCost)}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Market Stats & Competitive Advantage */}
+      {(startup.marketStats.length > 0 || startup.competitiveAdvantage.length > 0) && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {startup.marketStats.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Market Opportunity</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {startup.marketStats.map((s: any, i: number) => {
+                  const icons = [Globe, Users2, TrendingUp, PieChart];
+                  const Icon = icons[i % icons.length];
+                  return (
+                    <div key={i} className="rounded-2xl bg-muted p-4 text-center transition-all duration-300 hover:bg-accent">
+                      <Icon className="mx-auto h-5 w-5 text-foreground" />
+                      <p className="mt-2 text-lg font-semibold text-foreground">{s.value}</p>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {startup.competitiveAdvantage.length > 0 && (
+            <div className="rounded-2xl bg-muted p-6">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Competitive Advantage</h3>
+              <ul className="mt-3 space-y-2.5">
+                {startup.competitiveAdvantage.map((c: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {c}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InvestorsSection({ investorPartners }: any) {
+  return (
+    <div className="rounded-2xl bg-muted p-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground tracking-tight">Interested Investors & Partners</h3>
+        <span className="text-xs text-muted-foreground">Only visible to you</span>
+      </div>
+      {investorPartners.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">No investors or partners have connected yet.</p>
+      ) : (
+        <div className="mt-4 divide-y divide-border">
+          {investorPartners.map((p: any) => (
+            <div key={p._id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+              <Avatar className="h-12 w-12 ring-2 ring-white">
+                <AvatarImage src={p.avatar} alt={p.name} />
+                <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
+                  {initialsFromName(p.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">{p.name}</p>
+                <p className="text-xs capitalize text-muted-foreground">{p.role}</p>
+              </div>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">Interested</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// SIDEBAR COMPONENTS
+// ============================================
+
+function TeamSidebar({ setJoinModal }: any) {
+  return (
+    <>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground">
+          <Users2 className="h-5 w-5" />
+        </div>
+        <h4 className="mt-3 text-base font-semibold text-foreground">Join the Team</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          Like this idea? Use your skills to help build this startup.
+        </p>
+        <button
+          onClick={() => setJoinModal({ open: true, role: null })}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+        >
+          <Users2 className="h-4 w-4" /> Join Team
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">How It Works</h4>
+        <div className="mt-4 space-y-4">
+          {[
+            ["Choose a Role", "Pick the role that matches your skills."],
+            ["Submit Application", "Fill in your info and experience."],
+            ["Founder Review", "The founder reviews your application."],
+            ["Join the Team", "Start working with the team."],
+          ].map(([title, desc], i) => (
+            <div key={title} className="flex items-start gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-foreground">
+                {i + 1}
+              </span>
+              <div>
+                <p className="text-sm font-medium text-foreground">{title}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ProductSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, onMessageFounder, user, messageFounderMutation }: any) {
+  return (
+    <>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
+          <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
+          <FundStat icon={PieChart} color="#171717" value={`${fundingPct}%`} label="Funded" />
+          <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining" />
+          <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
+          <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
+        </div>
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+          View Funding Details
+        </button>
+      </div>
+
+      {startup.whyProduct.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h4 className="text-sm font-semibold text-foreground">Why Our Product?</h4>
+          <ul className="mt-3 space-y-2.5">
+            {startup.whyProduct.map((w: string, i: number) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground">
+          <Truck className="h-5 w-5" />
+        </div>
+        <h4 className="mt-3 text-base font-semibold text-foreground">Want to Distribute?</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          Partner with us to distribute our products.
+        </p>
+        <button
+          onClick={onMessageFounder}
+          disabled={!user || messageFounderMutation.isPending}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+        >
+          <Truck className="h-4 w-4" /> Become Distributor
+        </button>
+      </div>
+
+      {(!!startup.pitchDeckUrl || !!startup.documents?.length) && (
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h4 className="text-sm font-semibold text-foreground">Documents</h4>
+          <div className="mt-3 divide-y divide-border">
+            {startup.pitchDeckUrl && <DocRow name="Pitch Deck" url={startup.pitchDeckUrl} />}
+            {startup.documents?.map((d: any, i: number) => <DocRow key={i} name={d.name} url={d.url} />)}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DocumentsSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, onMessageFounder, user, messageFounderMutation }: any) {
+  return (
+    <>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
+          <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
+          <FundStat icon={PieChart} color="#171717" value={`${fundingPct}%`} label="Funded" />
+          <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining" />
+          <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
+          <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
+        </div>
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+          View Funding Details
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Document Highlights</h4>
+        <ul className="mt-3 space-y-2.5">
+          {[
+            "Verified and authentic documents",
+            "Regularly updated for transparency",
+            "Helps investors understand the startup",
+            "Secure and easy access",
+          ].map((w, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Need More Information?</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Can't find what you're looking for?</p>
+        <button
+          onClick={onMessageFounder}
+          disabled={!user || messageFounderMutation.isPending}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+        >
+          <FilePlus2 className="h-4 w-4" /> Request Document
+        </button>
+      </div>
+
+      <div className="relative overflow-hidden rounded-2xl bg-muted p-6 border border-border/30">
+        <div className="relative">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-card/80 text-foreground">
+            <FolderCheck className="h-5 w-5" />
+          </div>
+          <h4 className="mt-3 text-base font-semibold text-foreground">Transparency builds trust</h4>
+          <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">
+            We believe in complete transparency with our investors and community.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function UpdatesSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, updatesList }: any) {
+  return (
+    <>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
+          <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
+          <FundStat icon={PieChart} color="#171717" value={`${fundingPct}%`} label="Funded" />
+          <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining" />
+          <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
+          <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
+        </div>
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+          View Funding Details
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Why Regular Updates?</h4>
+        <ul className="mt-3 space-y-2.5">
+          {[
+            "Builds transparency and trust",
+            "Shows real progress to investors",
+            "Helps attract partners and supporters",
+            "Keeps the community engaged",
+          ].map((w, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Recent Updates</h4>
+        {!updatesList?.length ? (
+          <p className="mt-3 text-sm text-muted-foreground">No updates posted yet.</p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {updatesList.slice(0, 4).map((u: any) => {
+              const meta = UPDATE_CATEGORY_META[u.category] ?? UPDATE_CATEGORY_META.Other;
+              const Icon = meta.icon;
+              return (
+                <div key={u._id} className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: meta.bg, color: meta.fg }}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-medium text-foreground">{u.title}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(u.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function DiscussionsSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, recentActivity, user, setDiscussionComposerOpen }: any) {
+  const navigate = useNavigate();
+  return (
+    <>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
+          <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
+          <FundStat icon={PieChart} color="#171717" value={`${fundingPct}%`} label="Funded" />
+          <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining" />
+          <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
+          <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
+        </div>
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+          View Funding Details
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground">
+          <MessageSquare className="h-5 w-5" />
+        </div>
+        <h4 className="mt-3 text-base font-semibold text-foreground">Start a Discussion</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          Have a question or suggestion? Start a discussion.
+        </p>
+        <button
+          onClick={() => (user ? setDiscussionComposerOpen(true) : navigate("/login"))}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> New Discussion
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Why Discussions Matter?</h4>
+        <ul className="mt-3 space-y-2.5">
+          {[
+            "Get expert advice from community",
+            "Find potential partners & supporters",
+            "Improve your business with feedback",
+            "Build trust and transparency",
+            "Grow your network",
+          ].map((w, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Recent Activity</h4>
+        {recentActivity.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No activity yet.</p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {recentActivity.map((d: any) => (
+              <div key={d._id} className="flex items-center gap-3">
+                <Avatar className="h-9 w-9 ring-2 ring-white">
+                  <AvatarImage src={d.author.avatar} alt={d.author.name} />
+                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                    {initialsFromName(d.author.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-foreground/80">
+                    <span className="font-medium text-foreground">{d.author.name}</span> started a discussion
+                  </p>
+                </div>
+                <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(d.createdAt)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function FundingSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, investorPartners, isOwner, onMessageFounder, user, messageFounderMutation, isInterested, interestMutation }: any) {
+  const navigate = useNavigate();
+  return (
+    <>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Quick Summary</h4>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
+          <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
+          <FundStat icon={PieChart} color="#171717" value={`${fundingPct}%`} label="Funded" />
+          <FundStat icon={Wallet} color="#d97706" value={formatCurrency(Math.max(0, startup.fundingNeeded - startup.fundingRaised))} label="Remaining" />
+          <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
+          <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
+        </div>
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+          View Funding Details
+        </button>
+      </div>
+
+      {startup.whyInvest.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h4 className="text-sm font-semibold text-foreground">Why Invest?</h4>
+          <ul className="mt-3 space-y-2.5">
+            {startup.whyInvest.map((w: string, i: number) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Become an Investor</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Invest in this idea and be part of the journey.</p>
+        <button
+          onClick={() => {
+            if (!user) return navigate("/login");
+            if (!isInterested) interestMutation.mutate();
+            setTab("investments");
+          }}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+        >
+          <Wallet className="h-4 w-4" /> Invest
+        </button>
+        <button
+          onClick={onMessageFounder}
+          disabled={!user || messageFounderMutation.isPending}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+        >
+          <MessageSquare className="h-4 w-4" /> Message Founder
+        </button>
+      </div>
+
+      {isOwner && investorPartners.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-foreground">Recent Investors</h4>
+            <span className="text-xs text-muted-foreground">Only you</span>
+          </div>
+          <div className="mt-3 space-y-3">
+            {investorPartners.slice(0, 4).map((p: any) => (
+              <div key={p._id} className="flex items-center gap-3">
+                <Avatar className="h-9 w-9 ring-2 ring-white">
+                  <AvatarImage src={p.avatar} alt={p.name} />
+                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                    {initialsFromName(p.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
+                  <p className="truncate text-xs capitalize text-muted-foreground">{p.role}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">Interested</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DefaultSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, investorPartners, isOwner, onMessageFounder, user, messageFounderMutation }: any) {
+  return (
+    <>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Funding & Needs</h4>
+        <p className="mt-4 text-2xl font-bold text-foreground">{formatCurrency(startup.fundingRaised)}</p>
+        <p className="text-sm text-muted-foreground">of {formatCurrency(startup.fundingNeeded)} Goal</p>
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-all duration-1000" style={{ width: `${fundingPct}%` }} />
+        </div>
+        <p className="mt-2 text-sm font-medium text-foreground">{fundingPct}% Funded</p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-muted p-3">
+            <Briefcase className="h-4 w-4 text-foreground" />
+            <p className="mt-1.5 text-sm font-semibold">{formatCurrency(startup.fundingNeeded)}</p>
+            <p className="text-xs text-muted-foreground">Needed</p>
+          </div>
+          <div className="rounded-xl bg-muted p-3">
+            <Users2 className="h-4 w-4 text-foreground" />
+            <p className="mt-1.5 text-sm font-semibold">{confirmedInvestorCount}</p>
+            <p className="text-xs text-muted-foreground">Investors</p>
+          </div>
+        </div>
+
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+          View Funding Details
+        </button>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-foreground">Team</h4>
+          <button onClick={() => setTab("team")} className="text-sm font-medium text-foreground hover:text-brand transition-colors">
+            View All
+          </button>
+        </div>
+        {startup.openRoles.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No open roles right now.</p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {startup.openRoles.slice(0, 5).map((role: any, i: number) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <Users2 className="h-4 w-4" />
+                </div>
+                <p className="flex-1 text-sm font-medium text-foreground">{role.title}</p>
+                <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium", role.type === "full_time" ? "bg-muted text-foreground" : "bg-amber-100 text-amber-700")}>
+                  {role.type === "full_time" ? "Full Time" : "Part Time"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {isOwner && (
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-foreground">Interested Investors</h4>
+            <span className="text-xs text-muted-foreground">Only you</span>
+          </div>
+          {investorPartners.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">None yet.</p>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {investorPartners.map((p: any) => (
+                <div key={p._id} className="flex items-center gap-3">
+                  <Avatar className="h-9 w-9 ring-2 ring-white">
+                    <AvatarImage src={p.avatar} alt={p.name} />
+                    <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                      {initialsFromName(p.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
+                    <p className="truncate text-xs capitalize text-muted-foreground">{p.role}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">Interested</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h4 className="text-sm font-semibold text-foreground">Let's Connect</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          Interested in this idea? Let's build something amazing together.
+        </p>
+        <button
+          onClick={onMessageFounder}
+          disabled={!user || messageFounderMutation.isPending}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+        >
+          {messageFounderMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
+          Send Message
+        </button>
+      </div>
+    </>
   );
 }

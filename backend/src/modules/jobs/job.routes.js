@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   listJobs,
   getJobCategoryCounts,
+  getJobSalaryRangeCounts,
   getMyJobs,
   getJobById,
   createJob,
@@ -19,6 +20,7 @@ import {
   acceptNda,
   getAttachmentUrl,
   getJobAccessLog,
+  reportJob,
 } from "./job.controller.js";
 import { protect, optionalAuth, authorize } from "../../middleware/auth.js";
 import { requireVerifiedForAction } from "../../middleware/roleAuth.js";
@@ -27,11 +29,12 @@ const router = Router();
 
 router.get("/", listJobs);
 router.get("/category-counts", getJobCategoryCounts);
+router.get("/salary-range-counts", getJobSalaryRangeCounts);
 router.get("/mine", protect, authorize("employer", "client", "super_admin"), getMyJobs);
 router.get("/invited", protect, authorize("freelancer", "super_admin"), getInvitedJobs);
 router.get("/analytics/mine", protect, authorize("employer", "client", "super_admin"), getMyJobAnalytics);
 router.get("/:id", optionalAuth, getJobById);
-router.post("/", protect, authorize("employer", "client", "super_admin"), requireVerifiedForAction("post_job"), createJob);
+router.post("/", protect, authorize("employer", "super_admin"), requireVerifiedForAction("post_job"), createJob);
 router.put("/:id", protect, updateJob);
 router.delete("/:id", protect, deleteJob);
 
@@ -46,5 +49,6 @@ router.delete("/:id/invite/:freelancerId", protect, authorize("employer", "clien
 router.post("/:id/accept-nda", protect, acceptNda);
 router.get("/:id/attachments/:index/signed-url", protect, getAttachmentUrl);
 router.get("/:id/access-log", protect, authorize("employer", "client", "super_admin"), getJobAccessLog);
+router.post("/:id/report", protect, reportJob);
 
 export default router;
