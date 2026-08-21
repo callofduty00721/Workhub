@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Flag, ShieldAlert, ShieldCheck, ShieldOff } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/api/admin";
+
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const cardVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+};
 
 export default function AdminFlaggedStartups() {
   const queryClient = useQueryClient();
@@ -39,9 +46,10 @@ export default function AdminFlaggedStartups() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <motion.div variants={gridVariants} initial="hidden" animate="show" className="space-y-3">
           {flagged.map((f) => (
-            <Card key={f.startupId}>
+            <motion.div key={f.startupId} variants={cardVariants}>
+            <Card>
               <CardContent className="space-y-3 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -109,8 +117,9 @@ export default function AdminFlaggedStartups() {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </DashboardLayout>
   );

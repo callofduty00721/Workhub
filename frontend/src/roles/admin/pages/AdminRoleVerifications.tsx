@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { CheckCircle2, XCircle, FileText, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { CheckCircle2, XCircle, FileText, Loader2, Download } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,15 +14,23 @@ import { adminApi, type AdminRoleVerificationRequest } from "@/api/admin";
 import { ROLE_LABELS } from "@/lib/roles";
 import type { UserRole } from "@/types";
 
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const cardVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+};
+
 export default function AdminRoleVerifications() {
   const queryClient = useQueryClient();
   const [resolving, setResolving] = useState<{ request: AdminRoleVerificationRequest; action: "approve" | "reject" } | null>(null);
   const [note, setNote] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ["admin", "role-verification-requests"],
-    queryFn: adminApi.roleVerificationRequests,
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin", "role-verification-requests", page],
+    queryFn: () => adminApi.roleVerificationRequests({ page, limit: 20 }),
   });
+  const requests = data?.data;
 
   const resolveMutation = useMutation({
     mutationFn: () => adminApi.reviewRoleVerification(resolving!.request._id, resolving!.action, note),
@@ -30,6 +39,10 @@ export default function AdminRoleVerifications() {
       setResolving(null);
       setNote("");
     },
+  });
+
+  const historyMutation = useMutation({
+    mutationFn: ({ userId, name }: { userId: string; name: string }) => adminApi.downloadVerificationHistory(userId, name),
   });
 
   return (
@@ -50,9 +63,10 @@ export default function AdminRoleVerifications() {
           <p className="text-sm text-muted-foreground">Submissions from employers, founders, and investors will show up here.</p>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <motion.div variants={gridVariants} initial="hidden" animate="show" className="space-y-3">
           {requests.map((req) => (
-            <Card key={req._id} className="p-5">
+            <motion.div key={req._id} variants={cardVariants}>
+            <Card className="p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -63,6 +77,19 @@ export default function AdminRoleVerifications() {
                   <p className="text-xs text-muted-foreground">Submitted {new Date(req.verificationSubmittedAt).toLocaleDateString()}</p>
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={historyMutation.isPending && historyMutation.variables?.userId === req._id}
+                    onClick={() => historyMutation.mutate({ userId: req._id, name: req.name })}
+                  >
+                    {historyMutation.isPending && historyMutation.variables?.userId === req._id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    History
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -95,7 +122,22 @@ export default function AdminRoleVerifications() {
                 ))}
               </div>
             </Card>
+            </motion.div>
           ))}
+        </motion.div>
+      )}
+
+      {data && data.pagination.pages > 1 && (
+        <div className="mt-5 flex items-center justify-center gap-2">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {data.pagination.page} of {data.pagination.pages}
+          </span>
+          <Button variant="outline" size="sm" disabled={page >= data.pagination.pages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </Button>
         </div>
       )}
 

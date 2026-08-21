@@ -8,7 +8,6 @@ import { earningsLinkForPaymentType } from "../../utils/earningsLink.js";
 
 export const raiseDispute = asyncHandler(async (req, res) => {
   const { reason } = req.body;
-  if (!reason || !reason.trim()) throw new ApiError(400, "Please describe the issue");
 
   const payment = await Payment.findById(req.params.id);
   if (!payment) throw new ApiError(404, "Payment not found");
@@ -17,7 +16,7 @@ export const raiseDispute = asyncHandler(async (req, res) => {
   if (payment.disputeStatus !== "none") throw new ApiError(400, "This payment already has a dispute on record");
 
   payment.disputeStatus = "raised";
-  payment.disputeReason = reason.trim();
+  payment.disputeReason = reason;
   payment.disputeRaisedAt = new Date();
   payment.disputeEscalated = false;
   await payment.save();
@@ -84,22 +83,18 @@ export const requestWithdrawal = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Complete bank verification before withdrawing your earnings");
   }
 
-  const { amount, method, upiId, bankAccountNumber, bankIfsc, bankAccountHolder } = req.body;
-  if (!amount || amount <= 0) throw new ApiError(400, "Enter a valid withdrawal amount");
-  if (!["upi", "bank"].includes(method)) throw new ApiError(400, "Invalid withdrawal method");
-
-  const payload = { freelancer: req.user._id, amount, method };
-  if (method === "upi") {
-    if (!upiId || !upiId.trim()) throw new ApiError(400, "Enter your UPI ID");
-    payload.upiId = upiId.trim();
-  } else {
-    if (!bankAccountNumber?.trim() || !bankIfsc?.trim() || !bankAccountHolder?.trim()) {
-      throw new ApiError(400, "Enter your account number, IFSC code, and account holder name");
-    }
-    payload.bankAccountNumber = bankAccountNumber.trim();
-    payload.bankIfsc = bankIfsc.trim().toUpperCase();
-    payload.bankAccountHolder = bankAccountHolder.trim();
-  }
+  const { amount, method } = req.body;
+  const payload =
+    method === "upi"
+      ? { freelancer: req.user._id, amount, method, upiId: req.body.upiId }
+      : {
+          freelancer: req.user._id,
+          amount,
+          method,
+          bankAccountNumber: req.body.bankAccountNumber,
+          bankIfsc: req.body.bankIfsc.toUpperCase(),
+          bankAccountHolder: req.body.bankAccountHolder,
+        };
 
   const availableBalance = await getAvailableBalance(req.user._id);
   if (amount > availableBalance) {

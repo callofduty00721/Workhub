@@ -11,6 +11,7 @@ import { notifyMatchingAlerts } from "../../utils/jobAlerts.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
 import { assertUnderListingLimit } from "../../utils/planLimits.js";
 import { getJobsEnabled } from "../finance/platformSettings.model.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 const ATTACHMENTS_EXPIRE_MS = 7 * 24 * 60 * 60 * 1000;
 const SIGNED_URL_TTL_SECONDS = 10 * 60;
@@ -64,7 +65,7 @@ export const listJobs = asyncHandler(async (req, res) => {
   // educationUG/educationPG) — matches against either field since a
   // candidate's degree could satisfy the UG or PG requirement.
   if (qualification) {
-    const re = new RegExp(qualification, "i");
+    const re = safeSearchRegex(qualification);
     filter.$or = [...(filter.$or ?? []), { educationUG: re }, { educationPG: re }];
   }
   // Powers the salary-range browse cards on JobList — a job "belongs" to a
@@ -187,7 +188,6 @@ export const getInvitedJobs = asyncHandler(async (req, res) => {
 
 export const inviteFreelancer = asyncHandler(async (req, res) => {
   const { freelancerId } = req.body;
-  if (!freelancerId) throw new ApiError(400, "freelancerId is required");
 
   const job = await Job.findById(req.params.id);
   if (!job) throw new ApiError(404, "Job not found");
@@ -506,7 +506,6 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
 
 export const scheduleInterview = asyncHandler(async (req, res) => {
   const { scheduledAt, mode, meetingLink, location, note } = req.body;
-  if (!scheduledAt) throw new ApiError(400, "scheduledAt is required");
 
   const application = await Application.findById(req.params.id).populate("job").populate("applicant", "name");
   if (!application) throw new ApiError(404, "Application not found");
@@ -563,7 +562,6 @@ export const confirmInterview = asyncHandler(async (req, res) => {
 
 export const signContract = asyncHandler(async (req, res) => {
   const { signatureName } = req.body;
-  if (!signatureName?.trim()) throw new ApiError(400, "Type your full name to sign");
 
   const application = await Application.findById(req.params.applicationId).populate("job");
   if (!application) throw new ApiError(404, "Application not found");

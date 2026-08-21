@@ -11,16 +11,8 @@ import Grievance from "./grievance.model.js";
 // that can get lost in an inbox with no record it was ever sent.
 export const submitContactMessage = asyncHandler(async (req, res) => {
   const { name, email, subject, message } = req.body;
-  if (!name?.trim() || !email?.trim() || !message?.trim()) {
-    throw new ApiError(400, "Name, email, and message are required");
-  }
 
-  const grievance = await Grievance.create({
-    name: name.trim(),
-    email: email.trim(),
-    subject: subject?.trim() || "",
-    message: message.trim(),
-  });
+  const grievance = await Grievance.create({ name, email, subject: subject || "", message });
 
   // Best-effort real-time nudge to the admin inbox — the Grievance row above
   // is the actual system of record, so a missing/misconfigured SMTP setup

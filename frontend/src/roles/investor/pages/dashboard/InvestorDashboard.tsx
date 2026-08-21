@@ -28,7 +28,7 @@ export default function InvestorDashboard() {
     <DashboardLayout role="investor" title={`Welcome back, ${user?.name.split(" ")[0]} 👋`} subtitle="Track startups you're interested in and following.">
       <VerificationBanner />
       <Tabs defaultValue="interested">
-        <TabsList>
+        <TabsList className="max-w-full overflow-x-auto">
           <TabsTrigger value="interested">
             <Heart className="mr-1.5 h-3.5 w-3.5" /> Interested
           </TabsTrigger>

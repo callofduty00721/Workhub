@@ -52,7 +52,7 @@ export const submitSkillTest = asyncHandler(async (req, res) => {
   if (!test) throw new ApiError(404, "Skill test not found");
 
   const { answers } = req.body;
-  if (!Array.isArray(answers) || answers.length !== test.questions.length) {
+  if (answers.length !== test.questions.length) {
     throw new ApiError(400, "Answers must match the number of questions");
   }
 
@@ -72,20 +72,9 @@ export const adminListSkillTests = asyncHandler(async (req, res) => {
 
 export const createSkillTest = asyncHandler(async (req, res) => {
   const { skill, description, questions, passingScorePercent } = req.body;
-  if (!skill?.trim()) throw new ApiError(400, "Skill name is required");
-  if (!Array.isArray(questions) || questions.length < 3) throw new ApiError(400, "Add at least 3 questions");
-
-  for (const q of questions) {
-    if (!q.question?.trim() || !Array.isArray(q.options) || q.options.length < 2) {
-      throw new ApiError(400, "Every question needs text and at least 2 options");
-    }
-    if (typeof q.correctIndex !== "number" || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
-      throw new ApiError(400, `Invalid correct answer for question: "${q.question}"`);
-    }
-  }
 
   const test = await SkillTest.create({
-    skill: skill.trim(),
+    skill,
     description: description || "",
     questions,
     passingScorePercent: passingScorePercent || 70,

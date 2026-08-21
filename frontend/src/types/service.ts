@@ -59,6 +59,7 @@ export interface Service {
   responseTime?: "Within 1 Hour" | "Within a few hours" | "Within a day" | "Within 2 days";
   cancellationPolicy?: "Flexible" | "Standard" | "Strict";
   status: "active" | "private" | "paused" | "draft";
+  isDemo?: boolean;
   ordersCount: number;
   viewsCount: number;
   rating: number;

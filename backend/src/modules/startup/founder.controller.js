@@ -6,6 +6,7 @@ import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { isUserOnline } from "../../socket/index.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 const PUBLIC_FIELDS =
   "name avatar coverImage headline location bio linkedIn industries pastStartupsCount skills yearsOfExperience " +
@@ -16,7 +17,7 @@ export const listFounders = asyncHandler(async (req, res) => {
   const { search } = req.query;
 
   const filter = { role: "founder" };
-  if (search) filter.$or = [{ name: new RegExp(search, "i") }, { headline: new RegExp(search, "i") }];
+  if (search) filter.$or = [{ name: safeSearchRegex(search) }, { headline: safeSearchRegex(search) }];
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
 

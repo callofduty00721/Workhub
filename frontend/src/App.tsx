@@ -28,7 +28,7 @@ const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
 const SelectCategory = lazy(() => import("@/pages/onboarding/SelectCategory"));
 const SelectRoles = lazy(() => import("@/pages/onboarding/SelectRoles"));
 
-const StartupList = lazy(() => import("@/roles/founder/pages/StartupList"));
+const StartupList = lazy(() => import("@/roles/founder/pages/marketplace/StartupMarketplace"));
 const StartupDetails = lazy(() => import("@/roles/founder/pages/StartupDetails"));
 const CreateStartup = lazy(() => import("@/roles/founder/pages/CreateStartup"));
 const MyStartups = lazy(() => import("@/roles/founder/pages/MyStartups"));
@@ -39,7 +39,7 @@ const ProjectDetails = lazy(() => import("@/pages/projects/ProjectDetails"));
 const PostJob = lazy(() => import("@/pages/jobs/PostJob"));
 const JobApplicants = lazy(() => import("@/pages/jobs/JobApplicants"));
 const PostProject = lazy(() => import("@/pages/projects/PostProject"));
-const CampaignList = lazy(() => import("@/pages/campaigns/CampaignList"));
+const CampaignMarketplace = lazy(() => import("@/pages/campaigns/marketplace/CampaignMarketplace").then((m) => ({ default: m.CampaignMarketplace })));
 const CampaignDetails = lazy(() => import("@/pages/campaigns/CampaignDetails"));
 const PostCampaign = lazy(() => import("@/pages/campaigns/PostCampaign"));
 const MyCampaigns = lazy(() => import("@/pages/campaigns/MyCampaigns"));
@@ -48,7 +48,9 @@ const CampaignApplicants = lazy(() => import("@/pages/campaigns/CampaignApplican
 const MyClients = lazy(() => import("@/pages/campaigns/MyClients"));
 const MyAgencies = lazy(() => import("@/pages/campaigns/MyAgencies"));
 const CampaignReport = lazy(() => import("@/pages/campaigns/CampaignReport"));
-const ContestList = lazy(() => import("@/pages/contests/ContestList"));
+const ContestMarketplace = lazy(() => import("@/pages/contests/marketplace/ContestMarketplace").then((m) => ({ default: m.ContestMarketplace })));
+const GigMarketplace = lazy(() => import("@/pages/gigs/marketplace/GigMarketplace").then((m) => ({ default: m.GigMarketplace })));
+const ProjectMarketplace = lazy(() => import("@/pages/projects/marketplace/ProjectMarketplace").then((m) => ({ default: m.ProjectMarketplace })));
 const SearchResults = lazy(() => import("@/pages/SearchResults"));
 const ContestDetails = lazy(() => import("@/pages/contests/ContestDetails"));
 const PostContest = lazy(() => import("@/pages/contests/PostContest"));
@@ -62,16 +64,18 @@ const GigProfile = lazy(() => import("@/pages/gigs/GigProfile"));
 const MyGigs = lazy(() => import("@/pages/gigs/MyGigs"));
 const CreateGig = lazy(() => import("@/pages/gigs/CreateGig"));
 
-const InvestorList = lazy(() => import("@/roles/investor/pages/InvestorList"));
+const InvestorList = lazy(() => import("@/roles/investor/pages/marketplace/InvestorMarketplace").then((m) => ({ default: m.InvestorMarketplace })));
 const InvestorProfile = lazy(() => import("@/roles/investor/pages/InvestorProfile"));
-const MentorList = lazy(() => import("@/pages/mentors/MentorList"));
+const MentorList = lazy(() => import("@/roles/mentor/pages/marketplace/MentorMarketplace").then((m) => ({ default: m.MentorMarketplace })));
 const MentorProfile = lazy(() => import("@/pages/mentors/MentorProfile"));
-const PartnerList = lazy(() => import("@/pages/partners/PartnerList"));
+const PartnerList = lazy(() => import("@/roles/partner/pages/marketplace/PartnerMarketplace").then((m) => ({ default: m.PartnerMarketplace })));
 const PartnerProfile = lazy(() => import("@/pages/partners/PartnerProfile"));
 const FounderProfile = lazy(() => import("@/roles/founder/pages/FounderProfile"));
 const JobSeekerList = lazy(() => import("@/roles/job-seeker/pages/JobSeekerList"));
 const JobSeekerProfile = lazy(() => import("@/roles/job-seeker/pages/JobSeekerProfile"));
-const InfluencerList = lazy(() => import("@/pages/influencers/InfluencerList"));
+const InfluencerMarketplace = lazy(() =>
+  import("@/pages/influencers/marketplace/InfluencerMarketplace").then((m) => ({ default: m.InfluencerMarketplace }))
+);
 const InfluencerProfile = lazy(() => import("@/pages/influencers/InfluencerProfile"));
 const RosterInvites = lazy(() => import("@/pages/influencers/RosterInvites"));
 const CampaignInvites = lazy(() => import("@/pages/influencers/CampaignInvites"));
@@ -79,13 +83,14 @@ const ShortlistedInfluencers = lazy(() => import("@/pages/influencers/Shortliste
 const BrandProfile = lazy(() => import("@/pages/profiles/BrandProfile"));
 const AgencyProfile = lazy(() => import("@/pages/profiles/AgencyProfile"));
 const TalentPartnerProfile = lazy(() => import("@/pages/profiles/TalentPartnerProfile"));
-const BrandList = lazy(() => import("@/pages/profiles/BrandList"));
-const AgencyList = lazy(() => import("@/pages/profiles/AgencyList"));
-const TalentPartnerList = lazy(() => import("@/pages/profiles/TalentPartnerList"));
+const BrandMarketplace = lazy(() => import("@/pages/profiles/marketplace/BrandMarketplace").then((m) => ({ default: m.BrandMarketplace })));
+const AgencyMarketplace = lazy(() => import("@/pages/profiles/marketplace/AgencyMarketplace").then((m) => ({ default: m.AgencyMarketplace })));
+const PartnerMarketplace = lazy(() => import("@/pages/profiles/marketplace/PartnerMarketplace").then((m) => ({ default: m.PartnerMarketplace })));
 
 const Messages = lazy(() => import("@/pages/chat/Messages"));
 const Referrals = lazy(() => import("@/pages/dashboard/Referrals"));
 const Invoice = lazy(() => import("@/pages/payments/Invoice"));
+const SubscriptionInvoice = lazy(() => import("@/pages/payments/SubscriptionInvoice"));
 
 const FounderDashboard = lazy(() => import("@/roles/founder/pages/dashboard/FounderDashboard"));
 const FounderApplications = lazy(() => import("@/roles/founder/pages/dashboard/FounderApplications"));
@@ -109,6 +114,7 @@ const EmployerDashboard = lazy(() => import("@/pages/dashboard/EmployerDashboard
 const InvestorDashboard = lazy(() => import("@/roles/investor/pages/dashboard/InvestorDashboard"));
 const PartnerDashboard = lazy(() => import("@/pages/dashboard/PartnerDashboard"));
 const MentorDashboard = lazy(() => import("@/pages/dashboard/MentorDashboard"));
+const MentorRequests = lazy(() => import("@/pages/dashboard/MentorRequests"));
 const EditProfile = lazy(() => import("@/pages/dashboard/EditProfile"));
 const VerifyRole = lazy(() => import("@/pages/dashboard/VerifyRole"));
 const Settings = lazy(() => import("@/pages/dashboard/Settings"));
@@ -123,11 +129,17 @@ const AdminWithdrawals = lazy(() => import("@/roles/admin/pages/AdminWithdrawals
 const AdminGrievances = lazy(() => import("@/roles/admin/pages/AdminGrievances"));
 const AdminStaff = lazy(() => import("@/roles/admin/pages/AdminStaff"));
 const AdminActivity = lazy(() => import("@/roles/admin/pages/AdminActivity"));
+const AdminSecurityEvents = lazy(() => import("@/roles/admin/pages/AdminSecurityEvents"));
 const AdminKyc = lazy(() => import("@/roles/admin/pages/AdminKyc"));
 const AdminProfileVerifications = lazy(() => import("@/roles/admin/pages/AdminProfileVerifications"));
 const AdminRoleVerifications = lazy(() => import("@/roles/admin/pages/AdminRoleVerifications"));
 const AdminSettings = lazy(() => import("@/roles/admin/pages/AdminSettings"));
 const AdminPlans = lazy(() => import("@/roles/admin/pages/AdminPlans"));
+const AdminSubscriptions = lazy(() => import("@/roles/admin/pages/AdminSubscriptions"));
+const AdminReviews = lazy(() => import("@/roles/admin/pages/AdminReviews"));
+const AdminReferrals = lazy(() => import("@/roles/admin/pages/AdminReferrals"));
+const AdminCampaigns = lazy(() => import("@/roles/admin/pages/AdminCampaigns"));
+const AdminAnnouncements = lazy(() => import("@/roles/admin/pages/AdminAnnouncements"));
 const AdminSkillTests = lazy(() => import("@/roles/admin/pages/AdminSkillTests"));
 const CompanyTeam = lazy(() => import("@/pages/dashboard/CompanyTeam"));
 const AdminJobs = lazy(() => import("@/roles/admin/pages/AdminJobs"));
@@ -151,17 +163,19 @@ export default function App() {
             renders NotFound instead of the real page while it's off. */}
         <Route path="/jobs" element={withMarketingLayout(<JobsFeatureGate><JobList /></JobsFeatureGate>)} />
         <Route path="/jobs/:id" element={withMarketingLayout(<JobsFeatureGate><JobDetails /></JobsFeatureGate>)} />
-        <Route path="/campaigns" element={withMarketingLayout(<CampaignList />)} />
+        <Route path="/campaigns" element={withMarketingLayout(<CampaignMarketplace />)} />
         <Route path="/campaigns/:id" element={withMarketingLayout(<CampaignDetails />)} />
+        <Route path="/projects" element={withMarketingLayout(<ProjectMarketplace />)} />
         <Route path="/projects/:id" element={withMarketingLayout(<ProjectDetails />)} />
 
-        <Route path="/contests" element={withMarketingLayout(<ContestList />)} />
+        <Route path="/contests" element={withMarketingLayout(<ContestMarketplace />)} />
         <Route path="/contests/:id" element={withMarketingLayout(<ContestDetails />)} />
 
         <Route path="/search" element={withMarketingLayout(<SearchResults />)} />
 
         <Route path="/freelancers" element={withMarketingLayout(<FreelancerList />)} />
         <Route path="/freelancers/:id" element={withMarketingLayout(<FreelancerProfile />)} />
+        <Route path="/services" element={withMarketingLayout(<GigMarketplace />)} />
         <Route path="/services/:id" element={withMarketingLayout(<GigProfile />)} />
 
         <Route path="/investors" element={withMarketingLayout(<InvestorList />)} />
@@ -173,13 +187,13 @@ export default function App() {
         <Route path="/founders/:id" element={withMarketingLayout(<FounderProfile />)} />
         <Route path="/job-seekers" element={withMarketingLayout(<JobSeekerList />)} />
         <Route path="/job-seekers/:id" element={withMarketingLayout(<JobSeekerProfile />)} />
-        <Route path="/influencers" element={withMarketingLayout(<InfluencerList />)} />
+        <Route path="/influencers" element={withMarketingLayout(<InfluencerMarketplace />)} />
         <Route path="/influencers/:id" element={withMarketingLayout(<InfluencerProfile />)} />
-        <Route path="/brands" element={withMarketingLayout(<BrandList />)} />
+        <Route path="/brands" element={withMarketingLayout(<BrandMarketplace />)} />
         <Route path="/brands/:id" element={withMarketingLayout(<BrandProfile />)} />
-        <Route path="/agencies" element={withMarketingLayout(<AgencyList />)} />
+        <Route path="/agencies" element={withMarketingLayout(<AgencyMarketplace />)} />
         <Route path="/agencies/:id" element={withMarketingLayout(<AgencyProfile />)} />
-        <Route path="/talent-partners" element={withMarketingLayout(<TalentPartnerList />)} />
+        <Route path="/talent-partners" element={withMarketingLayout(<PartnerMarketplace />)} />
         <Route path="/talent-partners/:id" element={withMarketingLayout(<TalentPartnerProfile />)} />
 
         <Route path="/pricing" element={withMarketingLayout(<Pricing />)} />
@@ -259,6 +273,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Invoice />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/subscriptions/:id/invoice"
+          element={
+            <ProtectedRoute>
+              <SubscriptionInvoice />
             </ProtectedRoute>
           }
         />
@@ -786,6 +808,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/dashboard/mentor/requests"
+          element={
+            <ProtectedRoute>
+              <MentorRequests />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Partner */}
         <Route
@@ -832,6 +862,14 @@ export default function App() {
           element={
             <ProtectedRoute allow={["super_admin"]}>
               <AdminActivity />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/security-events"
+          element={
+            <ProtectedRoute allow={["super_admin"]}>
+              <AdminSecurityEvents />
             </ProtectedRoute>
           }
         />
@@ -936,6 +974,46 @@ export default function App() {
           element={
             <ProtectedRoute allow={["super_admin"]}>
               <AdminPlans />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/subscriptions"
+          element={
+            <ProtectedRoute allow={["super_admin"]}>
+              <AdminSubscriptions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/reviews"
+          element={
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="reviews">
+              <AdminReviews />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/referrals"
+          element={
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="referrals">
+              <AdminReferrals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/campaigns"
+          element={
+            <ProtectedRoute allow={["super_admin", "staff"]} permission="campaigns">
+              <AdminCampaigns />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/announcements"
+          element={
+            <ProtectedRoute allow={["super_admin"]}>
+              <AdminAnnouncements />
             </ProtectedRoute>
           }
         />

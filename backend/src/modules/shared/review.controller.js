@@ -82,7 +82,6 @@ async function recomputeRating(targetType, targetId) {
 
 export const listReviews = asyncHandler(async (req, res) => {
   const { targetType, targetId } = req.query;
-  if (!targetType || !targetId) throw new ApiError(400, "targetType and targetId are required");
 
   const reviews = await Review.find({ targetType, targetId }).populate("reviewer", "name avatar").sort({ createdAt: -1 });
   res.json({ success: true, data: reviews });
@@ -90,8 +89,6 @@ export const listReviews = asyncHandler(async (req, res) => {
 
 export const createReview = asyncHandler(async (req, res) => {
   const { targetType, targetId, rating, comment } = req.body;
-  if (!["user", "service", "startup"].includes(targetType)) throw new ApiError(400, "Invalid targetType");
-  if (!rating || rating < 1 || rating > 5) throw new ApiError(400, "Rating must be between 1 and 5");
 
   const existing = await Review.findOne({ reviewer: req.user._id, targetType, targetId });
   if (existing) throw new ApiError(409, "You have already reviewed this");
@@ -120,7 +117,9 @@ export const createReview = asyncHandler(async (req, res) => {
 export const deleteReview = asyncHandler(async (req, res) => {
   const review = await Review.findById(req.params.id);
   if (!review) throw new ApiError(404, "Review not found");
-  if (review.reviewer.toString() !== req.user._id.toString() && req.user.role !== "super_admin") {
+  const isOwnReview = review.reviewer.toString() === req.user._id.toString();
+  const isModerator = req.user.role === "super_admin" || (req.user.role === "staff" && req.user.staffPermissions?.includes("reviews"));
+  if (!isOwnReview && !isModerator) {
     throw new ApiError(403, "You do not have permission to delete this review");
   }
 

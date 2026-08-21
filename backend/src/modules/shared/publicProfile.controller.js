@@ -6,6 +6,7 @@ import Payment from "./payment.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 // Only these roles ever post campaigns (see campaign.routes.js's authorize()
 // list) — no point querying Campaign for founder/freelancer/etc. rows.
@@ -56,11 +57,11 @@ const PUBLIC_FIELDS_BY_ROLE = {
 // visitor decide whether to click through.
 const LIST_FIELDS_BY_ROLE = {
   brand:
-    "name avatar headline location brandProfile.industry brandProfile.categories brandProfile.followerCount brandProfile.website brandProfile.socialLinks isVerified rating reviewCount createdAt",
+    "name avatar headline location brandProfile.industry brandProfile.categories brandProfile.followerCount brandProfile.website brandProfile.socialLinks isVerified rating reviewCount isDemo createdAt",
   agency:
-    "name avatar headline location agencyProfile.agencyType agencyProfile.teamSize agencyProfile.website agencyProfile.socialLinks isVerified rating reviewCount createdAt",
+    "name avatar headline location agencyProfile.agencyType agencyProfile.teamSize agencyProfile.website agencyProfile.socialLinks isVerified rating reviewCount isDemo createdAt",
   talent_partner:
-    "name avatar headline location talentPartnerProfile.partnerType talentPartnerProfile.website talentPartnerProfile.socialLinks isVerified rating reviewCount createdAt",
+    "name avatar headline location talentPartnerProfile.partnerType talentPartnerProfile.website talentPartnerProfile.socialLinks isVerified rating reviewCount isDemo createdAt",
 };
 
 // Directory list — feeds the Brands/Agencies/Talent Partners tabs next to
@@ -74,7 +75,7 @@ export const listPublicProfiles = asyncHandler(async (req, res) => {
 
   const { search, category } = req.query;
   const filter = { role };
-  if (search) filter.$or = [{ name: new RegExp(search, "i") }, { headline: new RegExp(search, "i") }];
+  if (search) filter.$or = [{ name: safeSearchRegex(search) }, { headline: safeSearchRegex(search) }];
   if (category === "other") {
     filter["brandProfile.categories"] = { $elemMatch: { $nin: BRAND_CATEGORIES } };
   } else if (category) {

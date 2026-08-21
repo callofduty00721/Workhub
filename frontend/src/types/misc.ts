@@ -45,6 +45,7 @@ export interface PlatformSettings {
   firebaseConfigured: boolean;
   allowedEmailDomains: string[];
   jobsEnabled: boolean;
+  disabledRoles: string[];
 }
 
 export type TaskType = "task" | "meeting" | "call" | "deadline";

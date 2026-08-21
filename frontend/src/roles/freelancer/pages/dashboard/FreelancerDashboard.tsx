@@ -609,7 +609,7 @@ export default function FreelancerDashboard() {
           <CardContent className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-semibold">Open Projects You Could Apply To</h3>
-              <Link to="/freelancers?tab=projects" className="text-xs font-medium text-primary hover:underline">
+              <Link to="/projects" className="text-xs font-medium text-primary hover:underline">
                 View All Projects
               </Link>
             </div>

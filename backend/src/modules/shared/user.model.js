@@ -36,13 +36,26 @@ const PERMISSIONS = [
   "gigs",
   "contests",
   "skill-tests",
+  "reviews",
+  "referrals",
+  "campaigns",
 ];
 
-const PARTNER_TYPES = ["accelerator", "incubator", "government", "ngo", "service_provider"];
+// B2B agency/service-provider categories — a "partner" here means a
+// business GrowHive users can collaborate with (agency, consultant, tech
+// vendor...), not a startup-support program. Zero real partner accounts
+// exist yet, so this enum was safe to redefine outright rather than migrate.
+const PARTNER_TYPES = ["agency", "company", "consultant", "service_provider", "technology_partner", "strategic_partner"];
+
+const PARTNERSHIP_TYPE_VALUES = ["service", "referral", "technology", "strategic", "distribution"];
 
 // Mirrors Startup.js's stage enum — an investor's "preferred stages" filter
 // options should always match what a startup can actually be, so keep in sync.
 const STARTUP_STAGE_VALUES = ["idea", "pre_seed", "seed", "series_a", "series_b", "growth"];
+
+const INVESTOR_TYPE_VALUES = ["angel", "venture_capital", "private_equity", "family_office", "strategic"];
+
+const MENTOR_CATEGORY_VALUES = ["startup", "business", "career", "technology", "marketing", "finance", "leadership", "design"];
 
 const CATEGORY_VALUES = ["talent", "hiring", "startup"];
 const VERIFICATION_STATUS_VALUES = ["unverified", "pending", "verified", "rejected"];
@@ -316,6 +329,10 @@ const userSchema = new mongoose.Schema(
     // just repoints `role` at one of them.
     role: { type: String, enum: ROLES, default: null },
     roles: [{ type: String, enum: ROLES }],
+    // Set only by scripts/seed/seedDemoContent.js — lets profile cards show a
+    // "Demo" badge on seeded accounts instead of passing them off as real,
+    // since the platform has no real users yet.
+    isDemo: { type: Boolean, default: false },
     // Only meaningful when role === "staff" — which admin-panel sections a
     // super_admin-created staff account can access (see requirePermission).
     // A super_admin account ignores this entirely; it always has full access.
@@ -431,6 +448,7 @@ const userSchema = new mongoose.Schema(
     profileViews: { type: Number, default: 0 },
 
     // Investor
+    investorType: { type: String, enum: INVESTOR_TYPE_VALUES },
     investmentFocus: [{ type: String }],
     ticketSizeMin: { type: Number, default: 0 },
     ticketSizeMax: { type: Number, default: 0 },
@@ -441,6 +459,7 @@ const userSchema = new mongoose.Schema(
 
     // Mentor — availability reuses hoursPerWeekAvailable/workingDays/workingHours,
     // already defined above for freelancers; sessionFormat is mentor-only.
+    mentorCategory: { type: String, enum: MENTOR_CATEGORY_VALUES },
     expertise: [{ type: String }],
     sessionRate: { type: Number, default: 0 },
     sessionFormat: { type: String, enum: ["video", "chat", "in_person"], default: "video" },
@@ -448,11 +467,19 @@ const userSchema = new mongoose.Schema(
     // Partner
     organizationName: { type: String, default: "" },
     partnerType: { type: String, enum: PARTNER_TYPES, default: "service_provider" },
+    services: [{ type: String }],
+    teamSize: { type: Number, default: 0 },
+    yearsInBusiness: { type: Number, default: 0 },
+    projectsCompleted: { type: Number, default: 0 },
+    clientsServed: { type: Number, default: 0 },
+    partnershipTypes: [{ type: String, enum: PARTNERSHIP_TYPE_VALUES }],
     programDetails: { type: String, default: "" },
     startupsSupportedCount: { type: Number, default: 0 },
     applicationLink: { type: String, default: "" },
 
-    // Client
+    // Client (companySize also reused by Partner — same enum, no meaningful
+    // difference between "a client's company size" and "a partner's company
+    // size", so no need for a duplicate field)
     companyName: { type: String, default: "" },
     companySize: { type: String, enum: ["1-10", "11-50", "51-200", "201-500", "500+", ""], default: "" },
     companyRegistrationNumber: { type: String, default: "" },
@@ -461,7 +488,8 @@ const userSchema = new mongoose.Schema(
     // from `companyName` above (a free-text display label used by Client accounts).
     company: { type: mongoose.Schema.Types.ObjectId, ref: "Company", default: null },
 
-    // Founder
+    // Founder (linkedIn/industries also reused by Partner — generic fields,
+    // no meaningful role-specific difference)
     linkedIn: { type: String, default: "" },
     industries: [{ type: String }],
     pastStartupsCount: { type: Number, default: 0 },
@@ -490,6 +518,12 @@ const userSchema = new mongoose.Schema(
     savedInfluencers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     // An influencer bookmarking a campaign before deciding whether to apply.
     savedCampaigns: [{ type: mongoose.Schema.Types.ObjectId, ref: "Campaign" }],
+    // A founder bookmarking an investor before deciding whether to pitch them.
+    savedInvestors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    // Bookmarking a mentor before deciding whether to book a session.
+    savedMentors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    // Bookmarking a partner before deciding whether to reach out.
+    savedPartners: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     // Referral program — every user gets a code at creation; referredBy is set
     // once at signup if they arrived via someone else's code. Bonus balance is
@@ -621,8 +655,16 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     videoIntro,
     portfolioItems,
     payoutDetails,
+    investorType,
     investmentFocus,
     ticketSizeMin,
+    mentorCategory,
+    services,
+    teamSize,
+    yearsInBusiness,
+    projectsCompleted,
+    clientsServed,
+    partnershipTypes,
     ticketSizeMax,
     portfolioCompanyCount,
     fundName,
@@ -683,6 +725,9 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     savedContests,
     savedInfluencers,
     savedCampaigns,
+    savedInvestors,
+    savedMentors,
+    savedPartners,
     lastActiveAt,
     isEmailVerified,
     isProfileComplete,
@@ -732,8 +777,16 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     videoIntro,
     portfolioItems,
     payoutDetails,
+    investorType,
     investmentFocus,
     ticketSizeMin,
+    mentorCategory,
+    services,
+    teamSize,
+    yearsInBusiness,
+    projectsCompleted,
+    clientsServed,
+    partnershipTypes,
     ticketSizeMax,
     portfolioCompanyCount,
     fundName,
@@ -794,6 +847,9 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
     savedContests,
     savedInfluencers,
     savedCampaigns,
+    savedInvestors,
+    savedMentors,
+    savedPartners,
     lastActiveAt,
     isEmailVerified,
     isProfileComplete,
@@ -806,4 +862,10 @@ export const ROLE_VALUES = ROLES;
 export const PERMISSION_VALUES = PERMISSIONS;
 export const PARTNER_TYPE_VALUES = PARTNER_TYPES;
 export const LANGUAGE_LEVEL_VALUES = LANGUAGE_LEVELS;
+export const PARTNERSHIP_TYPE_VALUES_EXPORT = PARTNERSHIP_TYPE_VALUES;
+export const STARTUP_STAGE_VALUES_EXPORT = STARTUP_STAGE_VALUES;
+export const INVESTOR_TYPE_VALUES_EXPORT = INVESTOR_TYPE_VALUES;
+export const MENTOR_CATEGORY_VALUES_EXPORT = MENTOR_CATEGORY_VALUES;
+export const FOUNDER_STAGE_VALUES_EXPORT = FOUNDER_STAGE_VALUES;
+export const AGENCY_SERVICE_VALUES_EXPORT = AGENCY_SERVICE_VALUES;
 export default mongoose.model("User", userSchema);

@@ -174,10 +174,6 @@ export const submitVerificationRequest = asyncHandler(async (req, res) => {
   assertStartupFounder(startup, req.user, "Only the founder can request verification for this startup");
 
   const { type, documents, note } = req.body;
-  if (!["founder", "business"].includes(type)) throw new ApiError(400, "Invalid verification type");
-  if (!Array.isArray(documents) || documents.length === 0) {
-    throw new ApiError(400, "Attach at least one document");
-  }
 
   const alreadyVerified = type === "founder" ? startup.founderVerified : startup.isVerified;
   if (alreadyVerified) throw new ApiError(400, `This startup's ${type} verification is already approved`);

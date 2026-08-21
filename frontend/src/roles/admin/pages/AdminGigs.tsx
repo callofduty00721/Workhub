@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Search, Pause, Play, Trash2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminApi } from "@/api/admin";
 import { formatCurrency } from "@/lib/utils";
+
+const fadeIn = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
 
 export default function AdminGigs() {
   const [search, setSearch] = useState("");
@@ -48,6 +51,7 @@ export default function AdminGigs() {
         />
       </div>
 
+      <motion.div variants={fadeIn} initial="hidden" animate="show">
       <Card className="overflow-x-auto">
         {isLoading ? (
           <div className="space-y-3 p-5">
@@ -113,6 +117,7 @@ export default function AdminGigs() {
           </table>
         )}
       </Card>
+      </motion.div>
 
       {data && data.pagination.pages > 1 && (
         <div className="mt-5 flex items-center justify-center gap-2">

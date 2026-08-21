@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Lock, Unlock, Trash2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, Lock, Unlock, Trash2, Flag, ShieldCheck } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,19 +15,22 @@ import type { Paginated, Job, Project } from "@/types";
 
 type Tab = "jobs" | "projects";
 
+const fadeIn = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
+
 export default function AdminJobs() {
   const [tab, setTab] = useState<Tab>("jobs");
   const [search, setSearch] = useState("");
+  const [reportedOnly, setReportedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
   const isJobs = tab === "jobs";
 
   const { data, isLoading } = useQuery<Paginated<Job | Project>>({
-    queryKey: ["admin", tab, { search, page }],
+    queryKey: ["admin", tab, { search, page, reportedOnly: isJobs ? reportedOnly : false }],
     queryFn: () =>
       isJobs
-        ? adminApi.jobs({ search: search || undefined, page, limit: 20 })
+        ? adminApi.jobs({ search: search || undefined, page, limit: 20, hasReports: reportedOnly || undefined })
         : adminApi.projects({ search: search || undefined, page, limit: 20 }),
   });
 
@@ -42,10 +46,16 @@ export default function AdminJobs() {
     onSuccess: invalidate,
   });
 
+  const dismissReportsMutation = useMutation({
+    mutationFn: (id: string) => adminApi.dismissJobReports(id),
+    onSuccess: invalidate,
+  });
+
   const switchTab = (next: Tab) => {
     setTab(next);
     setPage(1);
     setSearch("");
+    setReportedOnly(false);
   };
 
   return (
@@ -65,19 +75,37 @@ export default function AdminJobs() {
         ))}
       </div>
 
-      <div className="relative mb-5 max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => {
-            setPage(1);
-            setSearch(e.target.value);
-          }}
-          placeholder={`Search by ${isJobs ? "job" : "project"} title...`}
-          className="pl-9"
-        />
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setPage(1);
+              setSearch(e.target.value);
+            }}
+            placeholder={`Search by ${isJobs ? "job" : "project"} title...`}
+            className="pl-9"
+          />
+        </div>
+        {isJobs && (
+          <button
+            type="button"
+            onClick={() => {
+              setPage(1);
+              setReportedOnly((v) => !v);
+            }}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+              reportedOnly ? "border-danger/40 bg-danger/10 text-danger" : "border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Flag className="h-3.5 w-3.5" /> Reported only
+          </button>
+        )}
       </div>
 
+      <motion.div variants={fadeIn} initial="hidden" animate="show">
       <Card className="overflow-x-auto">
         {isLoading ? (
           <div className="space-y-3 p-5">
@@ -102,9 +130,16 @@ export default function AdminJobs() {
                 return (
                   <tr key={item._id} className="border-b border-border last:border-0">
                     <td className="px-5 py-3">
-                      <Link to={`/${isJobs ? "jobs" : "projects"}/${item._id}`} className="font-medium hover:underline">
-                        {item.title}
-                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        <Link to={`/${isJobs ? "jobs" : "projects"}/${item._id}`} className="font-medium hover:underline">
+                          {item.title}
+                        </Link>
+                        {isJobs && !!(item as Job).reports?.length && (
+                          <Badge variant="danger" className="shrink-0 gap-1 text-[10px]">
+                            <Flag className="h-2.5 w-2.5" /> {(item as Job).reports!.length}
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">{item.companyName}</p>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">{employer?.name ?? "—"}</td>
@@ -120,6 +155,16 @@ export default function AdminJobs() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
+                        {isJobs && !!(item as Job).reports?.length && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={dismissReportsMutation.isPending}
+                            onClick={() => dismissReportsMutation.mutate(item._id)}
+                          >
+                            <ShieldCheck className="h-3.5 w-3.5" /> Dismiss reports
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -147,6 +192,7 @@ export default function AdminJobs() {
           </table>
         )}
       </Card>
+      </motion.div>
 
       {data && data.pagination.pages > 1 && (
         <div className="mt-5 flex items-center justify-center gap-2">

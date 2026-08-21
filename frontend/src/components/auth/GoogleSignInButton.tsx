@@ -27,6 +27,20 @@ export function GoogleSignInButton() {
     if (!CLIENT_ID || !containerRef.current) return;
 
     const scriptId = "google-identity-services";
+
+    // Google's button is a fixed-width iframe (in px, not %), so it doesn't
+    // shrink with its container on its own. Re-render it at the container's
+    // actual width whenever that width changes (initial layout, resize,
+    // orientation change) instead of hardcoding one width that overflows
+    // narrow screens like the auth card on mobile.
+    const renderAtContainerWidth = () => {
+      const container = containerRef.current;
+      if (!window.google || !container) return;
+      container.innerHTML = "";
+      const width = Math.min(Math.max(Math.round(container.offsetWidth), 200), 400);
+      window.google.accounts.id.renderButton(container, { theme: "outline", size: "large", width });
+    };
+
     const initialize = () => {
       if (!window.google || !containerRef.current) return;
       window.google.accounts.id.initialize({
@@ -36,22 +50,27 @@ export function GoogleSignInButton() {
           navigate(postLoginPath(user.role), { replace: true });
         },
       });
-      window.google.accounts.id.renderButton(containerRef.current, { theme: "outline", size: "large", width: 360 });
+      renderAtContainerWidth();
     };
+
+    let resizeObserver: ResizeObserver | undefined;
+    if (containerRef.current) {
+      resizeObserver = new ResizeObserver(() => renderAtContainerWidth());
+      resizeObserver.observe(containerRef.current);
+    }
 
     if (window.google) {
       initialize();
-      return;
+    } else if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.onload = initialize;
+      document.body.appendChild(script);
     }
 
-    if (document.getElementById(scriptId)) return;
-
-    const script = document.createElement("script");
-    script.id = scriptId;
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = initialize;
-    document.body.appendChild(script);
+    return () => resizeObserver?.disconnect();
   }, [loginWithGoogle, navigate]);
 
   // No VITE_GOOGLE_CLIENT_ID set yet — show a placeholder that looks like the

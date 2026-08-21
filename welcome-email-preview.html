@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to GrowHive</title>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f8f3;
+            background-image: none;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: rgba(255,255,255,.94);
+            background-image: url('https://res.cloudinary.com/bpcqn6kw/image/upload/v1787202432/background_leaf_inzkpn.png');
+            background-position: center top ;
+            background-size:cover;
+            background-repeat: no-repeat;
+            background-attachment:fixed;
+            background-size: 100% 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header h1 i {
+            color: #128c2e; /* Leaf Green */
+        }
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            padding: 40px;
+            gap: 30px;
+            align-items: center;
+        }
+        .hero-text {
+            flex: 1;
+        }
+        .hero-text h2 {
+            font-size: 32px;
+            margin: 0 0 10px;
+            color: #111;
+        }
+        .hero-text h2 span {
+            color: #128c2e;
+        }
+        .hero-text h3 {
+            font-size: 18px;
+            margin: 0 0 15px;
+            font-weight: 600;
+        }
+        .hero-text h3 span {
+            color: #128c2e;
+        }
+        .hero-text p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            display: inline-block;
+            background-color: #128c2e;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .btn-primary i {
+            margin-left: 8px;
+            background: white;
+            color: #128c2e;
+            border-radius: 50%;
+            padding: 4px;
+            font-size: 12px;
+        }
+
+        .hero-image {
+            flex: 1;
+            text-align: center;
+        }
+        .hero-image img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+
+        /* Features Section */
+        .features {
+            display: flex;
+            padding: 20px 40px;
+            background-color: #fafbfc;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            border-radius: 12px;
+            margin: 0 40px;
+            gap: 20px;
+        }
+        .feature-box {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+        }
+        .feature-box i {
+            font-size: 24px;
+            color: #128c2e;
+            background-color: #e6f4ea;
+            padding: 15px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        .feature-box h4 {
+            margin: 10px 0 5px;
+            font-size: 14px;
+            color: #111;
+        }
+        .feature-box p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* Footer Note */
+        .footer-note {
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .note-left {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        .note-left i {
+            color: #128c2e;
+            font-size: 24px;
+            background-color: #e6f4ea;
+            padding: 10px;
+            border-radius: 50%;
+        }
+        .note-text p {
+            margin: 0 0 5px;
+            font-size: 14px;
+            color: #444;
+        }
+        .note-text .regards {
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        .note-right h3 {
+            font-family: 'Caveat', cursive;
+            color: #128c2e;
+            font-size: 28px;
+            margin: 0;
+            transform: rotate(-5deg);
+        }
+
+        /* Social Footer */
+        .social-footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #fdfdfd;
+            border-top: 1px solid #eee;
+        }
+        .social-footer p {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+        .social-icons {
+            margin-bottom: 15px;
+        }
+        .social-icons a {
+            color: white;
+            text-decoration: none;
+            margin: 0 5px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+        .fa-facebook-f { background-color: #3b5998; }
+        .fa-twitter { background-color: #1da1f2; }
+        .fa-linkedin-in { background-color: #0077b5; }
+        .fa-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .fa-youtube { background-color: #ff0000; }
+
+        .copyright {
+            font-size: 11px;
+            color: #888;
+        }
+        .copyright span {
+            color: #128c2e;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero {
+                flex-direction: column;
+            }
+            .features {
+                flex-wrap: wrap;
+                margin: 0 20px;
+            }
+            .feature-box {
+                min-width: 40%;
+            }
+            .footer-note {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            .note-left {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fa-solid fa-leaf"></i> GrowHive</h1>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-text">
+            <h2>Welcome to <br><span>GrowHive!</span> 🎉</h2>
+            <h3>Hi <span>Aditya Shelke</span>,</h3>
+            <p>We're excited to have you on board! Your account has been successfully created and you're now part of India's growing talent ecosystem.</p>
+            <p>Explore amazing opportunities, connect with professionals, and grow your journey with us.</p>
+            <a href="#" class="btn-primary">Get Started <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="hero-image">
+            <!-- Replace this placeholder with the actual illustration image -->
+            <img src="https://res.cloudinary.com/bpcqn6kw/image/upload/v1787202441/ChatGPT_Image_Aug_19_2026_10_53_05_PM_ozxie7.png">
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features">
+        <div class="feature-box">
+            <i class="fa-solid fa-user-group"></i>
+            <h4>Find Opportunities</h4>
+            <p>Explore jobs, gigs, startups and more.</p>
+        </div>
+        <div class="feature-box">
+            <i class="fa-solid fa-handshake"></i>
+            <h4>Connect & Collaborate</h4>
+            <p>Build valuable connections and collaborate.</p>
+        </div>
+        <div class="feature-box">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <h4>Learn & Grow</h4>
+            <p>Access resources and upgrade your skills.</p>
+        </div>
+        <div class="feature-box">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h4>Secure & Trusted</h4>
+            <p>Your data and privacy are our priority.</p>
+        </div>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+        <div class="note-left">
+            <i class="fa-solid fa-heart"></i>
+            <div class="note-text">
+                <p>Thank you for joining <strong>GrowHive.</strong></p>
+                <p>Together, let's build, collaborate and grow!</p>
+                <p class="regards">Best Regards,<br>The <span style="color:#128c2e;">GrowHive</span> Team</p>
+            </div>
+        </div>
+        <div class="note-right">
+            <h3>Happy Networking!</h3>
+        </div>
+    </div>
+
+    <!-- Social Footer -->
+    <div class="social-footer">
+        <p>Stay connected with us</p>
+        <div class="social-icons">
+            <a href="#" class="fa-brands fa-facebook-f"></a>
+            <a href="#" class="fa-brands fa-twitter"></a>
+            <a href="#" class="fa-brands fa-linkedin-in"></a>
+            <a href="#" class="fa-brands fa-instagram"></a>
+            <a href="#" class="fa-brands fa-youtube"></a>
+        </div>
+        <div class="copyright">
+            &copy; 2025 <span>GrowHive</span>. All rights reserved.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

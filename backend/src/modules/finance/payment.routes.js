@@ -1,6 +1,16 @@
 import { Router } from "express";
+import { validateObjectId } from "../../middleware/validateObjectId.js";
 import rateLimit from "express-rate-limit";
-import { createRazorpayOrder, verifyRazorpayPayment, createStripeCheckout, getMySubscription } from "./subscription.controller.js";
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  createStripeCheckout,
+  getMySubscription,
+  getMySubscriptions,
+  getSubscriptionById,
+  downloadSubscriptionInvoice,
+  emailSubscriptionInvoice,
+} from "./subscription.controller.js";
 import {
   createGigOrderPayment,
   createJobHirePayment,
@@ -23,53 +33,68 @@ import { getPaymentById, downloadInvoice, getMyEarnings, getMyPayments } from ".
 import { raiseDispute, requestWithdrawal, getMyWithdrawals } from "./disputesWithdrawals.controller.js";
 import { protect } from "../../middleware/auth.js";
 import { createRateLimitStore } from "../../utils/rateLimitStore.js";
+import { RATE_LIMITS } from "../../config/rateLimits.js";
+import { validate } from "../../middleware/validate.js";
+import { checkoutSchema, verifyRazorpayPaymentSchema } from "./subscription.validation.js";
+import { createGigOrderPaymentSchema, createHourlyPaymentSchema } from "./marketplaceOrders.validation.js";
+import { deliverWorkSchema, requestRevisionSchema, requestExtensionSchema, respondExtensionSchema } from "./orderLifecycle.validation.js";
+import { raiseDisputeSchema, requestWithdrawalSchema } from "./disputesWithdrawals.validation.js";
 
 const router = Router();
+router.param("applicationId", validateObjectId);
+router.param("contestId", validateObjectId);
+router.param("entryId", validateObjectId);
+router.param("id", validateObjectId);
+router.param("milestoneId", validateObjectId);
+router.param("serviceId", validateObjectId);
 
 router.use(protect);
 
-// Every route below moves money or confirms a payment signature — the app-wide
-// global limiter (300 req/15min, shared across every endpoint) is far too
-// loose to catch someone hammering /razorpay/verify or /marketplace/verify
-// trying to guess a valid signature. Keyed per-user (protect has already run,
-// so req.user exists) rather than per-IP, so one office/NAT full of
-// legitimate users can't lock each other out.
-const PAYMENT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+// Every route below moves money or confirms a payment signature — the
+// app-wide tiered limiter (tieredRateLimit.js) is far too loose to catch
+// someone hammering /razorpay/verify or /marketplace/verify trying to guess
+// a valid signature. Keyed per-user (protect has already run, so req.user
+// exists) rather than per-IP, so one office/NAT full of legitimate users
+// can't lock each other out.
 router.use(
   rateLimit({
-    windowMs: PAYMENT_RATE_LIMIT_WINDOW_MS,
-    limit: 30,
+    windowMs: RATE_LIMITS.payment.windowMs,
+    limit: RATE_LIMITS.payment.max,
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => req.user?._id?.toString() ?? req.ip,
     message: { success: false, message: "Too many payment requests — please slow down and try again shortly." },
-    store: createRateLimitStore(PAYMENT_RATE_LIMIT_WINDOW_MS, "payment"),
+    store: createRateLimitStore(RATE_LIMITS.payment.windowMs, "payment"),
   })
 );
 
-router.post("/razorpay/order", createRazorpayOrder);
-router.post("/razorpay/verify", verifyRazorpayPayment);
-router.post("/stripe/checkout", createStripeCheckout);
+router.post("/razorpay/order", validate(checkoutSchema), createRazorpayOrder);
+router.post("/razorpay/verify", validate(verifyRazorpayPaymentSchema), verifyRazorpayPayment);
+router.post("/stripe/checkout", validate(checkoutSchema), createStripeCheckout);
 router.get("/subscription", getMySubscription);
+router.get("/subscriptions/mine", getMySubscriptions);
+router.get("/subscriptions/:id", getSubscriptionById);
+router.get("/subscriptions/:id/invoice", downloadSubscriptionInvoice);
+router.post("/subscriptions/:id/invoice/email", emailSubscriptionInvoice);
 
-router.post("/gig-order/:serviceId", createGigOrderPayment);
+router.post("/gig-order/:serviceId", validate(createGigOrderPaymentSchema), createGigOrderPayment);
 router.post("/job-hire/:applicationId", createJobHirePayment);
 router.post("/campaign/:applicationId", createCampaignPayment);
 router.post("/campaign-offplatform/:applicationId", createOffPlatformFacilitationPayment);
 router.post("/milestone/:milestoneId", createMilestonePayment);
-router.post("/hourly/:applicationId", createHourlyPayment);
+router.post("/hourly/:applicationId", validate(createHourlyPaymentSchema), createHourlyPayment);
 router.post("/contest-prize/:contestId/:entryId", createContestPrizePayment);
-router.post("/marketplace/verify", verifyMarketplacePayment);
+router.post("/marketplace/verify", validate(verifyRazorpayPaymentSchema), verifyMarketplacePayment);
 router.put("/:id/release", releasePayment);
-router.put("/:id/deliver", deliverWork);
+router.put("/:id/deliver", validate(deliverWorkSchema), deliverWork);
 router.put("/:id/accept-delivery", acceptDelivery);
-router.put("/:id/request-revision", requestRevision);
-router.put("/:id/request-extension", requestExtension);
-router.put("/:id/respond-extension", respondExtension);
+router.put("/:id/request-revision", validate(requestRevisionSchema), requestRevision);
+router.put("/:id/request-extension", validate(requestExtensionSchema), requestExtension);
+router.put("/:id/respond-extension", validate(respondExtensionSchema), respondExtension);
 router.get("/earnings/mine", getMyEarnings);
 router.get("/mine", getMyPayments);
-router.post("/:id/dispute", raiseDispute);
-router.post("/withdrawals", requestWithdrawal);
+router.post("/:id/dispute", validate(raiseDisputeSchema), raiseDispute);
+router.post("/withdrawals", validate(requestWithdrawalSchema), requestWithdrawal);
 router.get("/withdrawals/mine", getMyWithdrawals);
 router.get("/:id/invoice", downloadInvoice);
 // Kept last: a bare "/:id" would otherwise swallow the literal GET routes above

@@ -31,12 +31,17 @@ export const verifyPendingRegistrationToken = (token) => {
   return payload;
 };
 
-export const REFRESH_COOKIE_NAME = "growhive_rt";
+export const REFRESH_COOKIE_NAME = "mahahub_rt";
 
+// Frontend (Vercel) and backend (Railway) live on different domains in
+// production, so the browser treats every API call as cross-site — "lax"
+// cookies are withheld from those, only sent on top-level navigation. "none"
+// is required for a cross-site cookie to be sent at all, and browsers only
+// honor "none" when `secure` is also true (already the case in production).
 export const refreshCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: 30 * 24 * 60 * 60 * 1000,
   path: "/api/auth",
 };

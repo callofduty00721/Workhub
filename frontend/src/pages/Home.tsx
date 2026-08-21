@@ -75,7 +75,7 @@ export default function Home() {
 function HeroSection() {
   return (
   
-    <section className="relative flex min-h-screen flex-col justify-center overflow-hidden py-16">
+    <section className="relative flex min-h-screen flex-col justify-center -mt-14  overflow-hidden py-14 sm:py-20">
       <div className="pointer-events-none absolute inset-0 -z-10">
         {/* bottom-anchored glow */}
         <div className="absolute inset-x-0 bottom-0 h-[70%] bg-[radial-gradient(ellipse_70%_65%_at_50%_115%,rgba(34,197,94,0.55),transparent_70%)]" />
@@ -95,7 +95,7 @@ function HeroSection() {
       >
         <motion.span
           variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-[12.5px] font-semibold text-white/80 ring-1 ring-white/10 sm:text-[13px] sm:leading-5"
+          className="inline-flex items-center mt-7 gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-[12.5px] font-semibold text-white/80 ring-1 ring-white/10 sm:text-[13px] sm:leading-5"
         >
           Built for seven kinds of people
         </motion.span>

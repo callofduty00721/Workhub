@@ -57,7 +57,7 @@ describe("CATEGORY_ROLES / categoryForRole", () => {
 
   it("never mixes roles from different categories under one key", () => {
     expect(CATEGORY_ROLES.talent).toEqual(["freelancer", "influencer"]);
-    expect(CATEGORY_ROLES.hiring).toEqual(["client"]);
+    expect(CATEGORY_ROLES.hiring).toEqual(["client", "brand", "agency", "talent_partner"]);
     expect(CATEGORY_ROLES.startup).toEqual(["founder", "partner", "investor", "mentor"]);
   });
 });

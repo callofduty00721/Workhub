@@ -1,8 +1,14 @@
 import PDFDocument from "pdfkit";
 
+// pdfkit's standard 14 fonts (Helvetica etc.) use WinAnsiEncoding, which has
+// no glyph for ₹ (U+20B9) — it silently renders as a garbled superscript
+// instead of erroring, so this went unnoticed until the actual PDF output
+// was inspected. "Rs." avoids the encoding gap entirely; embedding a Unicode
+// font just for this one symbol isn't worth the added asset/dependency. The
+// web invoice page is unaffected — the browser renders ₹ natively there.
 function money(amount, currency = "INR") {
-  const symbol = currency === "USD" ? "$" : "₹";
-  return `${symbol}${Number(amount || 0).toFixed(2)}`;
+  const prefix = currency === "USD" ? "$" : "Rs. ";
+  return `${prefix}${Number(amount || 0).toFixed(2)}`;
 }
 
 // Streams a PDF invoice for a captured payment directly to the response.

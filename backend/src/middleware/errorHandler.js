@@ -37,10 +37,35 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // A malformed ObjectId (e.g. in a route param not covered by
+  // validateObjectId, or a ref field inside a query) throws Mongoose's raw
+  // CastError, whose default message embeds the field/model name — not
+  // sensitive, but not something we've deliberately written for users either.
+  if (err.name === "CastError") {
+    return res.status(400).json({ success: false, message: "Invalid ID" });
+  }
+
+  // multer's own built-in errors (file too large, too many files, ...) —
+  // finite, well-known, safe messages, distinct from the fileFilter errors
+  // in upload.js (those are already ApiError and handled by the trusted
+  // branch below).
+  if (err.name === "MulterError") {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+
+  // Everything else reaching here is either a deliberate ApiError — its
+  // message was written by application code specifically to be shown to a
+  // user — or a genuinely unexpected failure (a bug, a raw driver/DB error,
+  // a timeout, ...). Only the former is safe to echo back. The full message
+  // and stack always go to the log/Sentry above regardless; only a generic
+  // message reaches the response for anything we didn't author ourselves, so
+  // a raw database error or an internal file path never reaches the client.
+  const isTrustedError = err instanceof ApiError;
+
   res.status(statusCode).json({
     success: false,
-    message: err.message || "Internal server error",
-    details: err.details,
+    message: isTrustedError ? err.message : "Something went wrong. Please try again.",
+    details: isTrustedError ? err.details : undefined,
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 };

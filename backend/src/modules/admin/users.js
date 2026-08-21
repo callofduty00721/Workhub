@@ -1,4 +1,4 @@
-import User, { ROLE_VALUES } from "../shared/user.model.js";
+import User from "../shared/user.model.js";
 import Startup from "../startup/startup.model.js";
 import Job from "../jobs/job.model.js";
 import Project from "../jobs/project.model.js";
@@ -30,6 +30,7 @@ import Conversation from "../chat/conversation.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 export const listUsers = asyncHandler(async (req, res) => {
   const { search, role, status } = req.query;
@@ -43,7 +44,7 @@ export const listUsers = asyncHandler(async (req, res) => {
     filter.isDeactivated = false;
   }
   if (search) {
-    filter.$or = [{ name: new RegExp(search, "i") }, { email: new RegExp(search, "i") }];
+    filter.$or = [{ name: safeSearchRegex(search) }, { email: safeSearchRegex(search) }];
   }
 
   const { pageNum, limitNum, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 100 });
@@ -234,7 +235,6 @@ export const deleteUser = asyncHandler(async (req, res) => {
 
 export const updateUserRole = asyncHandler(async (req, res) => {
   const { role } = req.body;
-  if (!ROLE_VALUES.includes(role)) throw new ApiError(400, "Invalid role");
 
   const user = await User.findById(req.params.id);
   if (!user) throw new ApiError(404, "User not found");

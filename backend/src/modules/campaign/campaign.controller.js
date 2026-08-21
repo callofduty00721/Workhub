@@ -113,9 +113,10 @@ export const getCampaignById = asyncHandler(async (req, res) => {
 });
 
 export const createCampaign = asyncHandler(async (req, res) => {
-  // isFeatured is admin-only (see toggleCampaignFeatured) — stripped here so
-  // a brand can never self-declare its own campaign "featured".
-  const { onBehalfOf, isFeatured: _isFeatured, ...rest } = req.body;
+  // isFeatured is admin-only (see toggleCampaignFeatured) — not part of
+  // createCampaignSchema at all, so a brand including it in the request gets
+  // a clean 400 rather than it being silently ignored.
+  const { onBehalfOf, ...rest } = req.body;
 
   if (onBehalfOf) {
     const relationship = await AgencyClient.findOne({ brand: onBehalfOf, agency: req.user._id, status: "accepted" });
@@ -140,7 +141,7 @@ export const updateCampaign = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You do not have permission to edit this campaign");
   }
 
-  const { onBehalfOf, isFeatured: _isFeatured, ...rest } = req.body;
+  const { onBehalfOf, ...rest } = req.body;
   if (onBehalfOf !== undefined && onBehalfOf !== String(campaign.onBehalfOf || "")) {
     if (onBehalfOf) {
       const relationship = await AgencyClient.findOne({ brand: onBehalfOf, agency: req.user._id, status: "accepted" });
@@ -225,7 +226,6 @@ export const inviteToCampaign = asyncHandler(async (req, res) => {
   if (campaign.status !== "open") throw new ApiError(400, "This campaign is no longer open");
 
   const { influencerId, message } = req.body;
-  if (!influencerId) throw new ApiError(400, "influencerId is required");
 
   const influencer = await User.findOne({ _id: influencerId, role: "influencer" });
   if (!influencer) throw new ApiError(404, "Influencer not found");

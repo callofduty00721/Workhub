@@ -1,9 +1,19 @@
 import { api } from "./axios";
-import type { MentorSession, MentorSummary, Paginated, SessionStatus } from "@/types";
+import type { MentorCategory, MentorSession, MentorSessionFormat, MentorSummary, Paginated, SessionStatus } from "@/types";
+
+export type MentorSort = "rating" | "newest" | "experience";
 
 export interface MentorFilters {
   search?: string;
   expertise?: string;
+  category?: MentorCategory;
+  location?: string;
+  verified?: boolean;
+  language?: string;
+  sessionFormat?: MentorSessionFormat;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: MentorSort;
   page?: number;
   limit?: number;
 }

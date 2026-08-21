@@ -38,7 +38,7 @@ export function timeUntil(iso: string) {
   return `${String(days).padStart(2, "0")}d : ${String(hours).padStart(2, "0")}h : ${String(mins).padStart(2, "0")}m`;
 }
 
-// Same brackets as InfluencerFilterSidebar's FOLLOWER_RANGE_OPTIONS — kept
+// Same brackets as InfluencerMarketplace's FOLLOWER_RANGE_OPTIONS — kept
 // here too (not imported from there) since that file is filter-UI-specific
 // and this is used on cards/profiles that don't need the rest of it.
 const FOLLOWER_TIERS = [

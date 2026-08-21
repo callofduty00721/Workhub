@@ -17,15 +17,12 @@ export const addTimeEntry = asyncHandler(async (req, res) => {
   const application = await getHiredApplicationAsFreelancer(req.params.applicationId, req.user);
 
   const { date, hours, description } = req.body;
-  const hoursNum = Number(hours);
-  if (!date) throw new ApiError(400, "Date is required");
-  if (!hoursNum || hoursNum <= 0 || hoursNum > 24) throw new ApiError(400, "Hours must be between 0.25 and 24");
 
   const entry = await TimeEntry.create({
     application: application._id,
     freelancer: req.user._id,
     date,
-    hours: hoursNum,
+    hours,
     description: description || "",
   });
 

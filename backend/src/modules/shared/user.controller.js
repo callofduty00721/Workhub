@@ -9,6 +9,7 @@ import Campaign from "../campaign/campaign.model.js";
 import User from "./user.model.js";
 import { getPhoneAuthProvider } from "../finance/platformSettings.model.js";
 import { verifyFirebasePhoneIdToken } from "../../utils/firebaseAuth.js";
+import { logVerificationAttempt } from "../../utils/verificationHistory.js";
 
 // User.phone is stored as a bare 10-digit number (see registerSchema's
 // `^\d{10}$` regex) — there's no separate country-code field, so every
@@ -40,6 +41,8 @@ const EDITABLE_FIELDS = [
   "videoIntro",
   "portfolioItems",
   "payoutDetails",
+  "investorType",
+  "mentorCategory",
   "investmentFocus",
   "ticketSizeMin",
   "ticketSizeMax",
@@ -52,6 +55,12 @@ const EDITABLE_FIELDS = [
   "sessionFormat",
   "organizationName",
   "partnerType",
+  "services",
+  "teamSize",
+  "yearsInBusiness",
+  "projectsCompleted",
+  "clientsServed",
+  "partnershipTypes",
   "programDetails",
   "startupsSupportedCount",
   "applicationLink",
@@ -141,6 +150,7 @@ export const submitKyc = asyncHandler(async (req, res) => {
   req.user.kycSubmittedAt = new Date();
   req.user.kycReviewNote = "";
   await req.user.save();
+  await logVerificationAttempt({ user: req.user._id, type: "kyc", documents });
 
   res.json({ success: true, user: req.user.toSafeJSON() });
 });
@@ -187,6 +197,7 @@ export const submitFaceVerification = asyncHandler(async (req, res) => {
   req.user.faceVerificationSubmittedAt = new Date();
   req.user.faceVerificationReviewNote = "";
   await req.user.save();
+  await logVerificationAttempt({ user: req.user._id, type: "face", selfie: selfieUrl });
 
   res.json({ success: true, user: req.user.toSafeJSON() });
 });
@@ -204,6 +215,7 @@ export const submitAddressVerification = asyncHandler(async (req, res) => {
   req.user.addressVerificationSubmittedAt = new Date();
   req.user.addressVerificationReviewNote = "";
   await req.user.save();
+  await logVerificationAttempt({ user: req.user._id, type: "address", documents });
 
   res.json({ success: true, user: req.user.toSafeJSON() });
 });
@@ -221,6 +233,7 @@ export const submitBankVerification = asyncHandler(async (req, res) => {
   req.user.bankVerificationSubmittedAt = new Date();
   req.user.bankVerificationReviewNote = "";
   await req.user.save();
+  await logVerificationAttempt({ user: req.user._id, type: "bank", documents });
 
   res.json({ success: true, user: req.user.toSafeJSON() });
 });
@@ -330,8 +343,53 @@ export const toggleSavedCampaign = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { saved: !alreadySaved } });
 });
 
+export const toggleSavedInvestor = asyncHandler(async (req, res) => {
+  const investor = await User.findOne({ _id: req.params.investorId, role: "investor" }).select("_id");
+  if (!investor) throw new ApiError(404, "Investor not found");
+
+  const alreadySaved = req.user.savedInvestors.some((id) => id.toString() === investor._id.toString());
+  if (alreadySaved) {
+    req.user.savedInvestors = req.user.savedInvestors.filter((id) => id.toString() !== investor._id.toString());
+  } else {
+    req.user.savedInvestors.push(investor._id);
+  }
+  await req.user.save();
+
+  res.json({ success: true, data: { saved: !alreadySaved } });
+});
+
+export const toggleSavedMentor = asyncHandler(async (req, res) => {
+  const mentor = await User.findOne({ _id: req.params.mentorId, role: "mentor" }).select("_id");
+  if (!mentor) throw new ApiError(404, "Mentor not found");
+
+  const alreadySaved = req.user.savedMentors.some((id) => id.toString() === mentor._id.toString());
+  if (alreadySaved) {
+    req.user.savedMentors = req.user.savedMentors.filter((id) => id.toString() !== mentor._id.toString());
+  } else {
+    req.user.savedMentors.push(mentor._id);
+  }
+  await req.user.save();
+
+  res.json({ success: true, data: { saved: !alreadySaved } });
+});
+
+export const toggleSavedPartner = asyncHandler(async (req, res) => {
+  const partner = await User.findOne({ _id: req.params.partnerId, role: "partner" }).select("_id");
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  const alreadySaved = req.user.savedPartners.some((id) => id.toString() === partner._id.toString());
+  if (alreadySaved) {
+    req.user.savedPartners = req.user.savedPartners.filter((id) => id.toString() !== partner._id.toString());
+  } else {
+    req.user.savedPartners.push(partner._id);
+  }
+  await req.user.save();
+
+  res.json({ success: true, data: { saved: !alreadySaved } });
+});
+
 export const getSavedItems = asyncHandler(async (req, res) => {
-  const [jobs, projects, services, freelancers, contests, influencers, campaigns] = await Promise.all([
+  const [jobs, projects, services, freelancers, contests, influencers, campaigns, investors, mentors, partners] = await Promise.all([
     Job.find({ _id: { $in: req.user.savedJobs } }).populate("employer", "name avatar companyName").sort({ createdAt: -1 }),
     Project.find({ _id: { $in: req.user.savedProjects } }).populate("employer", "name avatar companyName").sort({ createdAt: -1 }),
     Service.find({ _id: { $in: req.user.savedServices } }).populate("freelancer", "name avatar rating reviewCount").sort({ createdAt: -1 }),
@@ -344,9 +402,18 @@ export const getSavedItems = asyncHandler(async (req, res) => {
       .populate("employer", "name avatar isVerified rating reviewCount")
       .populate("onBehalfOf", "name avatar")
       .sort({ createdAt: -1 }),
+    User.find({ _id: { $in: req.user.savedInvestors } }).select(
+      "name avatar headline location investorType investmentFocus ticketSizeMin ticketSizeMax portfolioCompanyCount isVerified"
+    ),
+    User.find({ _id: { $in: req.user.savedMentors } }).select(
+      "name avatar headline location mentorCategory expertise sessionRate sessionFormat yearsOfExperience rating reviewCount isVerified"
+    ),
+    User.find({ _id: { $in: req.user.savedPartners } }).select(
+      "name avatar organizationName partnerType location services industries companySize isVerified"
+    ),
   ]);
 
-  res.json({ success: true, data: { jobs, projects, services, freelancers, contests, influencers, campaigns } });
+  res.json({ success: true, data: { jobs, projects, services, freelancers, contests, influencers, campaigns, investors, mentors, partners } });
 });
 
 export const getMyReferrals = asyncHandler(async (req, res) => {

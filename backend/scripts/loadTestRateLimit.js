@@ -1,9 +1,9 @@
-// Answers a concrete question about the global rate limiter (app.js —
-// 300 requests / 15 min, keyed by IP by default since only the payment
-// limiter overrides keyGenerator to per-user): how many realistic page loads
-// from ONE IP does it actually take to trip it? Matters more than it might
-// seem — the global limiter's default IP-based key means every user behind
-// the same NAT/office/campus shares one 300-request budget, not 300 each.
+// Answers a concrete question about the app-wide "public" tier limiter
+// (middleware/tieredRateLimit.js — RATE_LIMIT_PUBLIC_MAX, 300/15min by
+// default, keyed by IP for anonymous requests): how many realistic page
+// loads from ONE IP does it actually take to trip it? Matters more than it
+// might seem — the IP-based key means every user behind the same NAT/
+// office/campus shares one budget, not 300 each.
 //
 // Fires bursts of real public (no-auth) GET requests against a locally
 // running server, each burst modeling "a user opens a page that fires a
@@ -44,7 +44,7 @@ async function run() {
   let first429At = null;
   const MAX_PAGE_VIEWS = 150; // plenty to cross 300 requests at ~2-3 calls/view
 
-  console.log(`Load-testing global rate limiter against ${baseUrl} — firing realistic page-view bursts...\n`);
+  console.log(`Load-testing the public-tier rate limiter against ${baseUrl} — firing realistic page-view bursts...\n`);
 
   for (let view = 1; view <= MAX_PAGE_VIEWS; view += 1) {
     const urls = PAGE_VIEWS[(view - 1) % PAGE_VIEWS.length];

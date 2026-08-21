@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { motion } from "framer-motion";
 import { Plus, Loader2, Ban, RotateCcw } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -14,6 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { adminApi } from "@/api/admin";
 import { ADMIN_PERMISSION_VALUES, ADMIN_PERMISSION_LABELS } from "@/types";
 import type { AdminPermission, User } from "@/types";
+
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
+const rowVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+};
 
 function PermissionCheckboxes({ selected, onChange }: { selected: AdminPermission[]; onChange: (next: AdminPermission[]) => void }) {
   return (
@@ -169,8 +176,9 @@ export default function AdminStaff() {
             <p className="text-sm text-muted-foreground">Add one to delegate specific admin sections without giving full access.</p>
           </div>
         ) : (
-          staff.map((s) => (
-            <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 p-5">
+          <motion.div variants={gridVariants} initial="hidden" animate="show" className="divide-y divide-border">
+          {staff.map((s) => (
+            <motion.div key={s.id} variants={rowVariants} className="flex flex-wrap items-center justify-between gap-3 p-5">
               <div>
                 <p className="flex items-center gap-2 font-medium">
                   {s.name}
@@ -208,8 +216,9 @@ export default function AdminStaff() {
                   {s.isBanned ? "Unban" : "Ban"}
                 </Button>
               </div>
-            </div>
-          ))
+            </motion.div>
+          ))}
+          </motion.div>
         )}
       </Card>
 

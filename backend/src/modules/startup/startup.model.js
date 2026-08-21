@@ -181,6 +181,10 @@ const startupSchema = new mongoose.Schema(
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     interested: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     status: { type: String, enum: ["draft", "pending_review", "published"], default: "draft" },
+    // Set only by scripts/seed/seedDemoContent.js — lets marketplace cards
+    // show a "Demo" badge on seeded content instead of passing it off as a
+    // real listing, since the platform has no real users yet.
+    isDemo: { type: Boolean, default: false },
     // Two independent verification tiers, since idea-stage startups have no
     // registered business to check: founderVerified only confirms the founder's
     // identity is real; isVerified additionally confirms the business registration.

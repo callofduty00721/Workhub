@@ -151,7 +151,7 @@ export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   employer: "Post full-time jobs and hire employees",
   investor: "Discover startups and track your investments",
   mentor: "Offer paid or free mentorship sessions to founders",
-  partner: "Support startups as an accelerator, incubator, or service provider",
+  partner: "List your agency or business and connect with founders looking to collaborate",
   client: "Post projects and hire freelancers to complete them",
   brand: "Hire influencers to run marketing campaigns for your company",
   agency: "Run influencer campaigns on behalf of brand clients you manage",

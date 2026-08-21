@@ -1,7 +1,7 @@
 import type { PaymentType } from "./payment";
 import type { WithdrawalMethod } from "./withdrawal";
 import type { StartupStage } from "./startup";
-import type { PartnerType } from "./summaries";
+import type { PartnerType, PartnershipType, InvestorType, MentorCategory } from "./summaries";
 
 export type UserRole =
   | "super_admin"
@@ -34,7 +34,10 @@ export type AdminPermission =
   | "jobs"
   | "gigs"
   | "contests"
-  | "skill-tests";
+  | "skill-tests"
+  | "reviews"
+  | "referrals"
+  | "campaigns";
 
 export const ADMIN_PERMISSION_VALUES: AdminPermission[] = [
   "grievances",
@@ -47,6 +50,9 @@ export const ADMIN_PERMISSION_VALUES: AdminPermission[] = [
   "gigs",
   "contests",
   "skill-tests",
+  "reviews",
+  "referrals",
+  "campaigns",
 ];
 
 export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
@@ -60,6 +66,9 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
   gigs: "Gigs",
   contests: "Contests",
   "skill-tests": "Skill Tests",
+  reviews: "Reviews",
+  referrals: "Referrals",
+  campaigns: "Campaigns",
 };
 
 export type RoleCategory = "talent" | "hiring" | "startup";
@@ -296,6 +305,9 @@ export interface User {
   savedContests?: string[];
   savedInfluencers?: string[];
   savedCampaigns?: string[];
+  savedInvestors?: string[];
+  savedMentors?: string[];
+  savedPartners?: string[];
   portfolioItems?: PortfolioItem[];
   payoutDetails?: PayoutDetails;
   storageUsedBytes?: number;
@@ -317,6 +329,8 @@ export interface User {
   bankVerificationSubmittedAt?: string;
   bankVerificationReviewNote?: string;
   profileViews?: number;
+  investorType?: InvestorType;
+  mentorCategory?: MentorCategory;
   investmentFocus?: string[];
   ticketSizeMin?: number;
   ticketSizeMax?: number;
@@ -329,6 +343,12 @@ export interface User {
   sessionFormat?: MentorSessionFormat;
   organizationName?: string;
   partnerType?: PartnerType;
+  services?: string[];
+  teamSize?: number;
+  yearsInBusiness?: number;
+  projectsCompleted?: number;
+  clientsServed?: number;
+  partnershipTypes?: PartnershipType[];
   programDetails?: string;
   startupsSupportedCount?: number;
   applicationLink?: string;
@@ -355,6 +375,7 @@ export interface User {
   isProfileComplete: boolean;
   isBanned?: boolean;
   isDeactivated?: boolean;
+  isDemo?: boolean;
   emailNotificationsEnabled?: boolean;
   createdAt: string;
 }

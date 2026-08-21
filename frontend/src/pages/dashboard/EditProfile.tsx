@@ -15,6 +15,7 @@ import { useScrollToHash } from "@/hooks/useScrollToHash";
 import { domToBioText, renderBioHtml } from "@/lib/richText";
 import type {
   PartnerType,
+  PartnershipType,
   ExperienceEntry,
   EducationEntry,
   AchievementEntry,
@@ -182,6 +183,12 @@ export default function EditProfile() {
   // Partner
   const [organizationName, setOrganizationName] = useState(user?.organizationName ?? "");
   const [partnerType, setPartnerType] = useState<PartnerType>(user?.partnerType ?? "service_provider");
+  const [partnerServicesInput, setPartnerServicesInput] = useState(user?.services?.join(", ") ?? "");
+  const [teamSize, setTeamSize] = useState(user?.teamSize ?? 0);
+  const [yearsInBusiness, setYearsInBusiness] = useState(user?.yearsInBusiness ?? 0);
+  const [projectsCompleted, setProjectsCompleted] = useState(user?.projectsCompleted ?? 0);
+  const [clientsServed, setClientsServed] = useState(user?.clientsServed ?? 0);
+  const [partnershipTypesInput, setPartnershipTypesInput] = useState(user?.partnershipTypes?.join(", ") ?? "");
   const [programDetails, setProgramDetails] = useState(user?.programDetails ?? "");
   const [startupsSupportedCount, setStartupsSupportedCount] = useState(user?.startupsSupportedCount ?? 0);
   const [applicationLink, setApplicationLink] = useState(user?.applicationLink ?? "");
@@ -423,6 +430,12 @@ export default function EditProfile() {
         sessionFormat,
         organizationName,
         partnerType,
+        services: splitList(partnerServicesInput),
+        teamSize,
+        yearsInBusiness,
+        projectsCompleted,
+        clientsServed,
+        partnershipTypes: splitList(partnershipTypesInput) as PartnershipType[],
         programDetails,
         startupsSupportedCount,
         applicationLink,
@@ -794,12 +807,30 @@ export default function EditProfile() {
             setOrganizationName={setOrganizationName}
             partnerType={partnerType}
             setPartnerType={setPartnerType}
+            servicesInput={partnerServicesInput}
+            setServicesInput={setPartnerServicesInput}
+            industriesInput={industriesInput}
+            setIndustriesInput={setIndustriesInput}
+            companySize={companySize}
+            setCompanySize={setCompanySize}
+            teamSize={teamSize}
+            setTeamSize={setTeamSize}
+            yearsInBusiness={yearsInBusiness}
+            setYearsInBusiness={setYearsInBusiness}
+            projectsCompleted={projectsCompleted}
+            setProjectsCompleted={setProjectsCompleted}
+            clientsServed={clientsServed}
+            setClientsServed={setClientsServed}
+            partnershipTypesInput={partnershipTypesInput}
+            setPartnershipTypesInput={setPartnershipTypesInput}
             programDetails={programDetails}
             setProgramDetails={setProgramDetails}
             startupsSupportedCount={startupsSupportedCount}
             setStartupsSupportedCount={setStartupsSupportedCount}
             website={website}
             setWebsite={setWebsite}
+            linkedIn={linkedIn}
+            setLinkedIn={setLinkedIn}
             applicationLink={applicationLink}
             setApplicationLink={setApplicationLink}
           />

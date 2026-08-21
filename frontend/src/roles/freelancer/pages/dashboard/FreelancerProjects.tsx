@@ -71,7 +71,10 @@ export default function FreelancerProjects() {
 
   const paymentByApplication = new Map<string, Payment>();
   for (const p of earnings?.payments ?? []) {
-    if (p.type === "job_hire" && p.application) paymentByApplication.set(p.application, p);
+    if (p.type === "job_hire" && p.application) {
+      const applicationId = typeof p.application === "string" ? p.application : p.application._id;
+      paymentByApplication.set(applicationId, p);
+    }
   }
 
   const messageMutation = useMutation({

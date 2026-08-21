@@ -1,9 +1,18 @@
 import { api } from "./axios";
-import type { InvestorSummary, Paginated, Startup } from "@/types";
+import type { InvestorSummary, InvestorType, Paginated, Startup, StartupStage } from "@/types";
+
+export type InvestorSort = "newest" | "portfolio";
 
 export interface InvestorFilters {
   search?: string;
   focus?: string;
+  type?: InvestorType;
+  stage?: StartupStage;
+  location?: string;
+  verified?: boolean;
+  minTicket?: number;
+  maxTicket?: number;
+  sort?: InvestorSort;
   page?: number;
   limit?: number;
 }

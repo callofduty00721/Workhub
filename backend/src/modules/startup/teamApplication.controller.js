@@ -10,9 +10,6 @@ export const createTeamApplication = asyncHandler(async (req, res) => {
   if (!startup) throw new ApiError(404, "Startup not found");
 
   const { roleTitle, roleType, isCustomRole, bio, experience, skills, resumeUrl } = req.body;
-  if (!roleTitle || !bio || !experience) {
-    throw new ApiError(400, "Role, bio and experience are required");
-  }
 
   const application = await TeamApplication.create({
     startup: startup._id,

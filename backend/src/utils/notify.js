@@ -1,6 +1,6 @@
 import Notification from "../modules/shared/notification.model.js";
 import User from "../modules/shared/user.model.js";
-import { sendEmail, isEmailConfigured } from "./email.js";
+import { sendEmail, notificationEmailHtml, isEmailConfigured } from "./email.js";
 
 // Only genuinely time-sensitive or money-related events warrant an email —
 // everything else still lands in the in-app bell (and the socket push),
@@ -18,6 +18,12 @@ const EMAIL_EXCLUDED_TYPES = new Set([
   "session_request",
   "roster_invite",
   "review_received",
+  // A platform-wide broadcast to potentially every user is exactly the kind
+  // of thing that shouldn't silently fire a mass email from a single admin
+  // click — there's no rate-limiting/queue for that here. In-app + socket
+  // only; a real "email this broadcast too" feature is a deliberate,
+  // separate decision to make later, not a side effect of this one.
+  "announcement",
 ]);
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -48,7 +54,5 @@ async function sendNotificationEmail(userId, title, message, link) {
   if (!recipient?.email || !recipient.emailNotificationsEnabled) return;
 
   const url = link ? `${FRONTEND_URL}${link.startsWith("/") ? "" : "/"}${link}` : FRONTEND_URL;
-  const html = `<p>Hi ${recipient.name},</p><p>${title}</p>${message ? `<p>${message}</p>` : ""}<p><a href="${url}">View on GrowHive</a></p>`;
-
-  await sendEmail({ to: recipient.email, subject: title, html });
+  await sendEmail({ to: recipient.email, subject: title, html: notificationEmailHtml(recipient.name, title, message, url) });
 }

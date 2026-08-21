@@ -60,6 +60,10 @@ const serviceSchema = new mongoose.Schema(
     // (both filtered to status:"active") exclude it — only reachable via a
     // direct link, since getServiceById never filters by status.
     status: { type: String, enum: ["active", "private", "paused", "draft"], default: "active" },
+    // Set only by scripts/seed/seedDemoContent.js — lets marketplace cards
+    // show a "Demo" badge on seeded content instead of passing it off as a
+    // real listing, since the platform has no real users yet.
+    isDemo: { type: Boolean, default: false },
     // Search keywords surfaced to buyers — distinct from `skills` (the
     // freelancer's own tech-stack tags): seeded from skills but independently
     // editable, capped at 15 on the frontend.

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { motion } from "framer-motion";
 import { Plus, Trash2, Loader2, GraduationCap, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +14,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { adminSkillTestApi, type AdminSkillTestQuestion } from "@/api/skillTests";
 
 const EMPTY_QUESTION = (): AdminSkillTestQuestion => ({ question: "", options: ["", "", "", ""], correctIndex: 0 });
+
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const cardVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+};
 
 export default function AdminSkillTests() {
   const queryClient = useQueryClient();
@@ -159,9 +166,10 @@ export default function AdminSkillTests() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <motion.div variants={gridVariants} initial="hidden" animate="show" className="space-y-3">
           {tests.map((t) => (
-            <Card key={t._id}>
+            <motion.div key={t._id} variants={cardVariants}>
+            <Card>
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
                 <div>
                   <div className="flex items-center gap-2">
@@ -195,8 +203,9 @@ export default function AdminSkillTests() {
                 </div>
               </CardContent>
             </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </DashboardLayout>
   );

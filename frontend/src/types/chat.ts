@@ -7,6 +7,7 @@ export interface FreelancerSummary {
   coverImage?: string;
   headline?: string;
   location?: string;
+  bio?: string;
   category?: string;
   subCategory?: string;
   skills: string[];
@@ -22,6 +23,7 @@ export interface FreelancerSummary {
   languages?: string[];
   jobsCompleted?: number;
   jobSuccessPercent?: number;
+  isDemo?: boolean;
   socialLinks?: SocialLinks;
   createdAt?: string;
 }

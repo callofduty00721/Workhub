@@ -3,7 +3,6 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
 import mongoose from "mongoose";
 
@@ -54,7 +53,8 @@ import { razorpayWebhook } from "./modules/finance/webhooks.controller.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { requireTrustedOrigin } from "./middleware/originCheck.js";
 import { morganStream } from "./utils/logger.js";
-import { createRateLimitStore, userOrIpKeyGenerator } from "./utils/rateLimitStore.js";
+import { tieredRateLimit } from "./middleware/tieredRateLimit.js";
+import { validateObjectId } from "./middleware/validateObjectId.js";
 
 const app = express();
 
@@ -82,22 +82,11 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 if (process.env.NODE_ENV !== "test") app.use(morgan("dev", { stream: morganStream }));
 
-const GLOBAL_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-app.use(
-  rateLimit({
-    windowMs: GLOBAL_RATE_LIMIT_WINDOW_MS,
-    limit: 300,
-    standardHeaders: true,
-    legacyHeaders: false,
-    // Per-user for logged-in requests, IP for everyone else — see
-    // userOrIpKeyGenerator's comment (a real load test showed a plain IP key
-    // lets unrelated users behind one NAT exhaust each other's budget).
-    keyGenerator: userOrIpKeyGenerator,
-    // Shared across instances once REDIS_URL is set (falls back to
-    // per-process in-memory otherwise, same as before) — see rateLimitStore.js.
-    store: createRateLimitStore(GLOBAL_RATE_LIMIT_WINDOW_MS, "global"),
-  })
-);
+// Moderate limit for anonymous/public traffic, looser for a logged-in user's
+// own actions — see middleware/tieredRateLimit.js. Both tiers (and every
+// other limiter in the app) read their thresholds from config/rateLimits.js,
+// not hardcoded here.
+app.use(tieredRateLimit);
 
 // Liveness: is the process itself up (health check doesn't touch anything else).
 app.get("/api/health", (req, res) => res.json({ success: true, status: "ok", uptime: process.uptime() }));
@@ -113,6 +102,13 @@ app.get("/api/health/ready", (req, res) => {
     dependencies: { mongo: mongoConnected ? "connected" : "disconnected" },
   });
 });
+
+// `:startupId` here is a mount-path param, not a route declared on any of the
+// four mergeParams sub-routers below — router.param() on those routers never
+// fires for it, so it reached Mongoose unvalidated until now (a malformed id
+// threw an uncaught CastError instead of a clean 400, same gap validateObjectId
+// closes everywhere else).
+app.param("startupId", validateObjectId);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

@@ -14,7 +14,7 @@ import type {
 } from "./user";
 import type { StartupStage } from "./startup";
 
-export type PartnerType = "accelerator" | "incubator" | "government" | "ngo" | "service_provider";
+export type PartnerType = "agency" | "company" | "consultant" | "service_provider" | "technology_partner" | "strategic_partner";
 
 export interface JobSeekerSummary {
   _id: string;
@@ -112,6 +112,7 @@ interface DirectoryListItemBase {
   // Summed follower count of those actually-hired influencers' own
   // platforms — real aggregate, not an estimated/forecast reach figure.
   totalReach?: number;
+  isDemo?: boolean;
   createdAt: string;
 }
 
@@ -127,6 +128,8 @@ export interface TalentPartnerListItem extends DirectoryListItemBase {
   talentPartnerProfile?: Pick<TalentPartnerProfile, "partnerType" | "website" | "socialLinks">;
 }
 
+export type InvestorType = "angel" | "venture_capital" | "private_equity" | "family_office" | "strategic";
+
 export interface InvestorSummary {
   _id: string;
   name: string;
@@ -134,6 +137,7 @@ export interface InvestorSummary {
   headline?: string;
   location?: string;
   bio?: string;
+  investorType?: InvestorType;
   investmentFocus: string[];
   ticketSizeMin: number;
   ticketSizeMax: number;
@@ -143,8 +147,12 @@ export interface InvestorSummary {
   preferredStages?: StartupStage[];
   linkedIn?: string;
   socialLinks?: SocialLinks;
+  isVerified?: boolean;
+  isDemo?: boolean;
   createdAt: string;
 }
+
+export type MentorCategory = "startup" | "business" | "career" | "technology" | "marketing" | "finance" | "leadership" | "design";
 
 export interface MentorSummary {
   _id: string;
@@ -153,6 +161,7 @@ export interface MentorSummary {
   headline?: string;
   location?: string;
   bio?: string;
+  mentorCategory?: MentorCategory;
   expertise: string[];
   sessionRate: number;
   sessionFormat?: MentorSessionFormat;
@@ -160,12 +169,19 @@ export interface MentorSummary {
   workingDays?: string[];
   workingHours?: string;
   linkedIn?: string;
+  languages?: string[];
+  socialLinks?: SocialLinks;
+  availabilityStatus?: AvailabilityStatus;
+  isVerified?: boolean;
   yearsOfExperience: number;
   rating: number;
   reviewCount: number;
   completedSessionsCount?: number;
+  isDemo?: boolean;
   createdAt: string;
 }
+
+export type PartnershipType = "service" | "referral" | "technology" | "strategic" | "distribution";
 
 export interface PartnerSummary {
   _id: string;
@@ -176,10 +192,21 @@ export interface PartnerSummary {
   bio?: string;
   organizationName: string;
   partnerType: PartnerType;
+  services: string[];
+  industries?: string[];
+  companySize?: string;
+  teamSize?: number;
+  yearsInBusiness?: number;
+  projectsCompleted?: number;
+  clientsServed?: number;
+  partnershipTypes?: PartnershipType[];
   programDetails?: string;
   startupsSupportedCount?: number;
   applicationLink?: string;
+  linkedIn?: string;
   socialLinks?: SocialLinks;
+  isVerified?: boolean;
+  isDemo?: boolean;
   createdAt: string;
 }
 

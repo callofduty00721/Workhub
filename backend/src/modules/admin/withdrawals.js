@@ -77,7 +77,6 @@ async function attemptRazorpayXPayout(withdrawal, freelancer) {
 
 export const resolveWithdrawal = asyncHandler(async (req, res) => {
   const { action, note } = req.body;
-  if (!["complete", "reject"].includes(action)) throw new ApiError(400, "Invalid action");
 
   const withdrawal = await Withdrawal.findById(req.params.id);
   if (!withdrawal) throw new ApiError(404, "Withdrawal request not found");

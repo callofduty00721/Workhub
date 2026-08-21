@@ -8,7 +8,6 @@ const PUBLIC_ROSTER_FIELDS = "name avatar influencerProfile.category influencerP
 
 export const inviteToRoster = asyncHandler(async (req, res) => {
   const { influencerId, message } = req.body;
-  if (!influencerId) throw new ApiError(400, "influencerId is required");
   if (influencerId === req.user._id.toString()) throw new ApiError(400, "You can't invite yourself");
 
   const influencer = await User.findOne({ _id: influencerId, role: "influencer" });
@@ -41,7 +40,6 @@ export const inviteToRoster = asyncHandler(async (req, res) => {
 
 export const respondToInvite = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  if (!["accepted", "declined"].includes(status)) throw new ApiError(400, "status must be 'accepted' or 'declined'");
 
   const invite = await TalentRoster.findById(req.params.id);
   if (!invite) throw new ApiError(404, "Invite not found");

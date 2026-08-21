@@ -9,7 +9,6 @@ const BRAND_FIELDS = "name avatar headline location brandProfile.industry isVeri
 
 export const inviteAgency = asyncHandler(async (req, res) => {
   const { agencyId, budget, message } = req.body;
-  if (!agencyId) throw new ApiError(400, "agencyId is required");
   if (agencyId === req.user._id.toString()) throw new ApiError(400, "You can't invite yourself");
 
   const agency = await User.findOne({ _id: agencyId, role: "agency" });
@@ -21,12 +20,12 @@ export const inviteAgency = asyncHandler(async (req, res) => {
     if (existing.status === "accepted") throw new ApiError(409, "This agency already manages your campaigns");
     // declined/removed — re-inviting reopens the same row, same as TalentRoster.
     existing.status = "pending";
-    existing.budget = Number(budget) || 0;
+    existing.budget = budget || 0;
     existing.message = message || "";
     existing.respondedAt = null;
     await existing.save();
   } else {
-    await AgencyClient.create({ brand: req.user._id, agency: agencyId, budget: Number(budget) || 0, message: message || "" });
+    await AgencyClient.create({ brand: req.user._id, agency: agencyId, budget: budget || 0, message: message || "" });
   }
 
   await notify(req.app, {
@@ -42,7 +41,6 @@ export const inviteAgency = asyncHandler(async (req, res) => {
 
 export const respondToAgencyInvite = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  if (!["accepted", "declined"].includes(status)) throw new ApiError(400, "status must be 'accepted' or 'declined'");
 
   const invite = await AgencyClient.findById(req.params.id);
   if (!invite) throw new ApiError(404, "Invite not found");

@@ -2,6 +2,7 @@ import User from "../shared/user.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 const PUBLIC_FIELDS = "name avatar headline location bio skills yearsOfExperience jobSeekerProfile resumeUrl createdAt";
 
@@ -9,8 +10,8 @@ export const listJobSeekers = asyncHandler(async (req, res) => {
   const { search, location } = req.query;
 
   const filter = { role: "job_seeker" };
-  if (location) filter.location = new RegExp(location, "i");
-  if (search) filter.$or = [{ name: new RegExp(search, "i") }, { headline: new RegExp(search, "i") }];
+  if (location) filter.location = safeSearchRegex(location);
+  if (search) filter.$or = [{ name: safeSearchRegex(search) }, { headline: safeSearchRegex(search) }];
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
 

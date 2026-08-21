@@ -112,10 +112,10 @@ export default function JobList() {
   return (
     <div>
       {/* ================= Hero — full-width centered, matching Home.tsx / StartupList.tsx ================= */}
-      <section className="relative overflow-hidden bg-card pb-10 pt-16 sm:pb-12 sm:pt-20">
+      <section className="relative overflow-hidden bg-white pb-10 pt-16 sm:pb-12 sm:pt-20">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <motion.div
-            className="absolute -left-32 top-[-100px] h-[420px] w-[420px] rounded-full bg-primary opacity-20 blur-[100px]"
+            className="absolute -left-32 top-[-100px] h-[420px] w-[420px] rounded-full bg-[#171717] opacity-20 blur-[100px]"
             animate={{ x: [0, 40, 0], y: [0, 30, 0] }}
             transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -129,7 +129,7 @@ export default function JobList() {
         <motion.div initial="hidden" animate="show" variants={stagger} className="container flex flex-col items-center text-center">
           <motion.span
             variants={fadeUp}
-            className="inline-flex items-center gap-1.5 rounded-full bg-muted px-4 py-1.5 text-[14px] font-semibold text-foreground/80 ring-1 ring-border"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F5F5] px-4 py-1.5 text-[14px] font-semibold text-gray-700 ring-1 ring-gray-900/5"
           >
             <Briefcase className="h-3.5 w-3.5" />
             {total > 0 ? `${total.toLocaleString()} job${total === 1 ? "" : "s"} open now` : "Browse open roles"}
@@ -137,18 +137,18 @@ export default function JobList() {
 
           <motion.h1
             variants={fadeUp}
-            className="mt-4 max-w-xl font-display text-4xl font-black-thin leading-[1] tracking-[-0.03em] text-foreground sm:text-5xl"
+            className="mt-4 max-w-xl font-display text-4xl font-black-thin leading-[1] tracking-[-0.03em] text-neutral-900 sm:text-5xl"
           >
-            Find your next <span className="text-foreground">opportunity</span>
+            Find your next <span className="text-[#171717]">opportunity</span>
           </motion.h1>
 
-          <motion.p variants={fadeUp} className="mt-4 max-w-md text-[18px] leading-relaxed text-muted-foreground">
+          <motion.p variants={fadeUp} className="mt-4 max-w-md text-[18px] leading-relaxed text-neutral-500">
             Browse full-time, part-time, and internship roles posted by startups and companies on GrowHive.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
             {TRUST_POINTS.map((t) => (
-              <span key={t.label} className="flex items-center gap-1.5 text-[15px] font-medium text-muted-foreground">
+              <span key={t.label} className="flex items-center gap-1.5 text-[15px] font-medium text-neutral-500">
                 <t.icon className={`h-4 w-4 ${t.color}`} />
                 {t.label}
               </span>
@@ -161,11 +161,11 @@ export default function JobList() {
               e.preventDefault();
               setPage(1);
             }}
-            className="relative z-10 mt-8 w-full max-w-2xl rounded-2xl border border-border bg-card p-1.5"
+            className="relative z-10 mt-8 w-full max-w-2xl rounded-2xl border border-neutral-200 bg-white p-1.5"
           >
             <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                 <Input
                   value={search}
                   onChange={(e) => {
@@ -177,7 +177,7 @@ export default function JobList() {
                 />
               </div>
               {user?.role === "employer" && (
-                <Link to="/dashboard/employer/post-job" className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-5 text-[15px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                <Link to="/dashboard/employer/post-job" className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[#171717] px-5 text-[15px] font-semibold text-white transition-colors hover:bg-black">
                   <Plus className="h-3.5 w-3.5" /> Post a Job
                 </Link>
               )}
@@ -198,14 +198,14 @@ export default function JobList() {
       </section>
 
       {/* ================= How applying works ================= */}
-      <section className="border-t border-border bg-card pb-12 pt-4 sm:pb-14 sm:pt-6">
+      <section className="border-t border-neutral-100 bg-white pb-12 pt-4 sm:pb-14 sm:pt-6">
         <div className="container">
-          <h2 className="mb-8 text-center font-display text-[24px] font-black tracking-tight text-foreground sm:text-[27px]">
+          <h2 className="mb-8 text-center font-display text-[24px] font-black tracking-tight text-neutral-900 sm:text-[27px]">
             How applying works
           </h2>
 
           <div className="relative">
-            <div className="absolute left-0 right-0 top-7 hidden h-[2px] rounded-full bg-border sm:block" />
+            <div className="absolute left-0 right-0 top-7 hidden h-[2px] rounded-full bg-neutral-200 sm:block" />
             <div className="relative grid grid-cols-2 gap-y-8 sm:grid-cols-4">
               {APPLY_PROCESS.map((step, i) => {
                 const c = STEP_COLORS[i % STEP_COLORS.length];
@@ -217,8 +217,8 @@ export default function JobList() {
                     >
                       <step.icon className="h-5 w-5" />
                     </span>
-                    <h3 className="mt-3 text-[18px] font-bold text-foreground">{step.title}</h3>
-                    <p className="mt-1 max-w-[150px] text-[15.5px] leading-snug text-muted-foreground">{step.desc}</p>
+                    <h3 className="mt-3 text-[18px] font-bold text-neutral-900">{step.title}</h3>
+                    <p className="mt-1 max-w-[150px] text-[15.5px] leading-snug text-neutral-500">{step.desc}</p>
                   </div>
                 );
               })}
@@ -228,9 +228,9 @@ export default function JobList() {
       </section>
 
       {/* ================= Browse by salary ================= */}
-      <section className="border-t border-border bg-card py-8">
+      <section className="border-t border-neutral-100 bg-white py-8">
         <div className="container">
-          <h2 className="mb-4 text-[20px] font-bold text-foreground">Browse by Salary</h2>
+          <h2 className="mb-4 text-[20px] font-bold text-neutral-900">Browse by Salary</h2>
           <JobSalaryRangeCards
             selected={isDefaultSalary ? null : { min: filters.minSalary, max: filters.maxSalary }}
             onSelect={(range) => {
@@ -242,7 +242,7 @@ export default function JobList() {
       </section>
 
       {/* ================= Filters + results ================= */}
-      <div className="border-t border-border bg-muted py-10">
+      <div className="border-t border-neutral-100 bg-[#FAFAFA] py-10">
         <div className="container">
           <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
             <JobFilterSidebar value={filters} onChange={setFilters} />
@@ -263,10 +263,10 @@ export default function JobList() {
               )}
 
               {!isLoading && !isError && jobs.length === 0 && (
-                <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
-                  <Briefcase className="h-9 w-9 text-muted-foreground/50" />
-                  <p className="font-medium text-foreground">No jobs found</p>
-                  <p className="max-w-sm text-sm text-muted-foreground">Try a different search term or filter.</p>
+                <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-200 bg-white py-16 text-center">
+                  <Briefcase className="h-9 w-9 text-neutral-300" />
+                  <p className="font-medium text-neutral-900">No jobs found</p>
+                  <p className="max-w-sm text-sm text-neutral-500">Try a different search term or filter.</p>
                 </div>
               )}
 
@@ -287,17 +287,17 @@ export default function JobList() {
       </div>
 
       {/* ================= Final CTA — flat dark panel with an animated glow blob ================= */}
-      <section className="relative overflow-hidden bg-ink py-20 text-center sm:py-28">
+      <section className="relative overflow-hidden bg-[#1E1B4B] py-20 text-center sm:py-28">
         <motion.div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/20 blur-[120px]"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#171717]/20 blur-[120px]"
           animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.9, 1.1, 0.9] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
         <div className="container">
-          <h2 className="mx-auto max-w-lg font-display text-[30px] font-black leading-tight tracking-tight text-ink-foreground sm:text-[38px]">
+          <h2 className="mx-auto max-w-lg font-display text-[30px] font-black leading-tight tracking-tight text-white sm:text-[38px]">
             Hiring? Get your role in front of the right people.
           </h2>
-          <Link to={postJobTo} className={cn("mt-7 inline-flex items-center gap-2 rounded-full bg-card px-7 py-3.5 text-[15px] font-semibold text-foreground transition-transform hover:-translate-y-0.5")}>
+          <Link to={postJobTo} className={cn("mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-neutral-900 transition-transform hover:-translate-y-0.5")}>
             Post a Job <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

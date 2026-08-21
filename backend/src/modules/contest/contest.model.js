@@ -11,6 +11,10 @@ const contestSchema = new mongoose.Schema(
     currency: { type: String, default: "INR" },
     deadline: { type: Date, required: true },
     status: { type: String, enum: ["open", "judging", "closed"], default: "open" },
+    // Set only by scripts/seed/seedDemoContent.js — lets marketplace cards
+    // show a "Demo" badge on seeded content instead of passing it off as a
+    // real listing, since the platform has no real users yet.
+    isDemo: { type: Boolean, default: false },
     entriesCount: { type: Number, default: 0 },
     winnerEntry: { type: mongoose.Schema.Types.ObjectId, ref: "ContestEntry" },
   },

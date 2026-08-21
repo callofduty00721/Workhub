@@ -4,6 +4,7 @@ import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 const NEW_ACCOUNT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const AUTO_FLAG_MIN_COUNT = 3;
@@ -95,7 +96,6 @@ export const getFlaggedStartups = asyncHandler(async (req, res) => {
 
 export const resolveFlaggedStartup = asyncHandler(async (req, res) => {
   const { action } = req.body;
-  if (!["dismiss", "suspend"].includes(action)) throw new ApiError(400, "Invalid action");
 
   const startup = await Startup.findById(req.params.id);
   if (!startup) throw new ApiError(404, "Startup not found");
@@ -113,7 +113,7 @@ export const listAllStartups = asyncHandler(async (req, res) => {
   const { search } = req.query;
 
   const filter = {};
-  if (search) filter.name = new RegExp(search, "i");
+  if (search) filter.name = safeSearchRegex(search);
 
   const { pageNum, limitNum, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 100 });
 
@@ -179,7 +179,6 @@ export const listVerificationRequests = asyncHandler(async (req, res) => {
 
 export const reviewVerificationRequest = asyncHandler(async (req, res) => {
   const { action, reviewNote } = req.body;
-  if (!["approve", "reject"].includes(action)) throw new ApiError(400, "Invalid action");
 
   const startup = await Startup.findById(req.params.startupId);
   if (!startup) throw new ApiError(404, "Startup not found");

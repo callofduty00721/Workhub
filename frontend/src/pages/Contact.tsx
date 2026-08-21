@@ -22,30 +22,31 @@ export default function Contact() {
   });
 
   return (
-    <div className="container max-w-2xl py-16">
-      <div className="text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Mail className="h-6 w-6" />
-        </span>
-        <h1 className="mt-4 text-2xl font-bold">Contact Us</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Have a question, ran into an issue, or want to give feedback? Send us a message and we'll get back to you.
-        </p>
-      </div>
-
-      {mutation.isSuccess ? (
-        <div className="mt-8 flex flex-col items-center gap-2 rounded-xl border border-success/30 bg-success/10 py-10 text-center">
-          <CheckCircle2 className="h-8 w-8 text-success" />
-          <p className="text-sm font-medium text-success">Message sent — thanks for reaching out.</p>
+    <div className="bg-[#F7F8F5] py-16">
+      <div className="container max-w-2xl">
+        <div className="text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F1FFD6] text-[#3F6212]">
+            <Mail className="h-6 w-6" />
+          </span>
+          <h1 className="mt-4 text-2xl font-bold text-[#111111]">Contact Us</h1>
+          <p className="mt-2 text-sm text-[#6B7280]">
+            Have a question, ran into an issue, or want to give feedback? Send us a message and we'll get back to you.
+          </p>
         </div>
-      ) : (
-        <form
-          className="mt-8 space-y-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            mutation.mutate();
-          }}
-        >
+
+        {mutation.isSuccess ? (
+          <div className="mt-8 flex flex-col items-center gap-2 rounded-[20px] border border-[#BBF7D0] bg-[#ECFDF3] py-10 text-center">
+            <CheckCircle2 className="h-8 w-8 text-[#16A34A]" />
+            <p className="text-sm font-medium text-[#16A34A]">Message sent — thanks for reaching out.</p>
+          </div>
+        ) : (
+          <form
+            className="mt-8 space-y-5 rounded-[20px] border border-[#E5E7EB] bg-white p-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              mutation.mutate();
+            }}
+          >
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Your Name</Label>
@@ -81,7 +82,8 @@ export default function Contact() {
             Send Message
           </Button>
         </form>
-      )}
+        )}
+      </div>
     </div>
   );
 }

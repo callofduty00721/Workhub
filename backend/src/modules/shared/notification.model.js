@@ -14,6 +14,7 @@ const NOTIFICATION_TYPES = [
   "roster_invite_status",
   "campaign_invite",
   "system",
+  "announcement",
 ];
 
 const notificationSchema = new mongoose.Schema(

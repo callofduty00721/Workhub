@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, MapPin, Megaphone, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import type { Campaign } from "@/types";
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -21,13 +20,13 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   return (
     <Link
       to={`/campaigns/${campaign._id}`}
-      className="block rounded-2xl border border-neutral-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_16px_32px_-18px_rgba(15,23,42,0.18)]"
+      className="block rounded-[18px] border border-[#E5E7EB] bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B6FF00] hover:shadow-[0_16px_32px_-18px_rgba(15,23,42,0.18)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[15px] font-bold text-neutral-900">{campaign.title}</p>
-          {onBehalfOfName && <p className="truncate text-[11px] text-neutral-400">on behalf of {onBehalfOfName}</p>}
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-neutral-500">
+          <p className="truncate text-[15px] font-bold text-[#111111]">{campaign.title}</p>
+          {onBehalfOfName && <p className="truncate text-[11px] text-[#9CA3AF]">on behalf of {onBehalfOfName}</p>}
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#6B7280]">
             {campaign.location && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> {campaign.location}
@@ -43,31 +42,25 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
             )}
           </div>
         </div>
-        <span className="shrink-0 text-[13px] font-bold text-neutral-900">
+        <span className="shrink-0 text-[13px] font-bold text-[#111111]">
           ₹{campaign.budgetMin.toLocaleString("en-IN")}–{campaign.budgetMax.toLocaleString("en-IN")}
         </span>
       </div>
 
       {(campaign.influencerCategory || campaign.niche) && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {campaign.influencerCategory && (
-            <Badge variant="secondary" className="text-[10px]">
-              {campaign.influencerCategory}
-            </Badge>
-          )}
-          {campaign.niche && (
-            <Badge variant="outline" className="text-[10px]">
-              {campaign.niche}
-            </Badge>
-          )}
+          {campaign.influencerCategory && <span className="rounded-full bg-[#F3F5F1] px-2 py-0.5 text-[10px] font-medium text-[#4B5563]">{campaign.influencerCategory}</span>}
+          {campaign.niche && <span className="rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-medium text-[#4B5563]">{campaign.niche}</span>}
         </div>
       )}
 
-      {campaign.deliverables && <p className="mt-2.5 line-clamp-2 text-[12.5px] text-neutral-500">{campaign.deliverables}</p>}
+      {campaign.deliverables && <p className="mt-2.5 line-clamp-2 text-[12.5px] text-[#6B7280]">{campaign.deliverables}</p>}
 
-      <div className="mt-3 flex items-center justify-between border-t border-neutral-100 pt-3 text-[12px] text-neutral-400">
-        <span>{campaign.applicationsCount} applicant{campaign.applicationsCount === 1 ? "" : "s"}</span>
-        <span className="flex items-center gap-1 font-semibold text-neutral-900">
+      <div className="mt-3 flex items-center justify-between border-t border-[#F1F3EF] pt-3 text-[12px] text-[#9CA3AF]">
+        <span>
+          {campaign.applicationsCount} applicant{campaign.applicationsCount === 1 ? "" : "s"}
+        </span>
+        <span className="flex items-center gap-1 font-semibold text-[#111111]">
           View & Apply <ArrowRight className="h-3 w-3" />
         </span>
       </div>

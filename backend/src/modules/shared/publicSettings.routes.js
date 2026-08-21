@@ -1,9 +1,11 @@
 import { Router } from "express";
+import { validateObjectId } from "../../middleware/validateObjectId.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { getPhoneAuthProvider, getJobsEnabled, getCommissionPercent } from "../finance/platformSettings.model.js";
 import { isRazorpayConfigured, isStripeConfigured } from "../../config/payments.js";
 
 const router = Router();
+router.param("id", validateObjectId);
 
 // Not admin-gated — any logged-in user needs to know whether to render
 // Firebase's client SDK phone-verification flow, or neither if disabled.

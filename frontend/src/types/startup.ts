@@ -196,6 +196,7 @@ export interface Startup {
   viewCount: number;
   confirmedInvestorCount?: number;
   verificationRequests?: VerificationRequest[];
+  isDemo?: boolean;
   createdAt: string;
 }
 

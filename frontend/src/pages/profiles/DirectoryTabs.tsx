@@ -17,39 +17,31 @@ const TABS = [
   { label: "Campaigns", shortLabel: "Campaigns", to: "/campaigns", icon: Megaphone },
 ];
 
-// "dark": premium black+neon variant, used only by the Influencers page —
-// Brands/Agencies/Partners/Campaigns keep the original light tab strip.
-export function DirectoryTabs({ variant = "default" }: { variant?: "default" | "dark" }) {
-  const dark = variant === "dark";
+export function DirectoryTabs() {
   return (
-    <div className={cn("sticky top-16 z-30 border-b py-2", dark ? "border-white/[0.08] bg-black" : "bg-white")}>
+    <div className="sticky top-16 z-30 bg-white py-2">
       <div className="container flex justify-center">
-        <div
-          className={cn(
-            "flex w-full max-w-3xl gap-1 rounded-xl border p-1.5 sm:gap-1.5",
-            dark ? "border-white/[0.08] bg-[#0A0A0A]" : "border-neutral-200 bg-neutral-50"
-          )}
-        >
+        <div className="flex w-full max-w-3xl gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1.5 sm:gap-1.5">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
+              aria-label={tab.label}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-2 text-[11px] font-medium transition-all duration-200 sm:gap-2 sm:px-6 sm:py-2.5 sm:text-base",
-                  dark
-                    ? isActive
-                      ? "bg-gradient-to-b from-[#E8FF25] to-[#22C55E] text-black"
-                      : "text-[#A1A1AA] hover:bg-white/5 hover:text-white"
-                    : isActive
-                      ? "bg-[#171717] text-white"
-                      : "text-neutral-500 hover:bg-white hover:text-neutral-900"
+                  "flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-2 text-[11px] font-medium transition-all sm:gap-1.5 sm:px-3 sm:py-2.5 sm:text-sm lg:px-6 lg:text-base",
+                  isActive ? "bg-[#171717] text-white" : "text-neutral-500 hover:bg-white hover:text-neutral-900"
                 )
               }
             >
               <tab.icon className="h-4 w-4 shrink-0" />
-              <span className="sm:hidden">{tab.shortLabel}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
+              {/* Icon-only below sm (5 tabs in one row leaves no room for
+                  text at mobile widths — see MarketplaceTabs.tsx's identical
+                  reasoning for 4 tabs). Short label from sm, full label only
+                  from lg where there's room for "Influencers" alongside the
+                  other four. */}
+              <span className="hidden truncate sm:inline lg:hidden">{tab.shortLabel}</span>
+              <span className="hidden truncate lg:inline">{tab.label}</span>
             </NavLink>
           ))}
         </div>

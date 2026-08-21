@@ -90,10 +90,10 @@ const FUND_ITEM_COLORS = [
 
 function FundStat({ icon: Icon, color, value, label }: { icon: typeof Briefcase; color: string; value: string; label: string }) {
   return (
-    <div className="group rounded-xl bg-muted p-4 transition-all duration-300 hover:bg-accent">
+    <div className="group rounded-xl bg-[#F5F5F7] p-4 transition-all duration-300 hover:bg-[#EEEEF0]">
       <Icon className="h-4 w-4" style={{ color }} />
-      <p className="mt-2 text-[15px] font-semibold text-foreground">{value}</p>
-      <p className="text-[12px] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-[15px] font-semibold text-[#1D1D1F]">{value}</p>
+      <p className="text-[12px] text-[#86868B]">{label}</p>
     </div>
   );
 }
@@ -101,8 +101,8 @@ function FundStat({ icon: Icon, color, value, label }: { icon: typeof Briefcase;
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <>
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium text-foreground">{value}</span>
+      <span className="text-[#86868B]">{label}</span>
+      <span className="text-right font-medium text-[#1D1D1F]">{value}</span>
     </>
   );
 }
@@ -201,7 +201,7 @@ export default function StartupDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-muted">
+      <div className="min-h-screen bg-[#FAFAFA]">
         <div className="mx-auto max-w-[1600px] px-6 py-12">
           <div className="space-y-6">
             <Skeleton className="h-[400px] w-full rounded-3xl" />
@@ -217,12 +217,12 @@ export default function StartupDetails() {
 
   if (!startup) {
     return (
-      <div className="min-h-screen bg-muted">
+      <div className="min-h-screen bg-[#FAFAFA]">
         <div className="container py-32 text-center">
-          <p className="text-lg font-semibold text-foreground">Startup not found</p>
+          <p className="text-lg font-semibold text-[#1D1D1F]">Startup not found</p>
           <Link 
             to="/startups" 
-            className="mt-1 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+            className="mt-1 inline-flex items-center gap-2 rounded-full bg-[#1D1D1F] px-6 py-3 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
           >
             Back to Startups <ChevronRight className="h-4 w-4" />
           </Link>
@@ -257,12 +257,12 @@ export default function StartupDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen bg-[#FAFAFA]">
       <div className="mx-auto max-w-[1600px] px-6 py-8 lg:py-12">
         {/* Back button - Apple style */}
         <Link 
           to="/startups" 
-          className="group mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="group mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
           Back to Startups
@@ -272,14 +272,14 @@ export default function StartupDetails() {
           {/* MAIN COLUMN */}
           <div className="min-w-0 space-y-8">
             {/* Header Hero Card - Apple Style */}
-            <div className="relative overflow-hidden rounded-3xl bg-card border border-border shadow-sm">
+            <div className="relative overflow-hidden rounded-3xl bg-white border border-[#E5E5EA] shadow-sm">
               {/* Soft ambient glow — a single subtle accent, not the full multi-blob treatment */}
 
               <div className="relative px-6 py-5 sm:px-8 sm:py-6">
                 {/* Verification badges + Save — badges left, Save right, at the top of the card */}
                 <div className="flex w-full flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3.5 py-1.5 text-xs font-medium text-foreground">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-medium text-[#1D1D1F]">
                       {STAGE_LABELS[startup.stage]}
                     </span>
 
@@ -291,7 +291,7 @@ export default function StartupDetails() {
                     )}
 
                     {startup.founderVerified && !startup.isVerified && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3.5 py-1.5 text-xs font-medium text-foreground">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-medium text-[#1D1D1F]">
                         <ShieldCheck className="h-3.5 w-3.5" />
                         Founder Verified
                       </span>
@@ -305,24 +305,24 @@ export default function StartupDetails() {
                     className={cn(
                       "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-300",
                       isFollowing
-                        ? "bg-brand/10 text-brand border border-brand/30"
-                        : "bg-muted text-foreground hover:bg-accent"
+                        ? "bg-neutral-100 text-neutral-900 border border-neutral-300/50"
+                        : "bg-[#F5F5F7] text-[#1D1D1F] hover:bg-[#EEEEF0]"
                     )}
                   >
-                    <Heart className={cn("h-4 w-4 transition-all", isFollowing && "fill-brand text-brand")} />
+                    <Heart className={cn("h-4 w-4 transition-all", isFollowing && "fill-neutral-1000 text-neutral-1000")} />
                     {isFollowing ? "Saved" : "Save"}
-                    <span className="ml-0.5 text-xs text-muted-foreground">{startup.followers.length}</span>
+                    <span className="ml-0.5 text-xs text-[#86868B]">{startup.followers.length}</span>
                   </button>
                 </div>
 
                 <div className="flex flex-col items-center text-center">
                   {/* Logo */}
                   <div className="relative mt-4">
-                    <div className="relative h-20 w-20 rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
+                    <div className="relative h-20 w-20 rounded-2xl bg-[#F5F5F7] flex items-center justify-center overflow-hidden">
                       {startup.logo ? (
                         <img src={startup.logo} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <span className="text-2xl font-black text-foreground">
+                        <span className="text-2xl font-black text-neutral-1000">
                           {initialsFromName(startup.name)}
                         </span>
                       )}
@@ -330,17 +330,17 @@ export default function StartupDetails() {
                   </div>
 
                   {/* Name - Premium typography */}
-                  <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                  <h1 className="mt-3 text-2xl font-bold tracking-tight text-[#1D1D1F] sm:text-3xl">
                     {startup.name}
                   </h1>
 
                   {/* Tagline - Subdued elegance */}
-                  <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
+                  <p className="mt-1 text-sm text-[#86868B] max-w-2xl">
                     {startup.tagline}
                   </p>
 
                   {/* Location - Clean pill */}
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[#86868B]">
                     <MapPin className="h-3 w-3" />
                     {startup.location}
                   </div>
@@ -360,7 +360,7 @@ export default function StartupDetails() {
                 </div>
 
                 {/* Stats Bar - Apple style with separators */}
-                <div className="mt-4 flex items-center justify-center gap-4 border-t border-border pt-4 sm:gap-8">
+                <div className="mt-4 flex items-center justify-center gap-4 border-t border-[#E5E5EA] pt-4 sm:gap-8">
                   {[
                     { icon: Users2, value: String(startup.followers.length), label: "Followers" },
                     { icon: Eye, value: formatCompactNumber(startup.viewCount), label: "Views" },
@@ -368,66 +368,66 @@ export default function StartupDetails() {
                   ].map((stat, i, arr) => (
                     <div key={stat.label} className="flex items-center gap-4 sm:gap-8">
                       <div className="text-center">
-                        <p className="text-base font-semibold text-foreground tracking-tight">{stat.value}</p>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                        <p className="text-base font-semibold text-[#1D1D1F] tracking-tight">{stat.value}</p>
+                        <p className="text-xs text-[#86868B]">{stat.label}</p>
                       </div>
                       {i < arr.length - 1 && (
-                        <div className="h-6 w-px bg-muted" />
+                        <div className="h-6 w-px bg-[#E5E5EA]" />
                       )}
                     </div>
                   ))}
                 </div>
 
                 {/* Founder & Actions - Apple style row */}
-                <div className="mt-4 flex flex-col items-center gap-3 border-t border-border pt-4 sm:flex-row sm:justify-between">
+                <div className="mt-4 flex flex-col items-center gap-3 border-t border-[#E5E5EA] pt-4 sm:flex-row sm:justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9 ring-2 ring-white ring-offset-2">
                       <AvatarImage src={founder?.avatar} alt={founder?.name} />
-                      <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
+                      <AvatarFallback className="bg-[#171717] text-sm font-semibold text-white">
                         {founder ? initialsFromName(founder.name) : "?"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       {founder ? (
-                        <Link to={`/founders/${founder._id}`} className="text-sm font-medium text-foreground hover:text-brand transition-colors">
+                        <Link to={`/founders/${founder._id}`} className="text-sm font-medium text-[#1D1D1F] hover:text-neutral-900 transition-colors">
                           {founder.name}
                         </Link>
                       ) : (
-                        <p className="text-sm font-medium text-foreground">Unknown</p>
+                        <p className="text-sm font-medium text-[#1D1D1F]">Unknown</p>
                       )}
-                      <p className="text-xs text-muted-foreground">Founder</p>
+                      <p className="text-xs text-[#86868B]">Founder</p>
                     </div>
 
                     {(startup.website || Object.values(startup.socialLinks ?? {}).some(Boolean)) && (
-                      <div className="ml-1 flex items-center gap-1 border-l border-border pl-3">
+                      <div className="ml-1 flex items-center gap-1 border-l border-[#E5E5EA] pl-3">
                         {startup.website && (
                           <a
                             href={startup.website}
                             target="_blank"
                             rel="noreferrer"
                             aria-label="Website"
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F5F7] text-[#86868B] hover:bg-[#EEEEF0] hover:text-[#1D1D1F] transition-colors"
                           >
                             <Globe className="h-3.5 w-3.5" />
                           </a>
                         )}
                         {startup.socialLinks?.linkedin && (
-                          <a href={startup.socialLinks.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                          <a href={startup.socialLinks.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F5F7] text-[#86868B] hover:bg-[#EEEEF0] hover:text-[#1D1D1F] transition-colors">
                             <Linkedin className="h-3.5 w-3.5" />
                           </a>
                         )}
                         {startup.socialLinks?.twitter && (
-                          <a href={startup.socialLinks.twitter} target="_blank" rel="noreferrer" aria-label="Twitter" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                          <a href={startup.socialLinks.twitter} target="_blank" rel="noreferrer" aria-label="Twitter" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F5F7] text-[#86868B] hover:bg-[#EEEEF0] hover:text-[#1D1D1F] transition-colors">
                             <Twitter className="h-3.5 w-3.5" />
                           </a>
                         )}
                         {startup.socialLinks?.facebook && (
-                          <a href={startup.socialLinks.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                          <a href={startup.socialLinks.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F5F7] text-[#86868B] hover:bg-[#EEEEF0] hover:text-[#1D1D1F] transition-colors">
                             <Facebook className="h-3.5 w-3.5" />
                           </a>
                         )}
                         {startup.socialLinks?.instagram && (
-                          <a href={startup.socialLinks.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                          <a href={startup.socialLinks.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F5F7] text-[#86868B] hover:bg-[#EEEEF0] hover:text-[#1D1D1F] transition-colors">
                             <Instagram className="h-3.5 w-3.5" />
                           </a>
                         )}
@@ -439,7 +439,7 @@ export default function StartupDetails() {
                     {isOwner ? (
                       <Link
                         to={`/dashboard/founder/startup/${startup._id}`}
-                        className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#1D1D1F] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
                       >
                         <Pencil className="h-4 w-4" />
                         Edit Startup
@@ -452,11 +452,11 @@ export default function StartupDetails() {
                             if (!isInterested) interestMutation.mutate();
                             setTab("investments");
                           }}
-                          className="group relative inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors duration-300"
+                          className="group relative inline-flex items-center gap-2 rounded-full bg-[#171717] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#000000] transition-colors duration-300"
                         >
                           <Wallet className="h-4 w-4 transition-transform group-hover:scale-110" />
                           Invest
-                          <span className="absolute inset-0 rounded-full bg-card/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                         
                         <button
@@ -465,7 +465,7 @@ export default function StartupDetails() {
                             handleMessageFounder();
                           }}
                           disabled={!user || messageFounderMutation.isPending}
-                          className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-all duration-300"
+                          className="inline-flex items-center gap-2 rounded-full border border-[#E5E5EA] px-5 py-2.5 text-sm font-medium text-[#1D1D1F] hover:bg-[#F5F5F7] hover:border-[#D1D1D6] transition-all duration-300"
                         >
                           <MessageSquare className="h-4 w-4" />
                           Message
@@ -475,11 +475,11 @@ export default function StartupDetails() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground hover:bg-muted transition-colors">
+                        <button className="flex h-10 w-10 items-center justify-center rounded-full border border-[#E5E5EA] text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors">
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-2xl border-border shadow-elevated p-1">
+                      <DropdownMenuContent align="end" className="rounded-2xl border-neutral-200 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.2)] p-1">
                         <DropdownMenuItem onClick={handleShare} className="rounded-xl text-sm gap-2 py-2.5 px-4">
                           <Share2 className="h-4 w-4" /> {copied ? "Copied!" : "Share"}
                         </DropdownMenuItem>
@@ -501,7 +501,7 @@ export default function StartupDetails() {
                       value={reportReason}
                       onChange={(e) => setReportReason(e.target.value)}
                       placeholder="e.g. fake funding claims, misleading info, spam..."
-                      className="mt-2 min-h-[60px] bg-card/80 text-sm border-border rounded-xl focus:border-red-300 focus:ring-red-200"
+                      className="mt-2 min-h-[60px] bg-white/80 text-sm border-[#E5E5EA] rounded-xl focus:border-red-300 focus:ring-red-200"
                     />
                     <div className="mt-3 flex gap-2">
                       <button
@@ -514,7 +514,7 @@ export default function StartupDetails() {
                       </button>
                       <button 
                         onClick={() => setReportOpen(false)} 
-                        className="rounded-full border border-border px-5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                        className="rounded-full border border-[#E5E5EA] px-5 py-2 text-sm font-medium text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors"
                       >
                         Cancel
                       </button>
@@ -525,22 +525,22 @@ export default function StartupDetails() {
             </div>
 
             {/* Tabs - Apple style with elegant underline */}
-            <div className="rounded-3xl border border-border bg-card">
-              <div className="flex gap-1 overflow-x-auto border-b border-border px-4 scrollbar-hide sm:justify-between">
+            <div className="rounded-3xl border border-neutral-100 bg-white">
+              <div className="flex gap-1 overflow-x-auto border-b border-[#E5E5EA] px-4 scrollbar-hide sm:justify-between">
                 {TABS.map(([value, label]) => (
                   <button
                     key={value}
                     onClick={() => setTab(value)}
                     className={cn(
                       "relative whitespace-nowrap px-4 py-4 text-sm font-medium transition-all duration-300",
-                      tab === value
-                        ? "text-brand"
-                        : "text-muted-foreground hover:text-foreground"
+                      tab === value 
+                        ? "text-[#1D1D1F]" 
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
                     )}
                   >
                     {label}
                     {tab === value && (
-                      <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-brand" />
+                      <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-[#171717]" />
                     )}
                   </button>
                 ))}
@@ -639,15 +639,15 @@ export default function StartupDetails() {
             </div>
 
             {/* Bottom CTA - Apple style */}
-            <div className="relative overflow-hidden rounded-3xl bg-muted/50 border border-border p-8">
+            <div className="relative overflow-hidden rounded-3xl bg-[#F5F5F5]/50 border border-neutral-100 p-8">
               <div className="relative flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
                 <div className="text-center sm:text-left">
-                  <h3 className="text-xl font-semibold text-foreground">
+                  <h3 className="text-xl font-semibold text-[#1D1D1F]">
                     {tab === "product" 
                       ? "Believe in our product?" 
                       : "This idea excites you?"}
                   </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 text-sm text-[#86868B]">
                     {tab === "product" 
                       ? "Invest in our plan and help us build a strong future."
                       : "Invest now and help the founder build something amazing."}
@@ -660,17 +660,17 @@ export default function StartupDetails() {
                       if (!isInterested) interestMutation.mutate();
                       setTab("investments");
                     }}
-                    className="group relative inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors duration-300"
+                    className="group relative inline-flex items-center gap-2 rounded-full bg-[#171717] px-7 py-3 text-sm font-medium text-white hover:bg-[#000000] transition-colors duration-300"
                   >
                     <Wallet className="h-4 w-4 transition-transform group-hover:scale-110" />
                     Invest Now
-                    <span className="absolute inset-0 rounded-full bg-card/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                   
                   <button
                     onClick={handleMessageFounder}
                     disabled={!user || messageFounderMutation.isPending}
-                    className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3 text-sm font-medium text-foreground hover:bg-muted transition-all duration-300"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#E5E5EA] px-7 py-3 text-sm font-medium text-[#1D1D1F] hover:bg-[#F5F5F7] hover:border-[#D1D1D6] transition-all duration-300"
                   >
                     <MessageSquare className="h-4 w-4" />
                     Message Founder
@@ -678,7 +678,7 @@ export default function StartupDetails() {
                   
                   <button
                     onClick={handleShare}
-                    className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3 text-sm font-medium text-foreground hover:bg-muted transition-all duration-300"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#E5E5EA] px-7 py-3 text-sm font-medium text-[#1D1D1F] hover:bg-[#F5F5F7] hover:border-[#D1D1D6] transition-all duration-300"
                   >
                     <Share2 className="h-4 w-4" />
                     {copied ? "Copied!" : "Share"}
@@ -747,24 +747,24 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
     <div className="space-y-8">
       {/* About & Highlights Grid */}
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="group rounded-2xl bg-muted p-6 transition-all duration-300 hover:bg-accent">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">About the Idea</h3>
-          <p className="mt-3 text-sm leading-relaxed text-foreground/80">{startup.description}</p>
+        <div className="group rounded-2xl bg-[#F5F5F7] p-6 transition-all duration-300 hover:bg-[#EEEEF0]">
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">About the Idea</h3>
+          <p className="mt-3 text-sm leading-relaxed text-[#424245]">{startup.description}</p>
           {startup.targetAudience && (
-            <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
-              <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-              <span><span className="font-medium text-foreground">Target Audience:</span> {startup.targetAudience}</span>
+            <p className="mt-3 flex items-start gap-2 text-sm text-[#86868B]">
+              <Target className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" />
+              <span><span className="font-medium text-[#1D1D1F]">Target Audience:</span> {startup.targetAudience}</span>
             </p>
           )}
         </div>
 
         {startup.highlights.length > 0 && (
-          <div className="group rounded-2xl bg-muted p-6 transition-all duration-300 hover:bg-accent">
-            <h3 className="text-sm font-semibold text-foreground tracking-tight">Highlights</h3>
+          <div className="group rounded-2xl bg-[#F5F5F7] p-6 transition-all duration-300 hover:bg-[#EEEEF0]">
+            <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Highlights</h3>
             <ul className="mt-3 space-y-2.5">
               {startup.highlights.map((h: string, i: number) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {h}
+                <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {h}
                 </li>
               ))}
             </ul>
@@ -774,12 +774,12 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
 
       {/* Mission Statement */}
       {startup.missionStatement && (
-        <div className="group rounded-2xl bg-muted/40 p-6 border border-border/30">
+        <div className="group rounded-2xl bg-[#F5F5F5]/40 p-6 border border-neutral-100/30">
           <div className="flex items-center gap-2">
-            <Lightbulb className="h-4 w-4 text-foreground" />
-            <h3 className="text-sm font-semibold text-foreground tracking-tight">Our Mission</h3>
+            <Lightbulb className="h-4 w-4 text-neutral-1000" />
+            <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Our Mission</h3>
           </div>
-          <p className="mt-3 text-sm leading-relaxed text-foreground/80">{startup.missionStatement}</p>
+          <p className="mt-3 text-sm leading-relaxed text-[#424245]">{startup.missionStatement}</p>
         </div>
       )}
 
@@ -790,11 +790,11 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
             <div className="group rounded-2xl bg-red-50/40 p-6 border border-red-100/30 transition-all duration-300 hover:bg-red-50/60">
               <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4 text-red-500" />
-                <h3 className="text-sm font-semibold text-foreground tracking-tight">Problem</h3>
+                <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Problem</h3>
               </div>
               <ul className="mt-3 space-y-2">
                 {startup.problemStatement.split("\n").filter(Boolean).map((line: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
                     <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" /> {line}
                   </li>
                 ))}
@@ -806,11 +806,11 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
             <div className="group rounded-2xl bg-green-50/40 p-6 border border-green-100/30 transition-all duration-300 hover:bg-green-50/60">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <h3 className="text-sm font-semibold text-foreground tracking-tight">Solution</h3>
+                <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Solution</h3>
               </div>
               <ul className="mt-3 space-y-2">
                 {startup.solution.split("\n").filter(Boolean).map((line: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
                     <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" /> {line}
                   </li>
                 ))}
@@ -823,18 +823,18 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
       {/* Business Plan */}
       {startup.businessPlan.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Business Plan</h3>
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Business Plan</h3>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(160px,200px))]">
             {startup.businessPlan.map((item: any, i: number) => {
               const icons = [Target, TrendingUp, Layers, Users];
               const Icon = icons[i % icons.length];
               return (
-                <div key={i} className="rounded-2xl bg-muted p-4 text-center transition-all duration-300 hover:bg-accent">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground">
+                <div key={i} className="rounded-2xl bg-[#F5F5F7] p-4 text-center transition-all duration-300 hover:bg-[#EEEEF0]">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
                     <Icon className="h-4 w-4" />
                   </span>
-                  <p className="mt-2 text-sm font-medium text-foreground">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.value}</p>
+                  <p className="mt-2 text-sm font-medium text-[#1D1D1F]">{item.label}</p>
+                  <p className="text-xs text-[#86868B]">{item.value}</p>
                 </div>
               );
             })}
@@ -845,16 +845,16 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
       {/* Traction */}
       {startup.tractionStats.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Traction</h3>
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Traction</h3>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(160px,200px))]">
             {startup.tractionStats.map((item: any, i: number) => {
               const icons = [TrendingUp, Users2, CheckCircle2, PieChart];
               const Icon = icons[i % icons.length];
               return (
-                <div key={i} className="rounded-2xl bg-muted p-4 text-center transition-all duration-300 hover:bg-accent">
-                  <Icon className="mx-auto h-5 w-5 text-foreground" />
-                  <p className="mt-2 text-lg font-semibold text-foreground">{item.value}</p>
-                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                <div key={i} className="rounded-2xl bg-[#F5F5F7] p-4 text-center transition-all duration-300 hover:bg-[#EEEEF0]">
+                  <Icon className="mx-auto h-5 w-5 text-neutral-1000" />
+                  <p className="mt-2 text-lg font-semibold text-[#1D1D1F]">{item.value}</p>
+                  <p className="text-xs text-[#86868B]">{item.label}</p>
                 </div>
               );
             })}
@@ -865,20 +865,20 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
       {/* Milestones */}
       {startup.milestones.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Milestones</h3>
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Milestones</h3>
           <div className="space-y-0">
             {[...startup.milestones]
               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
               .map((m: any, i: number, arr: any[]) => (
                 <div key={i} className="flex gap-4">
                   <div className="flex flex-col items-center">
-                    <span className="mt-1.5 h-3 w-3 rounded-full bg-primary ring-2 ring-border" />
-                    {i < arr.length - 1 && <span className="mt-1 w-px flex-1 bg-muted" />}
+                    <span className="mt-1.5 h-3 w-3 rounded-full bg-neutral-1000 ring-2 ring-neutral-300" />
+                    {i < arr.length - 1 && <span className="mt-1 w-px flex-1 bg-[#E5E5EA]" />}
                   </div>
                   <div className={cn("pb-6", i === arr.length - 1 && "pb-0")}>
-                    <p className="text-sm font-medium text-foreground">{m.title}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(m.date).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}</p>
-                    {m.description && <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>}
+                    <p className="text-sm font-medium text-[#1D1D1F]">{m.title}</p>
+                    <p className="text-xs text-[#86868B]">{new Date(m.date).toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}</p>
+                    {m.description && <p className="mt-1 text-sm text-[#86868B]">{m.description}</p>}
                   </div>
                 </div>
               ))}
@@ -887,7 +887,7 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
       )}
 
       {/* Funding Mini Card */}
-      <div className="rounded-2xl bg-muted/40 border border-border/30 p-6">
+      <div className="rounded-2xl bg-[#F5F5F5]/40 border border-neutral-100/30 p-6">
         <div className="flex items-center gap-4">
           <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
             <svg className="h-20 w-20 -rotate-90">
@@ -905,12 +905,12 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
                 className="transition-all duration-1000 ease-out"
               />
             </svg>
-            <span className="absolute text-lg font-bold text-foreground">{fundingPct}%</span>
+            <span className="absolute text-lg font-bold text-[#1D1D1F]">{fundingPct}%</span>
           </div>
           <div>
-            <p className="text-2xl font-bold text-foreground">{formatCurrency(startup.fundingRaised)}</p>
-            <p className="text-sm text-muted-foreground">raised of {formatCurrency(startup.fundingNeeded)} goal</p>
-            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+            <p className="text-2xl font-bold text-[#1D1D1F]">{formatCurrency(startup.fundingRaised)}</p>
+            <p className="text-sm text-[#86868B]">raised of {formatCurrency(startup.fundingNeeded)} goal</p>
+            <div className="mt-1 flex items-center gap-3 text-xs text-[#86868B]">
               <span>{confirmedInvestorCount} investors</span>
               {startup.expectedClosingDate && (
                 <>
@@ -923,7 +923,7 @@ function OverviewContent({ startup, fundingPct, confirmedInvestorCount, setTab }
         </div>
         <button 
           onClick={() => setTab("funding")}
-          className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          className="mt-4 w-full rounded-full bg-[#1D1D1F] py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
         >
           View Funding Details
         </button>
@@ -937,8 +937,8 @@ function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }:
     <div className="space-y-8">
       {/* Funding Overview */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl bg-muted p-6">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Funding Overview</h3>
+        <div className="rounded-2xl bg-[#F5F5F7] p-6">
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Funding Overview</h3>
           <div className="mt-4 flex items-center gap-6">
             <div className="relative flex h-24 w-24 shrink-0 items-center justify-center">
               <svg className="h-24 w-24 -rotate-90">
@@ -956,19 +956,19 @@ function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }:
                   className="transition-all duration-1000 ease-out"
                 />
               </svg>
-              <span className="absolute text-xl font-bold text-foreground">{fundingPct}%</span>
+              <span className="absolute text-xl font-bold text-[#1D1D1F]">{fundingPct}%</span>
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{formatCurrency(startup.fundingNeeded)}</p>
-              <p className="text-sm text-muted-foreground">Funding Goal</p>
-              <p className="mt-2 text-xl font-bold text-foreground">{formatCurrency(startup.fundingRaised)}</p>
-              <p className="text-sm text-muted-foreground">Raised Amount</p>
+              <p className="text-2xl font-bold text-neutral-900">{formatCurrency(startup.fundingNeeded)}</p>
+              <p className="text-sm text-[#86868B]">Funding Goal</p>
+              <p className="mt-2 text-xl font-bold text-[#1D1D1F]">{formatCurrency(startup.fundingRaised)}</p>
+              <p className="text-sm text-[#86868B]">Raised Amount</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-muted p-6">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Funding Details</h3>
+        <div className="rounded-2xl bg-[#F5F5F7] p-6">
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Funding Details</h3>
           <div className="mt-4 grid grid-cols-2 gap-y-3 text-sm">
             <DetailRow label="Funding Type" value={startup.fundingType[0] || "—"} />
             <DetailRow label="Investment Type" value={startup.investmentType || "—"} />
@@ -994,11 +994,11 @@ function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }:
       {/* Fund Usage Plan */}
       {startup.fundUsagePlan.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Fund Usage Plan</h3>
-          <div className="overflow-x-auto rounded-2xl bg-muted p-4">
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Fund Usage Plan</h3>
+          <div className="overflow-x-auto rounded-2xl bg-[#F5F5F7] p-4">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                <tr className="border-b border-[#E5E5EA] text-xs uppercase tracking-wider text-[#86868B]">
                   <th className="pb-3 pr-4 text-left font-semibold">Category</th>
                   <th className="pb-3 pr-4 text-left font-semibold">Description</th>
                   <th className="pb-3 pr-4 text-right font-semibold">Cost</th>
@@ -1010,7 +1010,7 @@ function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }:
                   const pct = startup.fundingNeeded ? Math.round((item.estimatedCost / startup.fundingNeeded) * 100) : 0;
                   const color = FUND_ITEM_COLORS[i % FUND_ITEM_COLORS.length];
                   return (
-                    <tr key={i} className="border-b border-border last:border-0">
+                    <tr key={i} className="border-b border-[#E5E5EA] last:border-0">
                       <td className="py-3 pr-4">
                         <span className="flex items-center gap-2 font-medium">
                           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: color.bg, color: color.fg }}>
@@ -1019,11 +1019,11 @@ function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }:
                           {item.category}
                         </span>
                       </td>
-                      <td className="py-3 pr-4 text-muted-foreground">{item.description}</td>
+                      <td className="py-3 pr-4 text-[#86868B]">{item.description}</td>
                       <td className="py-3 pr-4 text-right font-medium">{formatCurrency(item.estimatedCost)}</td>
                       <td className="py-3">
                         <div className="flex items-center justify-end gap-3">
-                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#E5E5EA]">
                             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color.fg }} />
                           </div>
                           <span className="w-9 text-right text-xs font-medium">{pct}%</span>
@@ -1049,18 +1049,18 @@ function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }:
       {(startup.expectedOutcomes.length > 0 || !!startup.pitchDeckUrl || !!startup.documents?.length) && (
         <div className="grid gap-6 md:grid-cols-2">
           {startup.expectedOutcomes.length > 0 && (
-            <div className="rounded-2xl bg-muted p-6">
-              <h3 className="text-sm font-semibold text-foreground tracking-tight">Expected Outcomes</h3>
+            <div className="rounded-2xl bg-[#F5F5F7] p-6">
+              <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Expected Outcomes</h3>
               <div className="mt-3 space-y-3">
                 {startup.expectedOutcomes.map((o: any, i: number) => {
                   const icons = [Clock, TrendingUp, PieChart, Users2, Briefcase];
                   const Icon = icons[i % icons.length];
                   return (
                     <div key={i} className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-muted-foreground">
-                        <Icon className="h-3.5 w-3.5 shrink-0 text-foreground" /> {o.label}
+                      <span className="flex items-center gap-2 text-[#86868B]">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-neutral-1000" /> {o.label}
                       </span>
-                      <span className="font-medium text-foreground">{o.value}</span>
+                      <span className="font-medium text-[#1D1D1F]">{o.value}</span>
                     </div>
                   );
                 })}
@@ -1069,13 +1069,13 @@ function FundingContent({ startup, fundingPct, confirmedInvestorCount, setTab }:
           )}
 
           {(!!startup.pitchDeckUrl || !!startup.documents?.length) && (
-            <div className="rounded-2xl bg-muted p-6">
-              <h3 className="text-sm font-semibold text-foreground tracking-tight">Documents</h3>
-              <div className="mt-3 divide-y divide-border">
+            <div className="rounded-2xl bg-[#F5F5F7] p-6">
+              <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Documents</h3>
+              <div className="mt-3 divide-y divide-[#E5E5EA]">
                 {startup.pitchDeckUrl && <DocRow name="Pitch Deck" url={startup.pitchDeckUrl} />}
                 {startup.documents?.map((d: any, i: number) => <DocRow key={i} name={d.name} url={d.url} />)}
               </div>
-              <button onClick={() => setTab("documents")} className="mt-3 text-sm font-medium text-foreground hover:text-brand transition-colors">
+              <button onClick={() => setTab("documents")} className="mt-3 text-sm font-medium text-neutral-900 hover:text-neutral-800 transition-colors">
                 View All Documents →
               </button>
             </div>
@@ -1093,18 +1093,18 @@ function ProductContent({ startup, setProductModal }: any) {
         <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
           {startup.products.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground tracking-tight">Our Product</h3>
+              <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Our Product</h3>
               <ProductCarousel products={startup.products} onSelect={setProductModal} />
             </div>
           )}
 
           {startup.productHighlights.length > 0 && (
-            <div className="rounded-2xl bg-muted p-6">
-              <h3 className="text-sm font-semibold text-foreground tracking-tight">Product Highlights</h3>
+            <div className="rounded-2xl bg-[#F5F5F7] p-6">
+              <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Product Highlights</h3>
               <ul className="mt-3 space-y-2.5">
                 {startup.productHighlights.map((h: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {h}
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {h}
                   </li>
                 ))}
               </ul>
@@ -1116,35 +1116,35 @@ function ProductContent({ startup, setProductModal }: any) {
       {/* Plan Phases */}
       {startup.planPhases.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">Our Plan</h3>
+          <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Our Plan</h3>
           <div className="grid gap-4 sm:grid-cols-3">
             {startup.planPhases.map((phase: any, i: number) => {
               const icons = [Rocket, TrendingUp, Award];
               const Icon = icons[i % icons.length];
               return (
-                <div key={i} className="rounded-2xl bg-muted p-5 transition-all duration-300 hover:bg-accent">
+                <div key={i} className="rounded-2xl bg-[#F5F5F7] p-5 transition-all duration-300 hover:bg-[#EEEEF0]">
                   <div className="flex items-start justify-between">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
                       <Icon className="h-4 w-4" />
                     </span>
                     {phase.timeframe && (
-                      <span className="rounded-full bg-card/80 px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border">
+                      <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium text-[#86868B] border border-[#E5E5EA]">
                         {phase.timeframe}
                       </span>
                     )}
                   </div>
-                  <p className="mt-3 text-sm font-semibold text-foreground">{phase.title}</p>
+                  <p className="mt-3 text-sm font-semibold text-[#1D1D1F]">{phase.title}</p>
                   {phase.checklist.length > 0 && (
                     <ul className="mt-2 space-y-1.5">
                       {phase.checklist.map((c: string, ci: number) => (
-                        <li key={ci} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                          <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-foreground" /> {c}
+                        <li key={ci} className="flex items-start gap-1.5 text-xs text-[#86868B]">
+                          <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-neutral-1000" /> {c}
                         </li>
                       ))}
                     </ul>
                   )}
                   {phase.estimatedCost > 0 && (
-                    <p className="mt-3 border-t border-border pt-2.5 text-xs font-medium text-foreground">
+                    <p className="mt-3 border-t border-[#E5E5EA] pt-2.5 text-xs font-medium text-neutral-900">
                       Est. Cost: {formatCurrency(phase.estimatedCost)}
                     </p>
                   )}
@@ -1160,16 +1160,16 @@ function ProductContent({ startup, setProductModal }: any) {
         <div className="grid gap-6 md:grid-cols-2">
           {startup.marketStats.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground tracking-tight">Market Opportunity</h3>
+              <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Market Opportunity</h3>
               <div className="grid grid-cols-2 gap-4">
                 {startup.marketStats.map((s: any, i: number) => {
                   const icons = [Globe, Users2, TrendingUp, PieChart];
                   const Icon = icons[i % icons.length];
                   return (
-                    <div key={i} className="rounded-2xl bg-muted p-4 text-center transition-all duration-300 hover:bg-accent">
-                      <Icon className="mx-auto h-5 w-5 text-foreground" />
-                      <p className="mt-2 text-lg font-semibold text-foreground">{s.value}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    <div key={i} className="rounded-2xl bg-[#F5F5F7] p-4 text-center transition-all duration-300 hover:bg-[#EEEEF0]">
+                      <Icon className="mx-auto h-5 w-5 text-neutral-1000" />
+                      <p className="mt-2 text-lg font-semibold text-[#1D1D1F]">{s.value}</p>
+                      <p className="text-xs text-[#86868B]">{s.label}</p>
                     </div>
                   );
                 })}
@@ -1178,12 +1178,12 @@ function ProductContent({ startup, setProductModal }: any) {
           )}
 
           {startup.competitiveAdvantage.length > 0 && (
-            <div className="rounded-2xl bg-muted p-6">
-              <h3 className="text-sm font-semibold text-foreground tracking-tight">Competitive Advantage</h3>
+            <div className="rounded-2xl bg-[#F5F5F7] p-6">
+              <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Competitive Advantage</h3>
               <ul className="mt-3 space-y-2.5">
                 {startup.competitiveAdvantage.map((c: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {c}
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {c}
                   </li>
                 ))}
               </ul>
@@ -1197,28 +1197,28 @@ function ProductContent({ startup, setProductModal }: any) {
 
 function InvestorsSection({ investorPartners }: any) {
   return (
-    <div className="rounded-2xl bg-muted p-6">
+    <div className="rounded-2xl bg-[#F5F5F7] p-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground tracking-tight">Interested Investors & Partners</h3>
-        <span className="text-xs text-muted-foreground">Only visible to you</span>
+        <h3 className="text-sm font-semibold text-[#1D1D1F] tracking-tight">Interested Investors & Partners</h3>
+        <span className="text-xs text-[#86868B]">Only visible to you</span>
       </div>
       {investorPartners.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No investors or partners have connected yet.</p>
+        <p className="mt-4 text-sm text-[#86868B]">No investors or partners have connected yet.</p>
       ) : (
-        <div className="mt-4 divide-y divide-border">
+        <div className="mt-4 divide-y divide-[#E5E5EA]">
           {investorPartners.map((p: any) => (
             <div key={p._id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
               <Avatar className="h-12 w-12 ring-2 ring-white">
                 <AvatarImage src={p.avatar} alt={p.name} />
-                <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
+                <AvatarFallback className="bg-[#171717] text-sm font-semibold text-white">
                   {initialsFromName(p.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{p.name}</p>
-                <p className="text-xs capitalize text-muted-foreground">{p.role}</p>
+                <p className="text-sm font-medium text-[#1D1D1F]">{p.name}</p>
+                <p className="text-xs capitalize text-[#86868B]">{p.role}</p>
               </div>
-              <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">Interested</span>
+              <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-900">Interested</span>
             </div>
           ))}
         </div>
@@ -1234,24 +1234,24 @@ function InvestorsSection({ investorPartners }: any) {
 function TeamSidebar({ setJoinModal }: any) {
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground">
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
           <Users2 className="h-5 w-5" />
         </div>
-        <h4 className="mt-3 text-base font-semibold text-foreground">Join the Team</h4>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+        <h4 className="mt-3 text-base font-semibold text-[#1D1D1F]">Join the Team</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-[#86868B]">
           Like this idea? Use your skills to help build this startup.
         </p>
         <button
           onClick={() => setJoinModal({ open: true, role: null })}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#1D1D1F] py-3 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
         >
           <Users2 className="h-4 w-4" /> Join Team
         </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">How It Works</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">How It Works</h4>
         <div className="mt-4 space-y-4">
           {[
             ["Choose a Role", "Pick the role that matches your skills."],
@@ -1260,12 +1260,12 @@ function TeamSidebar({ setJoinModal }: any) {
             ["Join the Team", "Start working with the team."],
           ].map(([title, desc], i) => (
             <div key={title} className="flex items-start gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-foreground">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-bold text-neutral-900">
                 {i + 1}
               </span>
               <div>
-                <p className="text-sm font-medium text-foreground">{title}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
+                <p className="text-sm font-medium text-[#1D1D1F]">{title}</p>
+                <p className="text-xs text-[#86868B]">{desc}</p>
               </div>
             </div>
           ))}
@@ -1278,8 +1278,8 @@ function TeamSidebar({ setJoinModal }: any) {
 function ProductSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, onMessageFounder, user, messageFounderMutation }: any) {
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Investment Summary</h4>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
           <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
@@ -1288,45 +1288,45 @@ function ProductSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, o
           <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
           <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
         </div>
-        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-[#1D1D1F] py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors">
           View Funding Details
         </button>
       </div>
 
       {startup.whyProduct.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-6">
-          <h4 className="text-sm font-semibold text-foreground">Why Our Product?</h4>
+        <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+          <h4 className="text-sm font-semibold text-[#1D1D1F]">Why Our Product?</h4>
           <ul className="mt-3 space-y-2.5">
             {startup.whyProduct.map((w: string, i: number) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+              <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {w}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground">
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
           <Truck className="h-5 w-5" />
         </div>
-        <h4 className="mt-3 text-base font-semibold text-foreground">Want to Distribute?</h4>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+        <h4 className="mt-3 text-base font-semibold text-[#1D1D1F]">Want to Distribute?</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-[#86868B]">
           Partner with us to distribute our products.
         </p>
         <button
           onClick={onMessageFounder}
           disabled={!user || messageFounderMutation.isPending}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#1D1D1F] py-3 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
         >
           <Truck className="h-4 w-4" /> Become Distributor
         </button>
       </div>
 
       {(!!startup.pitchDeckUrl || !!startup.documents?.length) && (
-        <div className="rounded-2xl border border-border bg-card p-6">
-          <h4 className="text-sm font-semibold text-foreground">Documents</h4>
-          <div className="mt-3 divide-y divide-border">
+        <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+          <h4 className="text-sm font-semibold text-[#1D1D1F]">Documents</h4>
+          <div className="mt-3 divide-y divide-[#E5E5EA]">
             {startup.pitchDeckUrl && <DocRow name="Pitch Deck" url={startup.pitchDeckUrl} />}
             {startup.documents?.map((d: any, i: number) => <DocRow key={i} name={d.name} url={d.url} />)}
           </div>
@@ -1339,8 +1339,8 @@ function ProductSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, o
 function DocumentsSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, onMessageFounder, user, messageFounderMutation }: any) {
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Investment Summary</h4>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
           <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
@@ -1349,13 +1349,13 @@ function DocumentsSidebar({ startup, fundingPct, confirmedInvestorCount, setTab,
           <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
           <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
         </div>
-        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-[#1D1D1F] py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors">
           View Funding Details
         </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Document Highlights</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Document Highlights</h4>
         <ul className="mt-3 space-y-2.5">
           {[
             "Verified and authentic documents",
@@ -1363,32 +1363,32 @@ function DocumentsSidebar({ startup, fundingPct, confirmedInvestorCount, setTab,
             "Helps investors understand the startup",
             "Secure and easy access",
           ].map((w, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+            <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {w}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Need More Information?</h4>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Can't find what you're looking for?</p>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Need More Information?</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-[#86868B]">Can't find what you're looking for?</p>
         <button
           onClick={onMessageFounder}
           disabled={!user || messageFounderMutation.isPending}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#1D1D1F] py-3 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
         >
           <FilePlus2 className="h-4 w-4" /> Request Document
         </button>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl bg-muted p-6 border border-border/30">
+      <div className="relative overflow-hidden rounded-2xl bg-[#F5F5F5] p-6 border border-neutral-300/30">
         <div className="relative">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-card/80 text-foreground">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/80 text-neutral-900">
             <FolderCheck className="h-5 w-5" />
           </div>
-          <h4 className="mt-3 text-base font-semibold text-foreground">Transparency builds trust</h4>
-          <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">
+          <h4 className="mt-3 text-base font-semibold text-[#1D1D1F]">Transparency builds trust</h4>
+          <p className="mt-1.5 text-sm leading-relaxed text-[#424245]">
             We believe in complete transparency with our investors and community.
           </p>
         </div>
@@ -1400,8 +1400,8 @@ function DocumentsSidebar({ startup, fundingPct, confirmedInvestorCount, setTab,
 function UpdatesSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, updatesList }: any) {
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Investment Summary</h4>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
           <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
@@ -1410,13 +1410,13 @@ function UpdatesSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, u
           <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
           <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
         </div>
-        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-[#1D1D1F] py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors">
           View Funding Details
         </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Why Regular Updates?</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Why Regular Updates?</h4>
         <ul className="mt-3 space-y-2.5">
           {[
             "Builds transparency and trust",
@@ -1424,17 +1424,17 @@ function UpdatesSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, u
             "Helps attract partners and supporters",
             "Keeps the community engaged",
           ].map((w, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+            <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {w}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Recent Updates</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Recent Updates</h4>
         {!updatesList?.length ? (
-          <p className="mt-3 text-sm text-muted-foreground">No updates posted yet.</p>
+          <p className="mt-3 text-sm text-[#86868B]">No updates posted yet.</p>
         ) : (
           <div className="mt-3 space-y-3">
             {updatesList.slice(0, 4).map((u: any) => {
@@ -1446,8 +1446,8 @@ function UpdatesSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, u
                     <Icon className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm font-medium text-foreground">{u.title}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(u.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</p>
+                    <p className="line-clamp-2 text-sm font-medium text-[#1D1D1F]">{u.title}</p>
+                    <p className="text-xs text-[#86868B]">{new Date(u.createdAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</p>
                   </div>
                 </div>
               );
@@ -1463,8 +1463,8 @@ function DiscussionsSidebar({ startup, fundingPct, confirmedInvestorCount, setTa
   const navigate = useNavigate();
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Investment Summary</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Investment Summary</h4>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
           <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
@@ -1473,29 +1473,29 @@ function DiscussionsSidebar({ startup, fundingPct, confirmedInvestorCount, setTa
           <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
           <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
         </div>
-        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-[#1D1D1F] py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors">
           View Funding Details
         </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-foreground">
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
           <MessageSquare className="h-5 w-5" />
         </div>
-        <h4 className="mt-3 text-base font-semibold text-foreground">Start a Discussion</h4>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+        <h4 className="mt-3 text-base font-semibold text-[#1D1D1F]">Start a Discussion</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-[#86868B]">
           Have a question or suggestion? Start a discussion.
         </p>
         <button
           onClick={() => (user ? setDiscussionComposerOpen(true) : navigate("/login"))}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#1D1D1F] py-3 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
         >
           <Plus className="h-4 w-4" /> New Discussion
         </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Why Discussions Matter?</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Why Discussions Matter?</h4>
         <ul className="mt-3 space-y-2.5">
           {[
             "Get expert advice from community",
@@ -1504,33 +1504,33 @@ function DiscussionsSidebar({ startup, fundingPct, confirmedInvestorCount, setTa
             "Build trust and transparency",
             "Grow your network",
           ].map((w, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+            <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {w}
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Recent Activity</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Recent Activity</h4>
         {recentActivity.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No activity yet.</p>
+          <p className="mt-3 text-sm text-[#86868B]">No activity yet.</p>
         ) : (
           <div className="mt-3 space-y-3">
             {recentActivity.map((d: any) => (
               <div key={d._id} className="flex items-center gap-3">
                 <Avatar className="h-9 w-9 ring-2 ring-white">
                   <AvatarImage src={d.author.avatar} alt={d.author.name} />
-                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                  <AvatarFallback className="bg-[#171717] text-xs font-semibold text-white">
                     {initialsFromName(d.author.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-foreground/80">
-                    <span className="font-medium text-foreground">{d.author.name}</span> started a discussion
+                  <p className="truncate text-sm text-[#424245]">
+                    <span className="font-medium text-[#1D1D1F]">{d.author.name}</span> started a discussion
                   </p>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(d.createdAt)}</span>
+                <span className="shrink-0 text-xs text-[#86868B]">{timeAgo(d.createdAt)}</span>
               </div>
             ))}
           </div>
@@ -1544,8 +1544,8 @@ function FundingSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, i
   const navigate = useNavigate();
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Quick Summary</h4>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Quick Summary</h4>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <FundStat icon={Briefcase} color="#171717" value={formatCurrency(startup.fundingNeeded)} label="Goal" />
           <FundStat icon={CheckCircle2} color="#171717" value={formatCurrency(startup.fundingRaised)} label="Raised" />
@@ -1554,66 +1554,66 @@ function FundingSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, i
           <FundStat icon={Users2} color="#7c3aed" value={String(confirmedInvestorCount)} label="Investors" />
           <FundStat icon={CalendarDays} color="#171717" value={startup.expectedClosingDate ? `${daysLeft(startup.expectedClosingDate)}d` : "—"} label="Days Left" />
         </div>
-        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-[#1D1D1F] py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors">
           View Funding Details
         </button>
       </div>
 
       {startup.whyInvest.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-6">
-          <h4 className="text-sm font-semibold text-foreground">Why Invest?</h4>
+        <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+          <h4 className="text-sm font-semibold text-[#1D1D1F]">Why Invest?</h4>
           <ul className="mt-3 space-y-2.5">
             {startup.whyInvest.map((w: string, i: number) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /> {w}
+              <li key={i} className="flex items-start gap-2 text-sm text-[#424245]">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-neutral-1000" /> {w}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Become an Investor</h4>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Invest in this idea and be part of the journey.</p>
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Become an Investor</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-[#86868B]">Invest in this idea and be part of the journey.</p>
         <button
           onClick={() => {
             if (!user) return navigate("/login");
             if (!isInterested) interestMutation.mutate();
             setTab("investments");
           }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#171717] py-3 text-sm font-medium text-white hover:bg-[#000000] transition-colors"
         >
           <Wallet className="h-4 w-4" /> Invest
         </button>
         <button
           onClick={onMessageFounder}
           disabled={!user || messageFounderMutation.isPending}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-[#E5E5EA] py-3 text-sm font-medium text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors"
         >
           <MessageSquare className="h-4 w-4" /> Message Founder
         </button>
       </div>
 
       {isOwner && investorPartners.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="rounded-2xl border border-neutral-100 bg-white p-6">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">Recent Investors</h4>
-            <span className="text-xs text-muted-foreground">Only you</span>
+            <h4 className="text-sm font-semibold text-[#1D1D1F]">Recent Investors</h4>
+            <span className="text-xs text-[#86868B]">Only you</span>
           </div>
           <div className="mt-3 space-y-3">
             {investorPartners.slice(0, 4).map((p: any) => (
               <div key={p._id} className="flex items-center gap-3">
                 <Avatar className="h-9 w-9 ring-2 ring-white">
                   <AvatarImage src={p.avatar} alt={p.name} />
-                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                  <AvatarFallback className="bg-[#171717] text-xs font-semibold text-white">
                     {initialsFromName(p.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
-                  <p className="truncate text-xs capitalize text-muted-foreground">{p.role}</p>
+                  <p className="truncate text-sm font-medium text-[#1D1D1F]">{p.name}</p>
+                  <p className="truncate text-xs capitalize text-[#86868B]">{p.role}</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">Interested</span>
+                <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-900">Interested</span>
               </div>
             ))}
           </div>
@@ -1626,51 +1626,51 @@ function FundingSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, i
 function DefaultSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, investorPartners, isOwner, onMessageFounder, user, messageFounderMutation }: any) {
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Funding & Needs</h4>
-        <p className="mt-4 text-2xl font-bold text-foreground">{formatCurrency(startup.fundingRaised)}</p>
-        <p className="text-sm text-muted-foreground">of {formatCurrency(startup.fundingNeeded)} Goal</p>
-        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary transition-all duration-1000" style={{ width: `${fundingPct}%` }} />
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Funding & Needs</h4>
+        <p className="mt-4 text-2xl font-bold text-[#1D1D1F]">{formatCurrency(startup.fundingRaised)}</p>
+        <p className="text-sm text-[#86868B]">of {formatCurrency(startup.fundingNeeded)} Goal</p>
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#E5E5EA]">
+          <div className="h-full rounded-full bg-[#171717] transition-all duration-1000" style={{ width: `${fundingPct}%` }} />
         </div>
-        <p className="mt-2 text-sm font-medium text-foreground">{fundingPct}% Funded</p>
+        <p className="mt-2 text-sm font-medium text-neutral-900">{fundingPct}% Funded</p>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-muted p-3">
-            <Briefcase className="h-4 w-4 text-foreground" />
+          <div className="rounded-xl bg-[#F5F5F7] p-3">
+            <Briefcase className="h-4 w-4 text-neutral-1000" />
             <p className="mt-1.5 text-sm font-semibold">{formatCurrency(startup.fundingNeeded)}</p>
-            <p className="text-xs text-muted-foreground">Needed</p>
+            <p className="text-xs text-[#86868B]">Needed</p>
           </div>
-          <div className="rounded-xl bg-muted p-3">
-            <Users2 className="h-4 w-4 text-foreground" />
+          <div className="rounded-xl bg-[#F5F5F7] p-3">
+            <Users2 className="h-4 w-4 text-neutral-1000" />
             <p className="mt-1.5 text-sm font-semibold">{confirmedInvestorCount}</p>
-            <p className="text-xs text-muted-foreground">Investors</p>
+            <p className="text-xs text-[#86868B]">Investors</p>
           </div>
         </div>
 
-        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors">
+        <button onClick={() => setTab("funding")} className="mt-4 w-full rounded-full bg-[#1D1D1F] py-2.5 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors">
           View Funding Details
         </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-foreground">Team</h4>
-          <button onClick={() => setTab("team")} className="text-sm font-medium text-foreground hover:text-brand transition-colors">
+          <h4 className="text-sm font-semibold text-[#1D1D1F]">Team</h4>
+          <button onClick={() => setTab("team")} className="text-sm font-medium text-neutral-900 hover:text-neutral-800 transition-colors">
             View All
           </button>
         </div>
         {startup.openRoles.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No open roles right now.</p>
+          <p className="mt-3 text-sm text-[#86868B]">No open roles right now.</p>
         ) : (
           <div className="mt-3 space-y-3">
             {startup.openRoles.slice(0, 5).map((role: any, i: number) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F5F7] text-[#86868B]">
                   <Users2 className="h-4 w-4" />
                 </div>
-                <p className="flex-1 text-sm font-medium text-foreground">{role.title}</p>
-                <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium", role.type === "full_time" ? "bg-muted text-foreground" : "bg-amber-100 text-amber-700")}>
+                <p className="flex-1 text-sm font-medium text-[#1D1D1F]">{role.title}</p>
+                <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium", role.type === "full_time" ? "bg-neutral-100 text-neutral-900" : "bg-amber-100 text-amber-700")}>
                   {role.type === "full_time" ? "Full Time" : "Part Time"}
                 </span>
               </div>
@@ -1680,28 +1680,28 @@ function DefaultSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, i
       </div>
 
       {isOwner && (
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="rounded-2xl border border-neutral-100 bg-white p-6">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">Interested Investors</h4>
-            <span className="text-xs text-muted-foreground">Only you</span>
+            <h4 className="text-sm font-semibold text-[#1D1D1F]">Interested Investors</h4>
+            <span className="text-xs text-[#86868B]">Only you</span>
           </div>
           {investorPartners.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">None yet.</p>
+            <p className="mt-3 text-sm text-[#86868B]">None yet.</p>
           ) : (
             <div className="mt-3 space-y-3">
               {investorPartners.map((p: any) => (
                 <div key={p._id} className="flex items-center gap-3">
                   <Avatar className="h-9 w-9 ring-2 ring-white">
                     <AvatarImage src={p.avatar} alt={p.name} />
-                    <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                    <AvatarFallback className="bg-[#171717] text-xs font-semibold text-white">
                       {initialsFromName(p.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
-                    <p className="truncate text-xs capitalize text-muted-foreground">{p.role}</p>
+                    <p className="truncate text-sm font-medium text-[#1D1D1F]">{p.name}</p>
+                    <p className="truncate text-xs capitalize text-[#86868B]">{p.role}</p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">Interested</span>
+                  <span className="shrink-0 rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-900">Interested</span>
                 </div>
               ))}
             </div>
@@ -1709,15 +1709,15 @@ function DefaultSidebar({ startup, fundingPct, confirmedInvestorCount, setTab, i
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h4 className="text-sm font-semibold text-foreground">Let's Connect</h4>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+        <h4 className="text-sm font-semibold text-[#1D1D1F]">Let's Connect</h4>
+        <p className="mt-1.5 text-sm leading-relaxed text-[#86868B]">
           Interested in this idea? Let's build something amazing together.
         </p>
         <button
           onClick={onMessageFounder}
           disabled={!user || messageFounderMutation.isPending}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition-colors"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#1D1D1F] py-3 text-sm font-medium text-white hover:bg-[#2D2D2F] transition-colors"
         >
           {messageFounderMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
           Send Message

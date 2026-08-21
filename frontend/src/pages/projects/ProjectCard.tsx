@@ -59,45 +59,45 @@ export function ProjectCard({ project }: { project: Project }) {
 
   return (
     <Link to={`/projects/${project._id}`} className="block h-full">
-      <div className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-foreground/15 hover:shadow-hover">
+      <div className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 hover:shadow-[0_16px_32px_-12px_rgba(0,0,0,0.16)]">
         <div className="flex flex-1 flex-col p-4">
           {/* Employer */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2.5">
               <Avatar className="h-9 w-9 shrink-0 rounded-xl">
                 <AvatarImage src={employer?.avatar} alt={project.companyName} className="rounded-xl object-cover" />
-                <AvatarFallback className="rounded-xl bg-primary text-xs font-semibold text-primary-foreground">
+                <AvatarFallback className="rounded-xl bg-neutral-900 text-xs font-semibold text-white">
                   {project.companyName[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-foreground">{project.title}</p>
-                <p className="truncate text-[11.5px] text-muted-foreground">{project.companyName}</p>
+                <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-neutral-900">{project.title}</p>
+                <p className="truncate text-[11.5px] text-neutral-500">{project.companyName}</p>
               </div>
             </div>
             <div onClick={(e) => e.preventDefault()}>
-              <SaveButton type="project" id={project._id} className="h-7 w-7 shrink-0 bg-muted text-muted-foreground hover:bg-muted/80" />
+              <SaveButton type="project" id={project._id} className="h-7 w-7 shrink-0 bg-neutral-100 text-neutral-500 hover:bg-neutral-200" />
             </div>
           </div>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{TYPE_LABELS[project.type]}</span>
             {project.category && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
                 {project.subCategory || project.category}
               </span>
             )}
             {project.location && (
-              <span className="flex items-center gap-1 text-[11px] text-muted-foreground/70">
+              <span className="flex items-center gap-1 text-[11px] text-neutral-400">
                 <MapPin className="h-3 w-3" /> {project.isRemote ? "Remote" : project.location}
               </span>
             )}
           </div>
 
-          <p className="mt-2 line-clamp-2 min-h-[2.2em] text-[12px] leading-snug text-muted-foreground">{project.description}</p>
+          <p className="mt-2 line-clamp-2 min-h-[2.2em] text-[12px] leading-snug text-neutral-500">{project.description}</p>
 
           {/* Info grid */}
-          <div className="mt-3 grid grid-cols-3 gap-x-2 gap-y-2 rounded-xl bg-muted p-2.5 text-[11px]">
+          <div className="mt-3 grid grid-cols-3 gap-x-2 gap-y-2 rounded-xl bg-neutral-50 p-2.5 text-[11px]">
             <InfoCell
               icon={Wallet}
               label="Budget"
@@ -123,7 +123,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 </span>
               ))}
               {extraSkillsCount > 0 && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground">+{extraSkillsCount} more</span>
+                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10.5px] font-medium text-neutral-500">+{extraSkillsCount} more</span>
               )}
             </div>
           )}
@@ -138,7 +138,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 <button
                   type="button"
                   onClick={handleBid}
-                  className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary text-[13px] font-medium text-primary-foreground transition-colors group-hover:bg-primary/90"
+                  className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-neutral-900 text-[13px] font-medium text-white transition-colors group-hover:bg-primary"
                 >
                   <Send className="h-3.5 w-3.5" /> Bid
                 </button>
@@ -149,7 +149,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 title="Message"
                 disabled={messageMutation.isPending}
                 onClick={handleMessage}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:opacity-50"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:border-neutral-900 hover:text-neutral-900 disabled:opacity-50"
               >
                 {messageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
               </button>

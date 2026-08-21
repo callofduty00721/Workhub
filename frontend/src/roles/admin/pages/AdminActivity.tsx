@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,12 @@ const TYPE_LABELS: Record<string, string> = {
   ...ADMIN_PERMISSION_LABELS,
   withdrawals: "Withdrawals",
   payments: "Payment Disputes",
+};
+
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
+const rowVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
 };
 
 export default function AdminActivity() {
@@ -35,8 +42,9 @@ export default function AdminActivity() {
             <p className="text-sm text-muted-foreground">KYC reviews, grievance resolutions, and other admin actions will show up here.</p>
           </div>
         ) : (
-          entries.map((entry: AdminActivityEntry, i: number) => (
-            <div key={i} className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <motion.div variants={gridVariants} initial="hidden" animate="show" className="divide-y divide-border">
+          {entries.map((entry: AdminActivityEntry, i: number) => (
+            <motion.div key={i} variants={rowVariants} className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="shrink-0 text-[11px]">
                   {TYPE_LABELS[entry.type] ?? entry.type}
@@ -63,8 +71,9 @@ export default function AdminActivity() {
                 </p>
                 <p>{new Date(entry.at).toLocaleString()}</p>
               </div>
-            </div>
-          ))
+            </motion.div>
+          ))}
+          </motion.div>
         )}
       </Card>
     </DashboardLayout>

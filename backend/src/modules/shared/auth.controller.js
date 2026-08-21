@@ -42,6 +42,7 @@ import { notify } from "../../utils/notify.js";
 import { isEmailDomainAllowlisted, getDisabledRoles } from "../finance/platformSettings.model.js";
 import { incrCounter } from "../../utils/store.js";
 import { isDisposableEmail } from "../../utils/disposableEmail.js";
+import { logSecurityEvent } from "../../utils/securityLog.js";
 
 const PHONE_RE = /^\d{10}$/;
 
@@ -81,12 +82,14 @@ const resendOtpSchema = z.object({
 const generateOtp = () => String(crypto.randomInt(100000, 999999));
 const hashOtp = (otp) => crypto.createHash("sha256").update(otp).digest("hex");
 
-// A 6-digit OTP has 1M combinations — the shared authLimiter (20 requests/
-// 15min) alone still leaves an attacker most of the ticket's 10-minute
-// window to brute-force it. This caps attempts *per ticket* specifically,
-// on top of that. Keyed by a hash of the ticket (not the ticket itself, so
-// nothing sensitive sits in the counter store) with the same TTL as the
-// ticket's own expiry, so the counter never outlives what it's guarding.
+// A 6-digit OTP has 1M combinations — the shared authRateLimit middleware
+// (middleware/authRateLimit.js) alone still leaves an attacker most of the
+// ticket's 10-minute window to brute-force it (its own per-ticket account
+// counter is far looser, sized for legitimate retries, not for this). This
+// caps attempts *per ticket* specifically, on top of that. Keyed by a hash
+// of the ticket (not the ticket itself, so nothing sensitive sits in the
+// counter store) with the same TTL as the ticket's own expiry, so the
+// counter never outlives what it's guarding.
 const MAX_OTP_ATTEMPTS = 5;
 const TICKET_TTL_SECONDS = 10 * 60;
 const otpAttemptKey = (ticket) => `otp_attempts:${crypto.createHash("sha256").update(ticket).digest("hex")}`;
@@ -234,6 +237,7 @@ export const verifyRegisterOtp = asyncHandler(async (req, res) => {
 
   const user = await createVerifiedUser(payload);
   sendWelcomeEmail(user);
+  logSecurityEvent(req, { type: "register_success", user: user._id, email: user.email });
   const accessToken = issueSession(res, user);
   res.status(201).json({ success: true, user: user.toSafeJSON(), accessToken });
 });
@@ -274,11 +278,13 @@ export const login = asyncHandler(async (req, res) => {
   const { email, phone, password } = parsed.data;
   const user = await User.findOne(email ? { email } : { phone }).select("+password");
   if (!user || !(await user.comparePassword(password))) {
+    logSecurityEvent(req, { type: "login_failed", email: email || phone, detail: user ? "wrong password" : "no such account" });
     throw new ApiError(401, "Invalid credentials");
   }
   if (user.isBanned) throw new ApiError(403, "This account has been suspended");
   if (user.isDeactivated) throw new ApiError(403, "This account has been deactivated. Contact support to reactivate it.");
 
+  logSecurityEvent(req, { type: "login_success", user: user._id, email: user.email });
   const accessToken = issueSession(res, user);
   res.json({ success: true, user: user.toSafeJSON(), accessToken });
 });
@@ -295,6 +301,7 @@ export const googleLogin = asyncHandler(async (req, res) => {
   try {
     payload = await verifyGoogleIdToken(idToken);
   } catch {
+    logSecurityEvent(req, { type: "google_login_failed", detail: "token verification failed" });
     throw new ApiError(401, "Invalid Google token");
   }
 
@@ -318,6 +325,7 @@ export const googleLogin = asyncHandler(async (req, res) => {
   if (user.isBanned) throw new ApiError(403, "This account has been suspended");
   if (user.isDeactivated) throw new ApiError(403, "This account has been deactivated. Contact support to reactivate it.");
 
+  logSecurityEvent(req, { type: "google_login_success", user: user._id, email: user.email });
   const accessToken = issueSession(res, user);
   res.json({ success: true, user: user.toSafeJSON(), accessToken });
 });
@@ -390,11 +398,17 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   // Response is intentionally generic to avoid leaking whether an email is registered.
+  // The event is still logged either way (server-side only, never reflected
+  // in the response) — that's what makes a burst of forgot-password
+  // requests probing many addresses reviewable after the fact.
   if (user) {
     const token = user.createResetPasswordToken();
     await user.save();
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
     await sendEmail({ to: user.email, subject: "Reset your GrowHive password", html: resetPasswordEmailHtml(user.name, resetUrl) });
+    logSecurityEvent(req, { type: "password_reset_requested", user: user._id, email: user.email });
+  } else {
+    logSecurityEvent(req, { type: "password_reset_requested", email, detail: "no such account" });
   }
 
   res.json({ success: true, message: "If an account exists for this email, a reset link has been sent." });
@@ -418,6 +432,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.resetPasswordExpires = undefined;
   user.refreshTokenVersion += 1;
   await user.save();
+  logSecurityEvent(req, { type: "password_reset_completed", user: user._id, email: user.email });
 
   res.json({ success: true, message: "Password reset successfully. Please log in with your new password." });
 });
@@ -432,12 +447,14 @@ export const changePassword = asyncHandler(async (req, res) => {
     throw new ApiError(400, "This account signed up with Google and has no password to change — use 'Forgot password' to set one.");
   }
   if (!(await user.comparePassword(currentPassword))) {
+    logSecurityEvent(req, { type: "login_failed", user: user._id, email: user.email, detail: "wrong current password on change-password" });
     throw new ApiError(401, "Current password is incorrect");
   }
 
   user.password = newPassword;
   user.refreshTokenVersion += 1;
   await user.save();
+  logSecurityEvent(req, { type: "password_changed", user: user._id, email: user.email });
 
   // The current session's refresh token is now stale too (version bumped),
   // so re-issue one right away rather than forcing an immediate re-login.
@@ -457,6 +474,7 @@ export const deactivateAccount = asyncHandler(async (req, res) => {
   user.isDeactivated = true;
   user.refreshTokenVersion += 1;
   await user.save();
+  logSecurityEvent(req, { type: "account_deactivated", user: user._id, email: user.email });
 
   // Self-service deactivation is otherwise silent to the platform — surface
   // it to admins so it shows up as a real event, not just a flag in a table

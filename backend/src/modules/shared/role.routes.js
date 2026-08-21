@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { validateObjectId } from "../../middleware/validateObjectId.js";
 import {
   selectCategory,
   addRoles,
@@ -8,13 +9,22 @@ import {
   reviewVerification,
 } from "./role.controller.js";
 import { protect, authorize, requirePermission } from "../../middleware/auth.js";
+import { validate } from "../../middleware/validate.js";
+import {
+  selectCategorySchema,
+  addRolesSchema,
+  switchRoleSchema,
+  requestVerificationSchema,
+  reviewVerificationSchema,
+} from "./role.validation.js";
 
 const router = Router();
+router.param("userId", validateObjectId);
 
-router.post("/select-category", protect, selectCategory);
-router.post("/add-roles", protect, addRoles);
-router.post("/switch", protect, switchRole);
-router.post("/verification", protect, requestVerification);
+router.post("/select-category", protect, validate(selectCategorySchema), selectCategory);
+router.post("/add-roles", protect, validate(addRolesSchema), addRoles);
+router.post("/switch", protect, validate(switchRoleSchema), switchRole);
+router.post("/verification", protect, validate(requestVerificationSchema), requestVerification);
 
 router.get(
   "/verification-requests",
@@ -28,6 +38,7 @@ router.put(
   protect,
   authorize("super_admin", "staff"),
   requirePermission("role-verifications"),
+  validate(reviewVerificationSchema),
   reviewVerification
 );
 

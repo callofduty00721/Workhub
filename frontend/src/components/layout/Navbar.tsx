@@ -46,6 +46,7 @@ export const EXPLORE_LINKS = [
 // (the dashboard sidebar) instead of this one.
 export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolean } = {}) {
   const [open, setOpen] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const { user, logout } = useAuth();
@@ -83,11 +84,11 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
   };
 
   return (
-    <header className="sticky top-3 z-50 mx-auto w-[calc(100%-2rem)] max-w-6xl rounded-2xl border border-white/[0.08] bg-black/95 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-      <div className="container relative flex h-14 items-center justify-between gap-4">
+    <header className="sticky top-3 z-[55] mx-3 rounded-3xl bg-neutral-950/80 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/10 backdrop-blur-xl sm:mx-6 lg:mx-12">
+      <div className="container relative flex h-12 items-center justify-between gap-4">
         <Logo />
 
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/4 items-center gap-4 lg:flex">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
@@ -95,30 +96,43 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
               end={link.to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive ? "bg-white/[0.06] text-white" : "text-white/70 hover:text-white"
+                  "rounded-md px-2 py-2 text-md font-normal transition-colors",
+                  isActive ? "text-[#B6FF00] font-semibold" : "text-white hover:text-[#B6FF00]"
                 )
               }
             >
               {link.label}
             </NavLink>
           ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-white/70 outline-none transition-colors hover:text-white">
+          {/* Plain useState dropdown, not Radix — Radix's DropdownMenu wraps its
+              content in a focus-trapped portal that releases a body-level
+              pointer-events lock on close; navigating via a Link inside it
+              could unmount the trigger before that release fires, leaving the
+              whole page unclickable. A real NavLink with no portal/focus-trap
+              can't hit that race, same as the mobile menu below. */}
+          <div className="relative" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setExploreOpen(false)}>
+            <button
+              type="button"
+              onClick={() => setExploreOpen((v) => !v)}
+              className="flex items-center gap-1 rounded-md px-3 py-2 text-md font-normal text-white/70 outline-none transition-colors hover:text-white"
+            >
               Explore <ChevronDown className="h-3.5 w-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="border-white/10 bg-neutral-900 text-white">
-              {EXPLORE_LINKS.map((link) => (
-                <DropdownMenuItem
-                  key={link.to}
-                  onClick={() => navigate(link.to)}
-                  className="focus:bg-white/10 focus:text-white"
-                >
-                  {link.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </button>
+            {exploreOpen && (
+              <div className="absolute left-0 top-full z-10 mt-2 min-w-[10rem] overflow-hidden rounded-lg border border-white/10 bg-neutral-900 p-1.5 shadow-elevated">
+                {EXPLORE_LINKS.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setExploreOpen(false)}
+                    className="block rounded-md px-2.5 py-2 text-sm text-white outline-none transition-colors hover:bg-white/10"
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -131,7 +145,7 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
                   onChange={(e) => setQuery(e.target.value)}
                   onBlur={() => !query && setSearchOpen(false)}
                   placeholder="Search GrowHive..."
-                  className="h-9 w-56 border-white/10 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-[#65d838]"
+                  className="h-9 w-56 border-white/10 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-[#B6FF00]"
                 />
                 <button
                   type="button"
@@ -161,7 +175,7 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
                     to="/dashboard/freelancer/earnings"
                     className="flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10"
                   >
-                    <Wallet className="h-3.5 w-3.5 text-[#65d838]" />
+                    <Wallet className="h-3.5 w-3.5 text-[#B6FF00]" />
                     {formatCurrency(wallet.wallet.availableBalance)}
                   </Link>
                 )}
@@ -179,7 +193,7 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
                 <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="ml-1 flex items-center gap-2 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#65d838]">
+                    <button className="ml-1 flex items-center gap-2 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#B6FF00]">
                       <Avatar className="h-9 w-9 border border-white/15">
                         <AvatarImage src={user.avatar} alt={user.name} />
                         <AvatarFallback>{initialsFromName(user.name)}</AvatarFallback>
@@ -195,25 +209,16 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-white/10" />
                     <RoleSwitcher />
-                    <DropdownMenuItem
-                      onClick={() => navigate(dashboardPathForRole(user.role))}
-                      className="focus:bg-white/10 focus:text-white"
-                    >
-                      Dashboard
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white">
+                      <Link to={dashboardPathForRole(user.role)}>Dashboard</Link>
                     </DropdownMenuItem>
                     {publicProfilePathForRole(user.role, user.id) && (
-                      <DropdownMenuItem
-                        onClick={() => navigate(publicProfilePathForRole(user.role, user.id)!)}
-                        className="focus:bg-white/10 focus:text-white"
-                      >
-                        My Profile
+                      <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white">
+                        <Link to={publicProfilePathForRole(user.role, user.id)!}>My Profile</Link>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem
-                      onClick={() => navigate("/settings")}
-                      className="focus:bg-white/10 focus:text-white"
-                    >
-                      Settings
+                    <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white">
+                      <Link to="/settings">Settings</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-white/10" />
                     <DropdownMenuItem
@@ -236,7 +241,7 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
                 </Button>
                 <Button
                   asChild
-                  className="rounded-full bg-gradient-to-b from-[#E8FF25] to-[#22C55E] px-5 font-semibold text-black transition-all hover:brightness-110"
+                  className="rounded-full bg-[#B6FF00] px-5 font-semibold text-black hover:opacity-90"
                 >
                   <Link to="/register">Register</Link>
                 </Button>
@@ -257,7 +262,7 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
       </div>
 
       {!hideMobileToggle && open && (
-        <div className="border-t border-white/10 bg-black px-6 py-4 lg:hidden">
+        <div className="rounded-b-3xl border-t border-white/10 bg-neutral-950/95 px-6 py-4 backdrop-blur-xl lg:hidden">
           <nav className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <NavLink
@@ -290,7 +295,7 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
                 <Button
                   variant="outline"
                   onClick={() => navigate(dashboardPathForRole(user.role))}
-                  className="border-white/20 text-white hover:bg-white/10 hover:text-white"
+                  className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
                 >
                   Dashboard
                 </Button>
@@ -303,13 +308,13 @@ export function Navbar({ hideMobileToggle = false }: { hideMobileToggle?: boolea
                 <Button
                   variant="outline"
                   asChild
-                  className="rounded-full border-white/20 text-white hover:bg-white/10 hover:text-white"
+                  className="rounded-full border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
                 >
                   <Link to="/login">Sign In</Link>
                 </Button>
                 <Button
                   asChild
-                  className="rounded-full bg-gradient-to-b from-[#E8FF25] to-[#22C55E] px-5 font-semibold text-black transition-all hover:brightness-110"
+                  className="rounded-full bg-[#B6FF00] px-5 font-semibold text-black hover:opacity-90"
                 >
                   <Link to="/register">Register</Link>
                 </Button>

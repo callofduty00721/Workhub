@@ -4,29 +4,54 @@ import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 const PUBLIC_FIELDS =
-  "name avatar headline location bio expertise sessionRate sessionFormat hoursPerWeekAvailable workingDays workingHours linkedIn yearsOfExperience rating reviewCount createdAt";
+  "name avatar headline location bio mentorCategory expertise sessionRate sessionFormat hoursPerWeekAvailable workingDays workingHours " +
+  "linkedIn languages socialLinks availabilityStatus isVerified yearsOfExperience rating reviewCount isDemo createdAt";
+
+const SORT_OPTIONS = {
+  rating: { rating: -1 },
+  newest: { createdAt: -1 },
+  experience: { yearsOfExperience: -1 },
+};
 
 export const listMentors = asyncHandler(async (req, res) => {
-  const { search, expertise } = req.query;
+  const { search, expertise, category, location, verified, language, sessionFormat, minPrice, maxPrice, sort } = req.query;
 
   const filter = { role: "mentor" };
   if (expertise) filter.expertise = expertise;
-  if (search) filter.$or = [{ name: new RegExp(search, "i") }, { headline: new RegExp(search, "i") }];
+  if (category) filter.mentorCategory = category;
+  if (location) filter.location = safeSearchRegex(location);
+  if (verified === "true") filter.isVerified = true;
+  if (language) filter.languages = language;
+  if (sessionFormat) filter.sessionFormat = sessionFormat;
+  if (minPrice !== undefined) filter.sessionRate = { ...filter.sessionRate, $gte: Number(minPrice) };
+  if (maxPrice !== undefined) filter.sessionRate = { ...filter.sessionRate, $lte: Number(maxPrice) };
+  if (search) filter.$or = [{ name: safeSearchRegex(search) }, { headline: safeSearchRegex(search) }];
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
 
   const [items, total] = await Promise.all([
     User.find(filter)
       .select(PUBLIC_FIELDS)
-      .sort({ rating: -1 })
+      .sort(SORT_OPTIONS[sort] ?? SORT_OPTIONS.rating)
       .skip(skip)
       .limit(limitNum),
     User.countDocuments(filter),
   ]);
 
-  res.json({ success: true, data: items, pagination: paginationMeta(pageNum, limitNum, total) });
+  // Real completed-session counts for exactly the mentors on this page — one
+  // extra aggregate query regardless of page size, not stored/cached, so it
+  // can never drift like a counter field would.
+  const counts = await Session.aggregate([
+    { $match: { mentor: { $in: items.map((m) => m._id) }, status: "completed" } },
+    { $group: { _id: "$mentor", count: { $sum: 1 } } },
+  ]);
+  const countByMentor = new Map(counts.map((c) => [c._id.toString(), c.count]));
+  const data = items.map((m) => ({ ...m.toObject(), completedSessionsCount: countByMentor.get(m._id.toString()) ?? 0 }));
+
+  res.json({ success: true, data, pagination: paginationMeta(pageNum, limitNum, total) });
 });
 
 export const getMentorProfile = asyncHandler(async (req, res) => {

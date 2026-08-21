@@ -33,7 +33,6 @@ export const listGrievances = asyncHandler(async (req, res) => {
 // resolved grievance can't be re-resolved from a stale UI state.
 export const updateGrievanceStatus = asyncHandler(async (req, res) => {
   const { action, note } = req.body;
-  if (!["acknowledge", "resolve"].includes(action)) throw new ApiError(400, "Invalid action");
 
   const grievance = await Grievance.findById(req.params.id);
   if (!grievance) throw new ApiError(404, "Grievance not found");
@@ -44,10 +43,9 @@ export const updateGrievanceStatus = asyncHandler(async (req, res) => {
     grievance.acknowledgedAt = new Date();
   } else {
     if (grievance.status === "resolved") throw new ApiError(400, "This grievance has already been resolved");
-    if (!note?.trim()) throw new ApiError(400, "A resolution note is required");
     grievance.status = "resolved";
     grievance.resolvedAt = new Date();
-    grievance.adminNote = note.trim();
+    grievance.adminNote = note;
     grievance.resolvedBy = req.user._id;
     if (!grievance.acknowledgedAt) grievance.acknowledgedAt = new Date();
   }

@@ -3,23 +3,37 @@ import Startup from "./startup.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 const PUBLIC_FIELDS =
-  "name avatar headline location bio investmentFocus ticketSizeMin ticketSizeMax portfolioCompanyCount fundName fundSize preferredStages linkedIn socialLinks createdAt";
+  "name avatar headline location bio investorType investmentFocus ticketSizeMin ticketSizeMax portfolioCompanyCount fundName fundSize preferredStages linkedIn socialLinks isVerified isDemo createdAt";
+
+const SORT_OPTIONS = {
+  newest: { createdAt: -1 },
+  portfolio: { portfolioCompanyCount: -1 },
+};
 
 export const listInvestors = asyncHandler(async (req, res) => {
-  const { search, focus } = req.query;
+  const { search, focus, type, stage, location, verified, minTicket, maxTicket, sort } = req.query;
 
   const filter = { role: "investor" };
   if (focus) filter.investmentFocus = focus;
-  if (search) filter.$or = [{ name: new RegExp(search, "i") }, { headline: new RegExp(search, "i") }];
+  if (type) filter.investorType = type;
+  if (stage) filter.preferredStages = stage;
+  if (location) filter.location = safeSearchRegex(location);
+  if (verified === "true") filter.isVerified = true;
+  // Ticket-range overlap: an investor matches if their real [min,max] ticket
+  // size overlaps the founder's requested range, not an exact match.
+  if (minTicket !== undefined) filter.ticketSizeMax = { $gte: Number(minTicket) };
+  if (maxTicket !== undefined) filter.ticketSizeMin = { $lte: Number(maxTicket) };
+  if (search) filter.$or = [{ name: safeSearchRegex(search) }, { headline: safeSearchRegex(search) }];
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
 
   const [items, total] = await Promise.all([
     User.find(filter)
       .select(PUBLIC_FIELDS)
-      .sort({ createdAt: -1 })
+      .sort(SORT_OPTIONS[sort] ?? SORT_OPTIONS.newest)
       .skip(skip)
       .limit(limitNum),
     User.countDocuments(filter),

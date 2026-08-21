@@ -4,9 +4,10 @@ import { getRazorpayClient, isRazorpayConfigured, getStripeClient, isStripeConfi
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { verifyRazorpaySignature } from "../../utils/razorpaySignature.js";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const CYCLE_DURATION_MS = { monthly: 30 * DAY_MS, yearly: 365 * DAY_MS };
+import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { streamSubscriptionInvoicePdf, getSubscriptionInvoicePdfBuffer } from "../../utils/subscriptionInvoice.js";
+import { sendEmail, subscriptionInvoiceEmailHtml } from "../../utils/email.js";
+import { CYCLE_DURATION_MS } from "../../utils/subscriptionCycle.js";
 
 // Plans are per-role now — `role` picks which of the user's roles they're
 // paying for (usually their active `role`, but the multi-role system lets
@@ -14,8 +15,11 @@ const CYCLE_DURATION_MS = { monthly: 30 * DAY_MS, yearly: 365 * DAY_MS };
 // enterprise within it. `billingCycle` then picks which of the plan's two
 // real stored prices applies — yearly isn't computed from monthly at
 // checkout time, it's whatever an admin has set on the plan itself.
+// role/tier/billingCycle are already schema-validated (subscription.validation.js)
+// before either caller below runs — this only checks whether that (role,
+// tier) combination actually has a real, priced Plan doc, which is a data
+// lookup, not an input-shape concern.
 async function resolvePaidPlan(role, tier, billingCycle) {
-  if (!CYCLE_DURATION_MS[billingCycle]) throw new ApiError(400, "billingCycle must be 'monthly' or 'yearly'");
   const plan = await Plan.findOne({ role, tier });
   const price = billingCycle === "yearly" ? plan?.priceInInrYearly : plan?.priceInInr;
   if (!plan || !price || price <= 0) throw new ApiError(400, "Invalid plan selected");
@@ -171,4 +175,59 @@ export const getMySubscription = asyncHandler(async (req, res) => {
     createdAt: -1,
   });
   res.json({ success: true, data: subscription });
+});
+
+// Unlike getMySubscription above (current active role only), this returns
+// the user's full subscription history across every role they've ever paid
+// for — "find a past invoice" is a different question than "what am I on
+// right now", so it isn't scoped to req.user.role.
+export const getMySubscriptions = asyncHandler(async (req, res) => {
+  const { pageNum, limitNum, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 50 });
+  const [items, total] = await Promise.all([
+    Subscription.find({ user: req.user._id }).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+    Subscription.countDocuments({ user: req.user._id }),
+  ]);
+  res.json({ success: true, data: items, pagination: paginationMeta(pageNum, limitNum, total) });
+});
+
+function assertSubscriptionAccess(subscription, req) {
+  if (!subscription) throw new ApiError(404, "Subscription not found");
+  const isOwner = subscription.user._id.toString() === req.user._id.toString();
+  if (!isOwner && req.user.role !== "super_admin") throw new ApiError(403, "You don't have access to this subscription");
+}
+
+export const getSubscriptionById = asyncHandler(async (req, res) => {
+  const subscription = await Subscription.findById(req.params.id).populate("user", "name email");
+  assertSubscriptionAccess(subscription, req);
+  res.json({ success: true, data: subscription });
+});
+
+export const downloadSubscriptionInvoice = asyncHandler(async (req, res) => {
+  const subscription = await Subscription.findById(req.params.id).populate("user", "name email phone");
+  assertSubscriptionAccess(subscription, req);
+  if (subscription.status !== "active") throw new ApiError(400, "Invoice is only available for active subscriptions");
+  streamSubscriptionInvoicePdf(subscription, res);
+});
+
+// Owner only (not the super_admin bypass the other three routes share) —
+// this emails the user's own inbox, not something an admin should be able
+// to trigger on someone else's behalf.
+export const emailSubscriptionInvoice = asyncHandler(async (req, res) => {
+  const subscription = await Subscription.findById(req.params.id).populate("user", "name email phone");
+  if (!subscription) throw new ApiError(404, "Subscription not found");
+  if (subscription.user._id.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You don't have access to this subscription");
+  }
+  if (subscription.status !== "active") throw new ApiError(400, "Invoice is only available for active subscriptions");
+
+  const pdfBuffer = await getSubscriptionInvoicePdfBuffer(subscription);
+  const invoiceNumber = subscription._id.toString().slice(-8).toUpperCase();
+  await sendEmail({
+    to: subscription.user.email,
+    subject: `Your GrowHive invoice — ${invoiceNumber}`,
+    html: subscriptionInvoiceEmailHtml(subscription.user.name, subscription),
+    attachments: [{ filename: `invoice-${subscription._id}.pdf`, content: pdfBuffer }],
+  });
+
+  res.json({ success: true, message: "Invoice emailed to your registered email address." });
 });

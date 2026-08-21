@@ -8,7 +8,6 @@ import { assertStartupFounder } from "./founderAuth.js";
 
 export const sendPitch = asyncHandler(async (req, res) => {
   const { startupId, investorId, message } = req.body;
-  if (!startupId || !investorId) throw new ApiError(400, "startupId and investorId are required");
 
   const startup = await Startup.findById(startupId).select("founder name");
   if (!startup) throw new ApiError(404, "Startup not found");

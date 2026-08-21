@@ -5,6 +5,7 @@ import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { computeFreelancerStats, computeFreelancerLevel } from "../../utils/freelancerLevel.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 // A gig can be managed by the freelancer who posted it, any other member of
 // the same agency/Company team, or an admin — mirrors jobController's isJobManager.
@@ -195,7 +196,7 @@ export const listFreelancers = asyncHandler(async (req, res) => {
   if (skill) filter.skills = skill;
   if (category) filter.category = category;
   if (subCategory) filter.subCategory = subCategory;
-  if (location) filter.location = new RegExp(location, "i");
+  if (location) filter.location = safeSearchRegex(location);
   if (level) filter.level = level;
   if (rateMin || rateMax) {
     filter.hourlyRate = {};
@@ -207,7 +208,7 @@ export const listFreelancers = asyncHandler(async (req, res) => {
   if (verifiedOnly === "true") filter.kycStatus = "verified";
   if (availability) filter.availabilityStatus = availability;
   if (search) {
-    filter.$or = [{ name: new RegExp(search, "i") }, { headline: new RegExp(search, "i") }];
+    filter.$or = [{ name: safeSearchRegex(search) }, { headline: safeSearchRegex(search) }];
   }
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
@@ -216,8 +217,8 @@ export const listFreelancers = asyncHandler(async (req, res) => {
   const [items, total] = await Promise.all([
     User.find(filter)
       .select(
-        "name avatar coverImage headline location category subCategory skills hourlyRate rating reviewCount yearsOfExperience " +
-          "availabilityStatus level company kycStatus responseTimeLabel languages socialLinks createdAt"
+        "name avatar coverImage headline location bio category subCategory skills hourlyRate rating reviewCount yearsOfExperience " +
+          "availabilityStatus level company kycStatus responseTimeLabel languages socialLinks isDemo createdAt"
       )
       .populate("company", "name")
       .sort(sortSpec)

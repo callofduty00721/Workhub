@@ -2,23 +2,38 @@ import User from "../shared/user.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 const PUBLIC_FIELDS =
-  "name avatar headline location bio organizationName partnerType programDetails startupsSupportedCount applicationLink socialLinks createdAt";
+  "name avatar headline location bio organizationName partnerType services industries companySize teamSize yearsInBusiness " +
+  "projectsCompleted clientsServed partnershipTypes programDetails startupsSupportedCount applicationLink linkedIn socialLinks " +
+  "isVerified isDemo createdAt";
+
+const SORT_OPTIONS = {
+  newest: { createdAt: -1 },
+  clients: { clientsServed: -1 },
+  projects: { projectsCompleted: -1 },
+};
 
 export const listPartners = asyncHandler(async (req, res) => {
-  const { search, type } = req.query;
+  const { search, type, service, industry, location, companySize, partnershipType, verified, sort } = req.query;
 
   const filter = { role: "partner" };
   if (type) filter.partnerType = type;
-  if (search) filter.$or = [{ name: new RegExp(search, "i") }, { organizationName: new RegExp(search, "i") }];
+  if (service) filter.services = service;
+  if (industry) filter.industries = industry;
+  if (location) filter.location = safeSearchRegex(location);
+  if (companySize) filter.companySize = companySize;
+  if (partnershipType) filter.partnershipTypes = partnershipType;
+  if (verified === "true") filter.isVerified = true;
+  if (search) filter.$or = [{ name: safeSearchRegex(search) }, { organizationName: safeSearchRegex(search) }];
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
 
   const [items, total] = await Promise.all([
     User.find(filter)
       .select(PUBLIC_FIELDS)
-      .sort({ createdAt: -1 })
+      .sort(SORT_OPTIONS[sort] ?? SORT_OPTIONS.newest)
       .skip(skip)
       .limit(limitNum),
     User.countDocuments(filter),

@@ -12,10 +12,17 @@ describe("requireTrustedOrigin", () => {
     process.env.CLIENT_URL = originalClientUrl;
   });
 
-  it("allows a request with no Origin/Referer header (non-browser clients)", () => {
+  it("rejects a request with no Origin/Referer header when CLIENT_URL is configured", () => {
+    // Only a real browser can ever present the httpOnly refresh cookie this
+    // guards — and in production that cookie is SameSite=None (frontend and
+    // backend are different origins), so this check is the only CSRF defense
+    // for these routes, not a backup for SameSite. A request with neither
+    // header is exactly the anomalous case it exists to catch.
     const next = vi.fn();
     requireTrustedOrigin({ headers: {} }, {}, next);
-    expect(next).toHaveBeenCalledWith();
+    expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0];
+    expect(err.statusCode).toBe(403);
   });
 
   it("allows a request whose Origin matches CLIENT_URL", () => {

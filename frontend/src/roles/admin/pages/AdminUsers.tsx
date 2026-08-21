@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Search, Ban, ShieldCheck, Trash2, Loader2, RotateCcw } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, Ban, ShieldCheck, Trash2, Loader2, RotateCcw, Download } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,8 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { adminApi, type AdminUserStatus } from "@/api/admin";
 import { ROLE_LABELS } from "@/lib/roles";
-import { initialsFromName } from "@/lib/utils";
-import type { User } from "@/types";
+import { initialsFromName, cn } from "@/lib/utils";
+import type { User, VerificationStatus } from "@/types";
 
 const STATUS_FILTERS: { value: AdminUserStatus | "all"; label: string }[] = [
   { value: "all", label: "All statuses" },
@@ -28,6 +29,52 @@ function statusBadge(u: User) {
   if (u.isDeactivated) return <Badge variant="warning">Deactivated</Badge>;
   return <Badge variant="success">Active</Badge>;
 }
+
+const VERIFICATION_CHIPS: { key: keyof User; label: string; letter: string }[] = [
+  { key: "kycStatus", label: "KYC", letter: "K" },
+  { key: "faceVerificationStatus", label: "Face", letter: "F" },
+  { key: "addressVerificationStatus", label: "Address", letter: "A" },
+  { key: "bankVerificationStatus", label: "Bank", letter: "B" },
+  { key: "verificationStatus", label: "Role", letter: "R" },
+];
+
+const CHIP_COLOR: Record<VerificationStatus, string> = {
+  verified: "border-success/40 bg-success/10 text-success",
+  pending: "border-warning/40 bg-warning/10 text-warning",
+  rejected: "border-danger/40 bg-danger/10 text-danger",
+  unverified: "border-border bg-muted text-muted-foreground",
+};
+
+const CHIP_STATUS_LABEL: Record<VerificationStatus, string> = {
+  verified: "Verified",
+  pending: "Pending review",
+  rejected: "Rejected",
+  unverified: "Not submitted",
+};
+
+function VerificationChips({ user }: { user: User }) {
+  return (
+    <div className="flex gap-1">
+      {VERIFICATION_CHIPS.map((c) => {
+        const status = (user[c.key] as VerificationStatus | undefined) ?? "unverified";
+        return (
+          <span
+            key={c.key}
+            title={`${c.label}: ${CHIP_STATUS_LABEL[status]}`}
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold",
+              CHIP_COLOR[status]
+            )}
+          >
+            {c.letter}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+const fadeIn = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
 
 export default function AdminUsers() {
   const [search, setSearch] = useState("");
@@ -59,6 +106,10 @@ export default function AdminUsers() {
       setDeleting(null);
       setConfirmed(false);
     },
+  });
+
+  const historyMutation = useMutation({
+    mutationFn: ({ userId, name }: { userId: string; name: string }) => adminApi.downloadVerificationHistory(userId, name),
   });
 
   return (
@@ -96,6 +147,7 @@ export default function AdminUsers() {
         </Select>
       </div>
 
+      <motion.div variants={fadeIn} initial="hidden" animate="show">
       <Card className="overflow-x-auto">
         {isLoading ? (
           <div className="space-y-3 p-5">
@@ -104,13 +156,14 @@ export default function AdminUsers() {
             ))}
           </div>
         ) : (
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[880px] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-foreground">
                 <th className="px-5 py-3 font-medium">User</th>
                 <th className="px-5 py-3 font-medium">Role</th>
                 <th className="px-5 py-3 font-medium">Joined</th>
                 <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Verifications</th>
                 <th className="px-5 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
@@ -135,7 +188,24 @@ export default function AdminUsers() {
                   <td className="px-5 py-3 text-muted-foreground">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="px-5 py-3">{statusBadge(u)}</td>
                   <td className="px-5 py-3">
+                    <VerificationChips user={u} />
+                  </td>
+                  <td className="px-5 py-3">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Download this user's full verification attempt history"
+                        disabled={historyMutation.isPending && historyMutation.variables?.userId === u.id}
+                        onClick={() => historyMutation.mutate({ userId: u.id, name: u.name })}
+                      >
+                        {historyMutation.isPending && historyMutation.variables?.userId === u.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        History
+                      </Button>
                       {u.role !== "super_admin" && (
                         <>
                           <Button
@@ -186,6 +256,7 @@ export default function AdminUsers() {
           </table>
         )}
       </Card>
+      </motion.div>
 
       {data && data.pagination.pages > 1 && (
         <div className="mt-5 flex items-center justify-center gap-2">

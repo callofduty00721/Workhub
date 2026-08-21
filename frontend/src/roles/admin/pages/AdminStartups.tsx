@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Search, ShieldCheck, ShieldOff, UserCheck, UserX, FileText, Check, X } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { adminApi } from "@/api/admin";
 import { initialsFromName } from "@/lib/utils";
+
+const fadeIn = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
 
 function VerificationRequestsQueue() {
   const queryClient = useQueryClient();
@@ -163,6 +166,7 @@ export default function AdminStartups() {
         />
       </div>
 
+      <motion.div variants={fadeIn} initial="hidden" animate="show">
       <Card className="overflow-x-auto">
         {isLoading ? (
           <div className="space-y-3 p-5">
@@ -247,6 +251,7 @@ export default function AdminStartups() {
           </table>
         )}
       </Card>
+      </motion.div>
 
       {data && data.pagination.pages > 1 && (
         <div className="mt-5 flex items-center justify-center gap-2">

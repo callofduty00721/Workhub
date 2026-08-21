@@ -1,4 +1,5 @@
 import multer from "multer";
+import { ApiError } from "./errorHandler.js";
 
 const storage = multer.memoryStorage();
 
@@ -23,6 +24,6 @@ export const upload = multer({
   limits: { fileSize: 256 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) return cb(null, true);
-    cb(new Error("Unsupported file type"));
+    cb(new ApiError(400, "Unsupported file type"));
   },
 });

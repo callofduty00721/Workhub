@@ -120,7 +120,6 @@ export const getInvitedProjects = asyncHandler(async (req, res) => {
 
 export const inviteFreelancerToProject = asyncHandler(async (req, res) => {
   const { freelancerId } = req.body;
-  if (!freelancerId) throw new ApiError(400, "freelancerId is required");
 
   const project = await Project.findById(req.params.id);
   if (!project) throw new ApiError(404, "Project not found");
@@ -226,9 +225,6 @@ export const createProject = asyncHandler(async (req, res) => {
 // step, with the same auto-generated contract as a normal hire.
 export const directHire = asyncHandler(async (req, res) => {
   const { scopeTitle, scopeDescription, amount, deliveryDays } = req.body;
-  if (!scopeTitle?.trim()) throw new ApiError(400, "Scope title is required");
-  if (!scopeDescription?.trim()) throw new ApiError(400, "Scope description is required");
-  if (!amount || amount <= 0) throw new ApiError(400, "Agreed amount must be greater than 0");
 
   const freelancer = await User.findOne({ _id: req.params.freelancerId, role: "freelancer" });
   if (!freelancer) throw new ApiError(404, "Freelancer not found");

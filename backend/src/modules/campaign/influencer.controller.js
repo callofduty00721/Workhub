@@ -4,6 +4,7 @@ import ProfileViewLog from "../shared/profileViewLog.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex, escapeRegexInput } from "../../utils/searchRegex.js";
 
 // Mirrors frontend/src/lib/mockData.ts's INFLUENCER_CATEGORY_NAMES — client-
 // side taxonomy, no backend enum (influencerProfile.category stays a plain
@@ -122,12 +123,12 @@ export const listInfluencers = asyncHandler(async (req, res) => {
   } else if (category) {
     filter["influencerProfile.category"] = category;
   }
-  if (niche) filter["influencerProfile.niche"] = new RegExp(niche, "i");
-  if (location) filter.location = new RegExp(location, "i");
+  if (niche) filter["influencerProfile.niche"] = safeSearchRegex(niche);
+  if (location) filter.location = safeSearchRegex(location);
   if (minRating) filter.rating = { $gte: Number(minRating) };
   if (verifiedOnly === "true") filter.isVerified = true;
-  if (platform) filter["influencerProfile.platforms.platform"] = new RegExp(`^${platform}$`, "i");
-  if (search) filter.$or = [{ name: new RegExp(search, "i") }, { headline: new RegExp(search, "i") }];
+  if (platform) filter["influencerProfile.platforms.platform"] = new RegExp(`^${escapeRegexInput(platform)}$`, "i");
+  if (search) filter.$or = [{ name: safeSearchRegex(search) }, { headline: safeSearchRegex(search) }];
 
   const { pageNum, limitNum, skip } = parsePagination(req.query);
   const sortSpec = INFLUENCER_SORT_FIELD[sort] ?? INFLUENCER_SORT_FIELD.newest;

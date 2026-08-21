@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { CheckCircle2, XCircle, FileText, Loader2, ScanFace, Home, Landmark } from "lucide-react";
+import { motion } from "framer-motion";
+import { CheckCircle2, XCircle, FileText, Loader2, ScanFace, Home, Landmark, Download } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { adminApi, type AdminProfileVerificationRequest, type ProfileVerificationType } from "@/api/admin";
 import { initialsFromName } from "@/lib/utils";
 
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const cardVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+};
+
 const TYPES: { value: ProfileVerificationType; label: string; icon: typeof ScanFace; submittedAtField: keyof AdminProfileVerificationRequest }[] = [
   { value: "face", label: "Face Verification", icon: ScanFace, submittedAtField: "faceVerificationSubmittedAt" },
   { value: "address", label: "Address Verification", icon: Home, submittedAtField: "addressVerificationSubmittedAt" },
@@ -23,11 +30,13 @@ function VerificationList({ type }: { type: ProfileVerificationType }) {
   const queryClient = useQueryClient();
   const [resolving, setResolving] = useState<{ request: AdminProfileVerificationRequest; action: "approve" | "reject" } | null>(null);
   const [note, setNote] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ["admin", "profile-verification-requests", type],
-    queryFn: () => adminApi.profileVerificationRequests(type),
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin", "profile-verification-requests", type, page],
+    queryFn: () => adminApi.profileVerificationRequests(type, { page, limit: 20 }),
   });
+  const requests = data?.data;
 
   const resolveMutation = useMutation({
     mutationFn: () => adminApi.reviewProfileVerification(type, resolving!.request._id, resolving!.action, note),
@@ -39,6 +48,10 @@ function VerificationList({ type }: { type: ProfileVerificationType }) {
   });
 
   const submittedAtField = TYPES.find((t) => t.value === type)!.submittedAtField;
+
+  const historyMutation = useMutation({
+    mutationFn: ({ userId, name }: { userId: string; name: string }) => adminApi.downloadVerificationHistory(userId, name),
+  });
 
   return (
     <>
@@ -54,9 +67,10 @@ function VerificationList({ type }: { type: ProfileVerificationType }) {
           <p className="text-sm text-muted-foreground">Submissions will show up here.</p>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <motion.div variants={gridVariants} initial="hidden" animate="show" className="space-y-3">
           {requests.map((req) => (
-            <Card key={req._id} className="p-5">
+            <motion.div key={req._id} variants={cardVariants}>
+            <Card className="p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
@@ -72,6 +86,19 @@ function VerificationList({ type }: { type: ProfileVerificationType }) {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={historyMutation.isPending && historyMutation.variables?.userId === req._id}
+                    onClick={() => historyMutation.mutate({ userId: req._id, name: req.name })}
+                  >
+                    {historyMutation.isPending && historyMutation.variables?.userId === req._id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    History
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -122,7 +149,22 @@ function VerificationList({ type }: { type: ProfileVerificationType }) {
                   ))}
               </div>
             </Card>
+            </motion.div>
           ))}
+        </motion.div>
+      )}
+
+      {data && data.pagination.pages > 1 && (
+        <div className="mt-5 flex items-center justify-center gap-2">
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {data.pagination.page} of {data.pagination.pages}
+          </span>
+          <Button variant="outline" size="sm" disabled={page >= data.pagination.pages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </Button>
         </div>
       )}
 

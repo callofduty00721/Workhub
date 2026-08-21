@@ -1,5 +1,13 @@
 import nodemailer from "nodemailer";
 import { logger } from "./logger.js";
+import { otpEmailHtml } from "./emails/otp.js";
+
+export { verificationEmailHtml } from "./emails/verification.js";
+export { otpEmailHtml } from "./emails/otp.js";
+export { resetPasswordEmailHtml } from "./emails/resetPassword.js";
+export { notificationEmailHtml } from "./emails/notification.js";
+export { welcomeEmailHtml } from "./emails/welcome.js";
+export { subscriptionInvoiceEmailHtml } from "./emails/subscriptionInvoiceEmail.js";
 
 export const isEmailConfigured = () => Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 
@@ -22,8 +30,10 @@ function getTransporter() {
 /**
  * Sends an email if SMTP is configured; otherwise logs to the console so local
  * development still surfaces the link/token instead of failing silently.
+ * `attachments` is passed straight through to nodemailer's sendMail (e.g.
+ * [{ filename, content: Buffer }]) — optional, most callers don't need it.
  */
-export async function sendEmail({ to, subject, html }) {
+export async function sendEmail({ to, subject, html, attachments }) {
   const client = getTransporter();
 
   if (!client) {
@@ -31,7 +41,13 @@ export async function sendEmail({ to, subject, html }) {
     return { delivered: false };
   }
 
-  await client.sendMail({ from: process.env.EMAIL_FROM || "GrowHive <no-reply@growhive.io>", to, subject, html });
+  await client.sendMail({
+    from: process.env.EMAIL_FROM || "GrowHive <no-reply@growhive.io>",
+    to,
+    subject,
+    html,
+    ...(attachments ? { attachments } : {}),
+  });
   return { delivered: true };
 }
 
@@ -63,28 +79,4 @@ export async function sendOtpEmail(name, to, otp) {
   }
 
   return sendEmail({ to, subject: "Your GrowHive verification code", html: otpEmailHtml(name, otp) });
-}
-
-export function verificationEmailHtml(name, verifyUrl) {
-  return `<p>Hi ${name},</p><p>Welcome to GrowHive! Please verify your email address to activate your account:</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>This link expires in 24 hours.</p>`;
-}
-
-// Sign-up verification code — used instead of the link above when
-// registering with email, so both channels (email/phone) confirm the same
-// way: enter a code before the account is created.
-export function otpEmailHtml(name, otp) {
-  return `<p>Hi ${name},</p><p>Your GrowHive verification code is:</p><p style="font-size:28px;font-weight:700;letter-spacing:4px;">${otp}</p><p>This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>`;
-}
-
-export function resetPasswordEmailHtml(name, resetUrl) {
-  return `<p>Hi ${name},</p><p>We received a request to reset your GrowHive password. Click the link below to choose a new one:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>`;
-}
-
-// Sent once, right after an account is actually created (email OTP verified,
-// or first-time Google sign-in) — not to be confused with verificationEmailHtml
-// above, which is a "confirm your email" link for an unverified account; by
-// the time this one goes out the account is already verified, so there's no
-// CTA link to click, just a pointer to the role picker.
-export function welcomeEmailHtml(name, exploreUrl) {
-  return `<p>Hi ${name},</p><p>Welcome to GrowHive! Your account is ready.</p><p>Head over and pick what you're here to do — freelance work, influencer campaigns, hiring, or building a startup:</p><p><a href="${exploreUrl}">Get started</a></p>`;
 }

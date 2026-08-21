@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-const STORAGE_KEY = "growhive_cookie_consent";
+const STORAGE_KEY = "mahahub_cookie_consent";
 
 // Simple accept/decline banner, not a granular cookie-category picker — this
 // app doesn't set third-party tracking cookies today (see PrivacyPolicy.tsx:

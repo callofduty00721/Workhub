@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { motion } from "framer-motion";
 import { CheckCircle2, MailCheck, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,12 @@ const TABS: { value: GrievanceStatus; label: string }[] = [
   { value: "acknowledged", label: "Acknowledged" },
   { value: "resolved", label: "Resolved" },
 ];
+
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
+const rowVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+};
 
 function hoursSince(dateStr: string) {
   return (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60);
@@ -110,8 +117,9 @@ export default function AdminGrievances() {
             <p className="text-sm text-muted-foreground">Contact form submissions will show up here.</p>
           </div>
         ) : (
-          data.data.map((g) => (
-            <div key={g._id} className="p-5">
+          <motion.div variants={gridVariants} initial="hidden" animate="show" className="divide-y divide-border">
+          {data.data.map((g) => (
+            <motion.div key={g._id} variants={rowVariants} className="p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">{g.subject || "(No subject)"}</p>
@@ -147,8 +155,9 @@ export default function AdminGrievances() {
                   </Button>
                 </div>
               )}
-            </div>
-          ))
+            </motion.div>
+          ))}
+          </motion.div>
         )}
       </Card>
 

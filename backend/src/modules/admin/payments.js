@@ -1,4 +1,5 @@
 import Payment from "../shared/payment.model.js";
+import User from "../shared/user.model.js";
 import { getRazorpayClient, isRazorpayConfigured } from "../../config/payments.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
@@ -6,12 +7,20 @@ import { notify } from "../../utils/notify.js";
 import { refreshFreelancerLevel } from "../../utils/freelancerLevel.js";
 import { earningsLinkForPaymentType } from "../../utils/earningsLink.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 export const listPayments = asyncHandler(async (req, res) => {
-  const { disputeStatus } = req.query;
+  const { disputeStatus, type, status, search } = req.query;
 
   const filter = {};
   if (disputeStatus) filter.disputeStatus = disputeStatus;
+  if (type) filter.type = type;
+  if (status) filter.status = status;
+  if (search) {
+    const regex = safeSearchRegex(search);
+    const userIds = await User.find({ $or: [{ name: regex }, { email: regex }] }).distinct("_id");
+    filter.$or = [{ payer: { $in: userIds } }, { payee: { $in: userIds } }];
+  }
 
   const { pageNum, limitNum, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 100 });
 
@@ -19,6 +28,10 @@ export const listPayments = asyncHandler(async (req, res) => {
     Payment.find(filter)
       .populate("payer", "name email avatar")
       .populate("payee", "name email avatar")
+      .populate("service", "title")
+      .populate("contest", "title")
+      .populate("milestone", "title amount status")
+      .populate({ path: "application", select: "job", populate: { path: "job", select: "title" } })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum),
@@ -34,15 +47,14 @@ export const listPayments = asyncHandler(async (req, res) => {
 
 export const resolveDispute = asyncHandler(async (req, res) => {
   const { action, note, refundAmount } = req.body;
-  if (!["refund", "reject"].includes(action)) throw new ApiError(400, "Invalid action");
 
   const payment = await Payment.findById(req.params.id);
   if (!payment) throw new ApiError(404, "Payment not found");
   if (payment.disputeStatus !== "raised") throw new ApiError(400, "This payment has no pending dispute");
 
   if (action === "refund") {
-    const amountToRefund = refundAmount ? Number(refundAmount) : payment.amount;
-    if (amountToRefund <= 0 || amountToRefund > payment.amount) {
+    const amountToRefund = refundAmount || payment.amount;
+    if (amountToRefund > payment.amount) {
       throw new ApiError(400, `Refund amount must be between ₹1 and ₹${payment.amount}`);
     }
 

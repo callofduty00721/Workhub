@@ -4,7 +4,7 @@ import { getR2Client, isR2Configured } from "../../config/r2.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 
-const FOLDER_MAP = {
+export const FOLDER_MAP = {
   avatar: "growhive/avatars",
   profile_cover: "growhive/profile-covers",
   startup_logo: "growhive/startup-logos",

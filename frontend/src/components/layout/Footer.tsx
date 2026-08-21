@@ -1,26 +1,21 @@
 import { Link } from "react-router-dom";
-import { Linkedin, Twitter, Facebook, Instagram, Youtube, Send } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Send } from "lucide-react";
 import { Logo } from "./Logo";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { publicSettingsApi } from "@/api/settings";
 
-const COLUMNS = [
-  {
-    title: "Platform",
-    links: [
-      { label: "Startups", to: "/startups" },
-      { label: "Freelancers", to: "/freelancers" },
-      { label: "Jobs", to: "/jobs" },
-      { label: "Investors", to: "/investors" },
-      { label: "Mentors", to: "/mentors" },
-    ],
-  },
+const BASE_PLATFORM_LINKS = [
+  { label: "Startups", to: "/startups" },
+  { label: "Freelancers", to: "/freelancers" },
+  { label: "Investors", to: "/investors" },
+  { label: "Mentors", to: "/mentors" },
+];
+
+const OTHER_COLUMNS = [
   {
     title: "Company",
     links: [
       { label: "About Us", to: "/about" },
-      { label: "Blog", to: "#" },
-      { label: "Careers", to: "#" },
       { label: "Contact Us", to: "/contact" },
       { label: "FAQs", to: "/#faq" },
     ],
@@ -37,34 +32,32 @@ const COLUMNS = [
 ];
 
 export function Footer() {
+  // Same public, not-admin-gated read of the Jobs kill-switch as
+  // Navbar.tsx — the "Jobs" link only appears once /jobs actually works,
+  // instead of sending visitors to a 404 while the feature is off.
+  const { data: jobsEnabled } = useQuery({
+    queryKey: ["settings", "jobs-enabled"],
+    queryFn: publicSettingsApi.jobsEnabled,
+    staleTime: 60 * 1000,
+  });
+  const platformLinks = jobsEnabled ? [...BASE_PLATFORM_LINKS, { label: "Jobs", to: "/jobs" }] : BASE_PLATFORM_LINKS;
+  const columns = [{ title: "Platform", links: platformLinks }, ...OTHER_COLUMNS];
+
   return (
-    <footer className="border-t border-white/[0.08] bg-black">
-      <div className="container grid gap-10 py-16 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr]">
+    <footer className="border-t border-[#E5E7EB] bg-white">
+      <div className="container grid gap-10 py-14 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr]">
         <div>
-          <Logo />
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/50">
-            The startup ecosystem's own network — founders, freelancers, mentors, investors, and influencers, connected directly.
-          </p>
-          <div className="mt-6 flex items-center gap-2.5">
-            {[Facebook, Twitter, Linkedin, Instagram, Youtube].map((Icon, i) => (
-              <a
-                key={i}
-                href="#"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] text-white/50 transition-colors hover:border-[#22C55E]/40 hover:text-[#65d838]"
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
-          </div>
+          <Logo variant="light" />
+          <p className="mt-4 max-w-xs text-sm text-[#6B7280]">Empowering India&apos;s multi-state talent ecosystem.</p>
         </div>
 
-        {COLUMNS.map((col) => (
+        {columns.map((col) => (
           <div key={col.title}>
-            <h4 className="mb-4 text-[13px] font-semibold uppercase tracking-wide text-white/40">{col.title}</h4>
-            <ul className="space-y-3">
+            <h4 className="mb-4 text-sm font-semibold text-[#111111]">{col.title}</h4>
+            <ul className="space-y-2.5">
               {col.links.map((link) => (
                 <li key={link.label}>
-                  <Link to={link.to} className="text-sm text-white/70 transition-colors hover:text-[#65d838]">
+                  <Link to={link.to} className="text-sm text-[#6B7280] transition-colors hover:text-[#3F6212]">
                     {link.label}
                   </Link>
                 </li>
@@ -74,35 +67,27 @@ export function Footer() {
         ))}
 
         <div>
-          <h4 className="mb-4 text-[13px] font-semibold uppercase tracking-wide text-white/40">Stay in the loop</h4>
-          <p className="mb-3 text-sm text-white/50">New opportunities, straight to your inbox.</p>
+          <h4 className="mb-4 text-sm font-semibold text-[#111111]">Subscribe to our newsletter</h4>
           <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-            <Input
+            <input
               placeholder="Enter your email"
-              className="border-white/10 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-[#65d838]"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-[#E5E7EB] bg-white px-3 text-sm text-[#111111] placeholder:text-[#9CA3AF] focus:border-[#B6FF00] focus:outline-none"
             />
-            <Button
-              size="icon"
+            <button
               type="submit"
               aria-label="Subscribe"
-              className="shrink-0 bg-gradient-to-b from-[#E8FF25] to-[#22C55E] text-black hover:brightness-110"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#B6FF00] text-[#111111] transition-opacity hover:opacity-90"
             >
               <Send className="h-4 w-4" />
-            </Button>
+            </button>
           </form>
         </div>
       </div>
 
-      <div className="border-t border-white/[0.08]">
-        <div className="container flex flex-col items-center justify-between gap-3 py-5 text-xs text-white/40 sm:flex-row">
+      <div className="border-t border-[#E5E7EB]">
+        <div className="container flex flex-col items-center justify-between gap-2 py-5 text-xs text-[#9CA3AF] sm:flex-row">
           <p>© {new Date().getFullYear()} GrowHive. All rights reserved.</p>
-          <span className="flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22C55E] opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22C55E]" />
-            </span>
-            All systems operational
-          </span>
+          <p>Made with care, for builders everywhere.</p>
         </div>
       </div>
     </footer>

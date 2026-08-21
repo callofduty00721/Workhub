@@ -45,6 +45,13 @@
     --input: 214 32% 91%;
     --ring: 0 0% 9%;
 
+    /* GrowHive neon-green brand accent (#B6FF00) — referenced by Pagination,
+       ToggleSwitch, Slider, and Badge's "brand" variant, but was never
+       actually defined, so bg-brand/text-brand/border-brand rendered as a
+       no-op (transparent) everywhere they were used across the app. */
+    --brand: 77 100% 50%;
+    --brand-foreground: 0 0% 9%;
+
     --radius: 0.75rem;
   }
 
@@ -70,6 +77,15 @@
 
   * {
     @apply border-border;
+  }
+
+  html {
+    /* Safety net, not a layout crutch — every intentional horizontal-scroll
+       area in this app (chip rows, admin tables) already scrolls within its
+       own overflow-x-auto container. This only catches stray cases like a
+       CSS-only tooltip (FieldInfo.tsx) that stays in the layout box at
+       opacity-0 and can nudge the page a few px wider than the viewport. */
+    overflow-x: hidden;
   }
 
   body {

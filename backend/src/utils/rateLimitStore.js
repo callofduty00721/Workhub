@@ -25,29 +25,33 @@ export function createRateLimitStore(windowMs, prefix) {
   };
 }
 
+// Verifies the bearer token if present, returning its payload or null —
+// shared by userOrIpKeyGenerator and tieredRateLimit.js so a request's
+// identity is only decoded once per limiter check. A missing/invalid/
+// expired token just resolves to null, same as no token at all — this never
+// rejects the request itself (an actually-invalid token still gets correctly
+// rejected by `protect` on whichever route the request is headed to,
+// regardless of what this resolved to).
+export function resolveRequestAuthPayload(req) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return null;
+  try {
+    return verifyAccessToken(header.slice(7));
+  } catch {
+    return null;
+  }
+}
+
 // Keys a rate limiter by user id when a valid access token is present,
 // falling back to the client IP otherwise — confirmed via a real load test
 // (scripts/loadTestRateLimit.js) that a plain IP-only key means everyone
 // behind one public IP shares a single budget. That's fine for the
 // login/OTP limiter (there's no token yet at that point, and IP-based
 // brute-force protection is exactly what's wanted there), but wrong for the
-// app-wide global limiter — mobile carrier-grade NAT (common in India) or
-// an office/campus WiFi can put many unrelated logged-in users behind one
-// IP, and they shouldn't be able to exhaust each other's budget. A missing/
-// invalid/expired token just falls back to IP, same as an unauthenticated
-// request — this never rejects the request itself, only picks a bucket for
-// it (an actually-invalid token still gets correctly rejected by `protect`
-// on whichever route the request is headed to, regardless of what key its
-// rate-limit attempt was counted against).
+// app-wide limiter — mobile carrier-grade NAT (common in India) or an
+// office/campus WiFi can put many unrelated logged-in users behind one IP,
+// and they shouldn't be able to exhaust each other's budget.
 export function userOrIpKeyGenerator(req) {
-  const header = req.headers.authorization;
-  if (header?.startsWith("Bearer ")) {
-    try {
-      const payload = verifyAccessToken(header.slice(7));
-      if (payload?.sub) return `user:${payload.sub}`;
-    } catch {
-      // fall through to IP
-    }
-  }
-  return req.ip;
+  const payload = resolveRequestAuthPayload(req);
+  return payload?.sub ? `user:${payload.sub}` : req.ip;
 }

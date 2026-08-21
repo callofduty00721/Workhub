@@ -1,4 +1,4 @@
-import User, { PERMISSION_VALUES } from "../shared/user.model.js";
+import User from "../shared/user.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 
@@ -12,20 +12,13 @@ export const listStaff = asyncHandler(async (req, res) => {
 
 export const createStaff = asyncHandler(async (req, res) => {
   const { name, email, password, permissions = [] } = req.body;
-  if (!name?.trim() || !email?.trim() || !password) {
-    throw new ApiError(400, "Name, email, and password are required");
-  }
-  if (password.length < 8) throw new ApiError(400, "Password must be at least 8 characters");
 
-  const invalid = permissions.filter((p) => !PERMISSION_VALUES.includes(p));
-  if (invalid.length) throw new ApiError(400, `Unknown permission(s): ${invalid.join(", ")}`);
-
-  const existing = await User.findOne({ email: email.trim().toLowerCase() });
+  const existing = await User.findOne({ email });
   if (existing) throw new ApiError(409, "An account with this email already exists");
 
   const staff = await User.create({
-    name: name.trim(),
-    email: email.trim(),
+    name,
+    email,
     password,
     role: "staff",
     roles: ["staff"],
@@ -38,10 +31,6 @@ export const createStaff = asyncHandler(async (req, res) => {
 
 export const updateStaffPermissions = asyncHandler(async (req, res) => {
   const { permissions } = req.body;
-  if (!Array.isArray(permissions)) throw new ApiError(400, "permissions must be an array");
-
-  const invalid = permissions.filter((p) => !PERMISSION_VALUES.includes(p));
-  if (invalid.length) throw new ApiError(400, `Unknown permission(s): ${invalid.join(", ")}`);
 
   const staff = await User.findById(req.params.id);
   if (!staff) throw new ApiError(404, "Staff account not found");

@@ -10,7 +10,8 @@ export type NotificationType =
   | "roster_invite"
   | "roster_invite_status"
   | "campaign_invite"
-  | "system";
+  | "system"
+  | "announcement";
 
 export interface AppNotification {
   _id: string;

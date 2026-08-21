@@ -10,6 +10,7 @@ import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 import { earningsLinkForPaymentType } from "../../utils/earningsLink.js";
 import { verifyRazorpaySignature } from "../../utils/razorpaySignature.js";
+import { CYCLE_DURATION_MS } from "../../utils/subscriptionCycle.js";
 
 // Idempotent: only transitions a payment pending -> paid once, so it's safe to
 // call this from both the client-side verify handler AND the webhook (whichever
@@ -105,9 +106,16 @@ async function notifyPaymentReceived(app, payment) {
 }
 
 async function finalizeSubscription({ providerOrderId, providerPaymentId }) {
+  const pending = await Subscription.findOne({ providerOrderId, status: "pending" });
+  if (!pending) return null;
   return Subscription.findOneAndUpdate(
     { providerOrderId, status: "pending" },
-    { status: "active", providerPaymentId, startedAt: new Date(), expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+    {
+      status: "active",
+      providerPaymentId,
+      startedAt: new Date(),
+      expiresAt: new Date(Date.now() + CYCLE_DURATION_MS[pending.billingCycle]),
+    },
     { new: true }
   );
 }

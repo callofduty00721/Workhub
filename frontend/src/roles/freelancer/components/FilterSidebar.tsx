@@ -23,7 +23,6 @@ interface Props {
   sort: FreelancerSort;
   setSort: (v: FreelancerSort) => void;
   resultCount: number;
-  variant?: "default" | "dark";
 }
 
 const EXPERIENCE_OPTIONS = [
@@ -76,15 +75,10 @@ export default function FilterSidebar({
   sort,
   setSort,
   resultCount,
-  variant = "default",
 }: Props) {
   return (
-    <FilterSidebarShell
-      title="Filters"
-      subtitle={`${resultCount.toLocaleString()} freelancer${resultCount === 1 ? "" : "s"} found`}
-      variant={variant}
-    >
-      <FilterBlock label="Category" variant={variant}>
+    <FilterSidebarShell title="Filters" subtitle={`${resultCount.toLocaleString()} freelancer${resultCount === 1 ? "" : "s"} found`}>
+      <FilterBlock label="Category">
         <FullSelect
           value={category}
           onChange={(v) => {
@@ -92,7 +86,6 @@ export default function FilterSidebar({
             setSubCategory("all");
           }}
           placeholder="Category"
-          variant={variant}
         >
           <SelectItem value="all">All Categories</SelectItem>
           {SERVICE_CATEGORY_NAMES.map((c) => (
@@ -104,8 +97,8 @@ export default function FilterSidebar({
       </FilterBlock>
 
       {category !== "all" && (SERVICE_SUBCATEGORIES[category]?.length ?? 0) > 0 && (
-        <FilterBlock label="Sub-category" variant={variant}>
-          <FullSelect value={subCategory} onChange={setSubCategory} placeholder="Sub-category" variant={variant}>
+        <FilterBlock label="Sub-category">
+          <FullSelect value={subCategory} onChange={setSubCategory} placeholder="Sub-category">
             <SelectItem value="all">All {category}</SelectItem>
             {SERVICE_SUBCATEGORIES[category].map((sub) => (
               <SelectItem key={sub} value={sub}>
@@ -116,8 +109,8 @@ export default function FilterSidebar({
         </FilterBlock>
       )}
 
-      <FilterBlock label="Experience" variant={variant}>
-        <FullSelect value={minExperience} onChange={setMinExperience} placeholder="Experience" variant={variant}>
+      <FilterBlock label="Experience">
+        <FullSelect value={minExperience} onChange={setMinExperience} placeholder="Experience">
           {EXPERIENCE_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}
@@ -126,8 +119,8 @@ export default function FilterSidebar({
         </FullSelect>
       </FilterBlock>
 
-      <FilterBlock label="Budget" variant={variant}>
-        <FullSelect value={budget} onChange={setBudget} placeholder="Budget" variant={variant}>
+      <FilterBlock label="Budget">
+        <FullSelect value={budget} onChange={setBudget} placeholder="Budget">
           {BUDGET_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}
@@ -136,8 +129,8 @@ export default function FilterSidebar({
         </FullSelect>
       </FilterBlock>
 
-      <FilterBlock label="Rating" variant={variant}>
-        <FullSelect value={minRating} onChange={setMinRating} placeholder="Rating" variant={variant}>
+      <FilterBlock label="Rating">
+        <FullSelect value={minRating} onChange={setMinRating} placeholder="Rating">
           {RATING_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}
@@ -146,16 +139,16 @@ export default function FilterSidebar({
         </FullSelect>
       </FilterBlock>
 
-      <FilterBlock label="Availability" variant={variant}>
-        <FullSelect value={availability} onChange={setAvailability} placeholder="Availability" variant={variant}>
+      <FilterBlock label="Availability">
+        <FullSelect value={availability} onChange={setAvailability} placeholder="Availability">
           <SelectItem value="any">Any Availability</SelectItem>
           <SelectItem value="available">Available Now</SelectItem>
           <SelectItem value="busy">Busy</SelectItem>
         </FullSelect>
       </FilterBlock>
 
-      <FilterBlock label="Sort by" variant={variant}>
-        <FullSelect value={sort} onChange={(v) => setSort(v as FreelancerSort)} placeholder="Sort" variant={variant}>
+      <FilterBlock label="Sort by">
+        <FullSelect value={sort} onChange={(v) => setSort(v as FreelancerSort)} placeholder="Sort">
           {SORT_OPTIONS.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}
@@ -168,14 +161,8 @@ export default function FilterSidebar({
         type="button"
         onClick={() => setVerifiedOnly(!verifiedOnly)}
         className={cn(
-          "flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] font-medium transition-colors",
-          variant === "dark"
-            ? verifiedOnly
-              ? "border-[#22C55E]/40 bg-[#22C55E]/10 text-[#65d838]"
-              : "border-white/10 text-[#A1A1AA] hover:border-white/20"
-            : verifiedOnly
-              ? "border-[#171717] bg-[#F5F5F5] text-[#171717]"
-              : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+          "flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition-colors",
+          verifiedOnly ? "border-[#171717] bg-[#F5F5F5] text-[#171717]" : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
         )}
       >
         <ShieldCheck className="h-3.5 w-3.5" />

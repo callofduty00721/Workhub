@@ -32,6 +32,7 @@ export default function Login() {
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [resetSuccess] = useState(() => Boolean((location.state as { resetSuccess?: boolean } | null)?.resetSuccess));
 
   const {
     register,
@@ -66,6 +67,11 @@ export default function Login() {
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        {resetSuccess && !serverError && (
+          <div className="rounded-lg border border-success/30 bg-success/10 px-3.5 py-2.5 text-sm text-success">
+            Your password has been reset. Log in with your new password.
+          </div>
+        )}
         {serverError && (
           <div className="rounded-lg border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{serverError}</div>
         )}

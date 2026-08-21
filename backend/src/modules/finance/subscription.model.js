@@ -1,11 +1,16 @@
 import mongoose from "mongoose";
+import { PLAN_ROLES } from "./plan.model.js";
 
 const subscriptionSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     // Which role's plan this is — plans are now per-role (see plan.model.js),
-    // so a subscription only makes sense in the context of one.
-    role: { type: String, required: true },
+    // so a subscription only makes sense in the context of one. Always
+    // written from a real Plan.role (see resolvePaidPlan in
+    // subscription.controller.js), which is itself PLAN_ROLES-enum-
+    // constrained — so tightening this to a real enum here is safe with no
+    // backfill needed.
+    role: { type: String, enum: PLAN_ROLES, required: true },
     plan: { type: String, enum: ["free", "pro", "enterprise"], default: "free" },
     billingCycle: { type: String, enum: ["monthly", "yearly"], default: "monthly" },
     provider: { type: String, enum: ["razorpay", "stripe"], required: true },

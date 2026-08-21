@@ -152,6 +152,10 @@ export interface Job {
   ndaText?: string;
   ndaAccepted?: boolean;
   attachments?: JobAttachment[];
+  // Admin-only moderation data (not selected on any public-facing query) —
+  // present on the /admin/jobs response so an admin can see report volume.
+  reports?: { user: string; reason: string; createdAt: string }[];
+  isDemo?: boolean;
   createdAt: string;
 }
 
@@ -186,6 +190,7 @@ export interface Project {
   ndaText?: string;
   ndaAccepted?: boolean;
   attachments?: JobAttachment[];
+  isDemo?: boolean;
   createdAt: string;
 }
 
@@ -265,6 +270,7 @@ export interface Campaign {
   // Admin-only — see campaign.controller.js's toggleCampaignFeatured; a
   // brand can never set this on itself.
   isFeatured?: boolean;
+  isDemo?: boolean;
   createdAt: string;
 }
 

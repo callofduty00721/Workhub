@@ -13,10 +13,9 @@ export const createCompany = asyncHandler(async (req, res) => {
   if (req.user.company) throw new ApiError(400, "You're already part of a company");
 
   const { name } = req.body;
-  if (!name?.trim()) throw new ApiError(400, "Company name is required");
 
   const company = await Company.create({
-    name: name.trim(),
+    name,
     owner: req.user._id,
     members: [{ user: req.user._id, role: "admin" }],
   });
@@ -61,9 +60,8 @@ export const inviteMember = asyncHandler(async (req, res) => {
   if (!isCompanyAdmin(company, req.user._id)) throw new ApiError(403, "Only company admins can invite members");
 
   const { email } = req.body;
-  if (!email?.trim()) throw new ApiError(400, "Email is required");
 
-  const invitee = await User.findOne({ email: email.trim().toLowerCase() });
+  const invitee = await User.findOne({ email });
   if (!invitee) throw new ApiError(404, "No account found with that email");
   // A company team is shared postings for one role at a time — an Employer's
   // team manages salaried Jobs, a Client's team manages bid-based Projects,

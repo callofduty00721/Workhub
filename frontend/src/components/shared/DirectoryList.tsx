@@ -37,6 +37,10 @@ interface DirectoryListProps<T> {
     accent: string;
     trustPoints: SimpleHeroTrustPoint[];
   };
+  // Opt-in — a "how it works" strip or similar block rendered between the
+  // hero and the filter/grid container, matching the process-strip pattern
+  // used on Jobs/Freelancers/Influencers. Only meaningful alongside `hero`.
+  afterHero?: ReactNode;
 }
 
 // Shared by MentorList, InfluencerList, PartnerList — same directory-page shape
@@ -56,6 +60,7 @@ export function DirectoryList<T>({
   categoryOptions,
   gridClassName = "grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
   hero,
+  afterHero,
 }: DirectoryListProps<T>) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>(undefined);
@@ -93,7 +98,9 @@ export function DirectoryList<T>({
         </div>
       )}
 
-      <div className={cn("container py-10", hero && "border-t border-border")}>
+      {hero && afterHero}
+
+      <div className={cn("container py-10", hero && !afterHero && "border-t border-neutral-100")}>
       {categoryOptions && categoryOptions.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">
           <Badge
@@ -107,7 +114,7 @@ export function DirectoryList<T>({
             <Badge
               key={c}
               variant={category === c ? "default" : "outline"}
-              className={cn("cursor-pointer", category === c && "border-transparent bg-brand text-brand-foreground")}
+              className={cn("cursor-pointer", category === c && "bg-primary text-primary-foreground")}
               onClick={() => setCategory(c)}
             >
               {c}

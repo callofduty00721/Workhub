@@ -5,8 +5,11 @@ import { assertNotProduction } from "../../src/utils/seedGuard.js";
 import User from "../../src/modules/shared/user.model.js";
 import Service from "../../src/modules/marketplace/service.model.js";
 import Job from "../../src/modules/jobs/job.model.js";
+import Project from "../../src/modules/jobs/project.model.js";
 import Contest from "../../src/modules/contest/contest.model.js";
 import SkillTest from "../../src/modules/marketplace/skillTest.model.js";
+import Campaign from "../../src/modules/campaign/campaign.model.js";
+import Startup from "../../src/modules/startup/startup.model.js";
 
 const DEMO_PASSWORD = "Demo@12345";
 
@@ -20,6 +23,9 @@ const FREELANCERS = [
     skills: ["Graphic Design", "Logo Design", "Illustrator", "Branding"],
     hourlyRate: 800,
     yearsOfExperience: 5,
+    responseTimeLabel: "Under 2 hrs",
+    languages: ["Marathi", "Hindi", "English"],
+    kycStatus: "verified",
   },
   {
     name: "Rohan Sharma",
@@ -30,6 +36,9 @@ const FREELANCERS = [
     skills: ["React", "Node.js", "MongoDB", "TypeScript"],
     hourlyRate: 1200,
     yearsOfExperience: 4,
+    responseTimeLabel: "Under 1 hr",
+    languages: ["Hindi", "English"],
+    kycStatus: "verified",
   },
   {
     name: "Sarah Fernandes",
@@ -40,8 +49,128 @@ const FREELANCERS = [
     skills: ["Content Writing", "SEO", "Copywriting", "Blogging"],
     hourlyRate: 900,
     yearsOfExperience: 3,
+    responseTimeLabel: "Under 3 hrs",
+    languages: ["English", "Kannada"],
+    kycStatus: "verified",
+  },
+  {
+    name: "Karan Mehta",
+    email: "karan.mehta@growhive.demo",
+    headline: "Video Editor & Motion Graphics Artist",
+    bio: "I edit and color-grade YouTube videos, reels, and ads — clean cuts, captions, and motion graphics that keep viewers watching.",
+    location: "Mumbai, Maharashtra, India",
+    skills: ["Video Editing", "Premiere Pro", "DaVinci Resolve", "Motion Graphics"],
+    hourlyRate: 700,
+    yearsOfExperience: 3,
+    responseTimeLabel: "Under 4 hrs",
+    languages: ["Hindi", "English"],
+    kycStatus: "verified",
   },
 ];
+
+const FOUNDERS = [
+  {
+    name: "Ananya Rao",
+    email: "ananya.rao@growhive.demo",
+    headline: "Founder, EcoCart",
+    companyName: "EcoCart",
+    location: "Bengaluru, Karnataka, India",
+  },
+  {
+    name: "Rahul Verma",
+    email: "rahul.verma@growhive.demo",
+    headline: "संस्थापक, FarmConnect",
+    companyName: "FarmConnect",
+    location: "Nashik, Maharashtra, India",
+  },
+  {
+    name: "Meera Iyer",
+    email: "meera.iyer@growhive.demo",
+    headline: "Founder, HealthBridge",
+    companyName: "HealthBridge",
+    location: "Pune, Maharashtra, India",
+  },
+  {
+    name: "Arjun Nair",
+    email: "arjun.nair@growhive.demo",
+    headline: "Founder, PayEasy",
+    companyName: "PayEasy",
+    location: "Mumbai, Maharashtra, India",
+  },
+];
+
+const BRAND = {
+  name: "Kavya Menon",
+  email: "kavya.menon@growhive.demo",
+  headline: "Marketing Head, UrbanStyle Fashion",
+  companyName: "UrbanStyle Fashion",
+  location: "Mumbai, Maharashtra, India",
+};
+
+const AGENCY = {
+  name: "Rajesh Iyer",
+  email: "rajesh.iyer@growhive.demo",
+  headline: "Founder, BuzzWorks Agency",
+  companyName: "BuzzWorks Agency",
+  location: "Bengaluru, Karnataka, India",
+};
+
+const INVESTOR = {
+  name: "Sanjay Kapoor",
+  email: "sanjay.kapoor@growhive.demo",
+  headline: "Partner, Nimbus Ventures",
+  location: "Mumbai, Maharashtra, India",
+  bio: "Early-stage investor backing Indian startups in SaaS, fintech and climate tech. I write first checks and stay hands-on through Series A.",
+  investorType: "venture_capital",
+  investmentFocus: ["SaaS", "FinTech", "ClimateTech"],
+  ticketSizeMin: 2500000,
+  ticketSizeMax: 20000000,
+  portfolioCompanyCount: 14,
+  fundName: "Nimbus Ventures",
+  fundSize: 500000000,
+  preferredStages: ["pre_seed", "seed", "series_a"],
+};
+
+const MENTOR = {
+  name: "Divya Nair",
+  email: "divya.nair@growhive.demo",
+  headline: "Ex-VP Product, 15 years in SaaS",
+  location: "Bengaluru, Karnataka, India",
+  bio: "I mentor first-time founders and PMs on product strategy, fundraising narratives, and scaling a product team from 0 to 1.",
+  mentorCategory: "startup",
+  expertise: ["Product Strategy", "Fundraising", "Team Building"],
+  sessionRate: 1500,
+  sessionFormat: "video",
+  hoursPerWeekAvailable: 6,
+  yearsOfExperience: 15,
+};
+
+const PARTNER = {
+  name: "Amit Deshpande",
+  email: "amit.deshpande@growhive.demo",
+  headline: "Founder, LedgerWorks Consulting",
+  organizationName: "LedgerWorks Consulting",
+  location: "Pune, Maharashtra, India",
+  bio: "We help early-stage startups with accounting, compliance and fundraising paperwork so founders can focus on building.",
+  partnerType: "service_provider",
+  services: ["Accounting", "Tax Compliance", "Fundraising Support"],
+  teamSize: 8,
+  companySize: "1-10",
+};
+
+const TALENT_PARTNER = {
+  name: "Neha Bhatt",
+  email: "neha.bhatt@growhive.demo",
+  headline: "Talent Manager, StarLoop Talent",
+  location: "Mumbai, Maharashtra, India",
+  bio: "I manage a roster of creators across fashion, food and lifestyle, and connect them with brand campaigns.",
+  talentPartnerProfile: { partnerType: "Talent Manager", services: ["Influencer Management", "Campaign Negotiation"] },
+};
+
+// Fields added to FREELANCERS after these demo accounts were first created —
+// upsertUser's "already exists" branch used to be a no-op, so accounts
+// created before this field was added would otherwise never pick it up.
+const PATCHABLE_FIELDS = ["responseTimeLabel", "languages", "kycStatus", "bio"];
 
 const CLIENT = {
   name: "Priya Deshmukh",
@@ -62,15 +191,38 @@ const EMPLOYER = {
 async function upsertUser(data, role) {
   let user = await User.findOne({ email: data.email });
   if (!user) {
-    user = new User({ ...data, role, password: DEMO_PASSWORD, isEmailVerified: true, isProfileComplete: true });
+    user = new User({ ...data, role, password: DEMO_PASSWORD, isEmailVerified: true, isProfileComplete: true, isDemo: true });
     await user.save();
     console.log(`Created ${role}: ${data.name}`);
   } else {
-    console.log(`Reusing existing ${role}: ${data.name}`);
+    let patched = false;
+    for (const field of PATCHABLE_FIELDS) {
+      if (data[field] === undefined) continue;
+      const current = user[field];
+      const isEmpty = current === undefined || current === "" || (Array.isArray(current) && current.length === 0);
+      if (isEmpty) {
+        user[field] = data[field];
+        patched = true;
+      }
+    }
+    if (!user.isDemo) {
+      user.isDemo = true;
+      patched = true;
+    }
+    if (patched) {
+      await user.save();
+      console.log(`Reusing existing ${role}: ${data.name} (patched ${PATCHABLE_FIELDS.join("/")})`);
+    } else {
+      console.log(`Reusing existing ${role}: ${data.name}`);
+    }
   }
   return user;
 }
 
+// isDemo is stamped on every document this creates — every model this is
+// called with (Service, Project, Job, Contest, Campaign, Startup) has that
+// field so marketplace cards can badge it; SkillTest doesn't declare it, so
+// Mongoose just drops the extra key there (default strict schema behavior).
 async function upsertByTitle(Model, filter, payload) {
   const label = filter.title ?? filter.skill ?? JSON.stringify(filter);
   const existing = await Model.findOne(filter);
@@ -78,7 +230,7 @@ async function upsertByTitle(Model, filter, payload) {
     console.log(`Skipping (already exists): ${label}`);
     return existing;
   }
-  const created = await Model.create(payload);
+  const created = await Model.create({ ...payload, isDemo: true });
   console.log(`Created: ${label}`);
   return created;
 }
@@ -87,11 +239,18 @@ async function run() {
   assertNotProduction("seedDemoContent");
   await connectDB();
 
-  const [aditi, rohan, sarah] = await Promise.all(FREELANCERS.map((f) => upsertUser(f, "freelancer")));
+  const [aditi, rohan, sarah, karan] = await Promise.all(FREELANCERS.map((f) => upsertUser(f, "freelancer")));
   const client = await upsertUser(CLIENT, "client");
   const employer = await upsertUser(EMPLOYER, "employer");
+  const [ananya, rahulF, meera, arjun] = await Promise.all(FOUNDERS.map((f) => upsertUser(f, "founder")));
+  const brand = await upsertUser(BRAND, "brand");
+  const agency = await upsertUser(AGENCY, "agency");
+  await upsertUser(INVESTOR, "investor");
+  await upsertUser(MENTOR, "mentor");
+  await upsertUser(PARTNER, "partner");
+  await upsertUser(TALENT_PARTNER, "talent_partner");
 
-  // 3 Gigs (Marathi, Hindi, English)
+  // 4 Gigs (Marathi, Hindi, English x2)
   await upsertByTitle(
     Service,
     { title: "व्यावसायिक लोगो आणि ब्रँड आयडेंटिटी डिझाईन करून देईन" },
@@ -227,9 +386,54 @@ async function run() {
     }
   );
 
-  // 3 Projects (Job model, type=freelance, posted by the client)
   await upsertByTitle(
-    Job,
+    Service,
+    { title: "I will edit and color-grade your YouTube videos with captions" },
+    {
+      freelancer: karan._id,
+      title: "I will edit and color-grade your YouTube videos with captions",
+      description:
+        "I'll cut, color-grade, and add captions/motion graphics to your YouTube videos or reels — clean, punchy edits that keep viewers watching to the end.",
+      category: "Video Editing",
+      priceType: "fixed",
+      price: 4000,
+      deliveryDays: 5,
+      skills: ["Video Editing", "Premiere Pro", "DaVinci Resolve"],
+      packages: [
+        {
+          name: "basic",
+          title: "Single Video Edit",
+          description: "One video, cut and color-graded with captions.",
+          price: 4000,
+          deliveryDays: 5,
+          revisions: 2,
+          features: ["Up to 10 min raw footage", "Captions", "Color grading", "2 revisions"],
+        },
+        {
+          name: "standard",
+          title: "4-Video Pack",
+          description: "A month's worth of edited videos.",
+          price: 14000,
+          deliveryDays: 10,
+          revisions: 3,
+          features: ["4 videos edited", "Captions + motion graphics", "Color grading", "3 revisions"],
+        },
+        {
+          name: "premium",
+          title: "Full Channel Package",
+          description: "8 videos plus a custom intro/outro template.",
+          price: 26000,
+          deliveryDays: 18,
+          revisions: 5,
+          features: ["8 videos edited", "Custom intro/outro template", "Thumbnails included", "Priority turnaround"],
+        },
+      ],
+    }
+  );
+
+  // 4 Projects (Project model, bid-based freelance/contract work, posted by the client)
+  await upsertByTitle(
+    Project,
     { title: "स्टार्टअपसाठी मोबाईल अॅप UI/UX डिझाईन हवे आहे" },
     {
       employer: client._id,
@@ -237,19 +441,20 @@ async function run() {
       companyName: CLIENT.companyName,
       description: "आमच्या नवीन मोबाईल अॅपसाठी आम्हाला संपूर्ण UI/UX डिझाईन (Figma) हवे आहे. फूड डिलिव्हरी अॅपसारखा अनुभव अपेक्षित आहे.",
       type: "freelance",
-      experienceLevel: "mid",
+      category: "UI/UX Design",
       skills: ["UI/UX Design", "Figma", "Mobile Design"],
       location: "Pune, Maharashtra, India",
       isRemote: true,
-      salaryMin: 20000,
-      salaryMax: 35000,
+      budgetMin: 20000,
+      budgetMax: 35000,
+      expectedDeliveryDays: 14,
       currency: "INR",
       status: "open",
     }
   );
 
   await upsertByTitle(
-    Job,
+    Project,
     { title: "ई-कॉमर्स वेबसाइट बनाने के लिए फ्रीलांसर चाहिए" },
     {
       employer: client._id,
@@ -257,19 +462,20 @@ async function run() {
       companyName: CLIENT.companyName,
       description: "हमें एक पूर्ण ई-कॉमर्स वेबसाइट चाहिए जिसमें प्रोडक्ट कैटलॉग, कार्ट, पेमेंट गेटवे और एडमिन पैनल शामिल हो। React और Node.js में अनुभव ज़रूरी है।",
       type: "contract",
-      experienceLevel: "senior",
+      category: "Web Development",
       skills: ["React", "Node.js", "Payment Gateway"],
       location: "Remote",
       isRemote: true,
-      salaryMin: 40000,
-      salaryMax: 60000,
+      budgetMin: 40000,
+      budgetMax: 60000,
+      expectedDeliveryDays: 30,
       currency: "INR",
       status: "open",
     }
   );
 
   await upsertByTitle(
-    Job,
+    Project,
     { title: "Need a freelance video editor for our YouTube channel" },
     {
       employer: client._id,
@@ -278,12 +484,35 @@ async function run() {
       description:
         "We're looking for a freelance video editor to cut, color-grade, and add captions to weekly YouTube videos for our startup's channel. Premiere Pro or DaVinci Resolve experience preferred.",
       type: "freelance",
-      experienceLevel: "mid",
+      category: "Video Editing",
       skills: ["Video Editing", "Premiere Pro", "DaVinci Resolve"],
       location: "Remote",
       isRemote: true,
-      salaryMin: 10000,
-      salaryMax: 18000,
+      budgetMin: 10000,
+      budgetMax: 18000,
+      expectedDeliveryDays: 21,
+      currency: "INR",
+      status: "open",
+    }
+  );
+
+  await upsertByTitle(
+    Project,
+    { title: "Need a freelance mobile app developer for our fitness app" },
+    {
+      employer: client._id,
+      title: "Need a freelance mobile app developer for our fitness app",
+      companyName: CLIENT.companyName,
+      description:
+        "We're building a fitness tracking app and need a freelancer to build the React Native frontend and connect it to our Firebase backend. Health/fitness app experience is a plus.",
+      type: "freelance",
+      category: "Mobile Development",
+      skills: ["React Native", "Firebase", "Mobile Development"],
+      location: "Remote",
+      isRemote: true,
+      budgetMin: 30000,
+      budgetMax: 50000,
+      expectedDeliveryDays: 21,
       currency: "INR",
       status: "open",
     }
@@ -359,7 +588,7 @@ async function run() {
     }
   );
 
-  // 3 Contests (posted by the client)
+  // 4 Contests (posted by the client)
   const contestDeadline = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
   await upsertByTitle(
@@ -408,6 +637,188 @@ async function run() {
       currency: "INR",
       deadline: contestDeadline(21),
       status: "open",
+    }
+  );
+
+  await upsertByTitle(
+    Contest,
+    { title: "Best social media caption for our product launch" },
+    {
+      client: client._id,
+      title: "Best social media caption for our product launch",
+      description:
+        "We're launching a new product and want a catchy, shareable caption for our announcement post. Winning entry gets used across our social channels.",
+      category: "Copywriting",
+      skills: ["Copywriting", "Social Media"],
+      prizeAmount: 2000,
+      currency: "INR",
+      deadline: contestDeadline(7),
+      status: "open",
+    }
+  );
+
+  // 4 Campaigns (posted by a brand and an agency)
+  await upsertByTitle(
+    Campaign,
+    { title: "Festive Collection — Instagram Reel Collab" },
+    {
+      employer: brand._id,
+      title: "Festive Collection — Instagram Reel Collab",
+      companyName: BRAND.companyName,
+      description:
+        "UrbanStyle Fashion is looking for fashion & lifestyle creators to shoot a reel styling our new festive collection. Product gifted + paid collaboration.",
+      platforms: ["instagram"],
+      niche: "Fashion",
+      location: "Mumbai, Maharashtra, India",
+      budgetMin: 5000,
+      budgetMax: 15000,
+      currency: "INR",
+      collaborationType: "paid",
+      status: "open",
+    }
+  );
+
+  await upsertByTitle(
+    Campaign,
+    { title: "UrbanStyle Ambassador Program" },
+    {
+      employer: brand._id,
+      title: "UrbanStyle Ambassador Program",
+      companyName: BRAND.companyName,
+      description:
+        "Looking for 3-4 long-term brand ambassadors to feature UrbanStyle Fashion across Instagram and YouTube each month, with early access to new drops.",
+      platforms: ["instagram", "youtube"],
+      niche: "Fashion",
+      location: "Remote",
+      budgetMin: 20000,
+      budgetMax: 50000,
+      currency: "INR",
+      collaborationType: "hybrid",
+      status: "open",
+    }
+  );
+
+  await upsertByTitle(
+    Campaign,
+    { title: "Tech Gadget Unboxing Campaign" },
+    {
+      employer: agency._id,
+      title: "Tech Gadget Unboxing Campaign",
+      companyName: AGENCY.companyName,
+      description:
+        "BuzzWorks Agency is running an unboxing campaign for a client's new gadget launch. Looking for tech YouTubers to create honest, detailed unboxing videos.",
+      platforms: ["youtube"],
+      niche: "Technology",
+      location: "Remote",
+      budgetMin: 10000,
+      budgetMax: 30000,
+      currency: "INR",
+      collaborationType: "paid",
+      status: "open",
+    }
+  );
+
+  await upsertByTitle(
+    Campaign,
+    { title: "Fitness App Launch — Multi-platform Promo" },
+    {
+      employer: agency._id,
+      title: "Fitness App Launch — Multi-platform Promo",
+      companyName: AGENCY.companyName,
+      description:
+        "Promoting a client's new fitness app launch across Instagram and YouTube. Looking for fitness/health creators to share honest app reviews and workout content.",
+      platforms: ["instagram", "youtube"],
+      niche: "Health & Fitness",
+      location: "Remote",
+      budgetMin: 8000,
+      budgetMax: 20000,
+      currency: "INR",
+      collaborationType: "paid",
+      status: "open",
+    }
+  );
+
+  // 4 Startups (one founder each)
+  await upsertByTitle(
+    Startup,
+    { name: "EcoCart" },
+    {
+      founder: ananya._id,
+      name: "EcoCart",
+      tagline: "Sustainable shopping, made easy.",
+      description:
+        "EcoCart is an e-commerce marketplace for eco-friendly and sustainably-sourced products, helping conscious shoppers find verified sustainable brands in one place.",
+      industry: "E-commerce",
+      stage: "seed",
+      location: "Bengaluru, Karnataka, India",
+      status: "published",
+      fundingNeeded: 5000000,
+      fundingRaised: 2000000,
+      openRoles: [
+        { title: "Backend Engineer", type: "full_time", workMode: "remote" },
+        { title: "Growth Marketer", type: "full_time", workMode: "hybrid" },
+      ],
+    }
+  );
+
+  await upsertByTitle(
+    Startup,
+    { name: "FarmConnect" },
+    {
+      founder: rahulF._id,
+      name: "FarmConnect",
+      tagline: "शेतकऱ्यांना थेट ग्राहकांशी जोडणारं व्यासपीठ.",
+      description:
+        "FarmConnect शेतकऱ्यांना मध्यस्थांशिवाय थेट ग्राहक आणि किरकोळ विक्रेत्यांशी जोडतं, जेणेकरून त्यांना त्यांच्या मालाला योग्य किंमत मिळेल.",
+      industry: "AgriTech",
+      stage: "pre_seed",
+      location: "Nashik, Maharashtra, India",
+      status: "published",
+      fundingNeeded: 2000000,
+      fundingRaised: 500000,
+      openRoles: [{ title: "Field Operations Lead", type: "full_time", workMode: "on_site" }],
+    }
+  );
+
+  await upsertByTitle(
+    Startup,
+    { name: "HealthBridge" },
+    {
+      founder: meera._id,
+      name: "HealthBridge",
+      tagline: "Telemedicine for India's tier-2 and tier-3 cities.",
+      description:
+        "HealthBridge connects patients in smaller towns with qualified doctors over video consultation, along with medicine delivery and follow-up care reminders.",
+      industry: "HealthTech",
+      stage: "idea",
+      location: "Pune, Maharashtra, India",
+      status: "published",
+      fundingNeeded: 1000000,
+      fundingRaised: 150000,
+      openRoles: [{ title: "Founding Engineer", type: "full_time", workMode: "remote" }],
+    }
+  );
+
+  await upsertByTitle(
+    Startup,
+    { name: "PayEasy" },
+    {
+      founder: arjun._id,
+      name: "PayEasy",
+      tagline: "Micro-lending for India's small businesses.",
+      description:
+        "PayEasy offers fast, collateral-free micro-loans to small and medium businesses, using alternative credit scoring to serve those underserved by traditional banks.",
+      industry: "FinTech",
+      stage: "series_a",
+      location: "Mumbai, Maharashtra, India",
+      status: "published",
+      isFeatured: true,
+      fundingNeeded: 50000000,
+      fundingRaised: 32000000,
+      openRoles: [
+        { title: "Senior Backend Engineer", type: "full_time", workMode: "hybrid" },
+        { title: "Risk Analyst", type: "full_time", workMode: "on_site" },
+      ],
     }
   );
 

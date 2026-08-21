@@ -147,7 +147,7 @@ export default function JobDetails() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: "easeOut" }}
-            className="overflow-hidden rounded-[26px] border border-border bg-card shadow-card"
+            className="overflow-hidden rounded-[26px] border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
           >
             <div
               className="h-28 w-full sm:h-36"
@@ -163,17 +163,17 @@ export default function JobDetails() {
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
-                    className="-mt-12 flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-card bg-primary text-2xl font-bold text-primary-foreground shadow-lg sm:-mt-14"
+                    className="-mt-12 flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-primary text-2xl font-bold text-white shadow-lg sm:-mt-14"
                   >
                     {job.companyName[0]}
                   </motion.div>
                   <div className="min-w-0 pb-1">
-                    <h1 className="text-xl font-bold text-foreground">{job.title}</h1>
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <h1 className="text-xl font-bold text-neutral-900">{job.title}</h1>
+                    <p className="flex items-center gap-1.5 text-sm text-neutral-500">
                       <span>{job.companyName}</span>
                       {typeof job.employer === "object" && !!job.employer.reviewCount && (
-                        <span className="flex shrink-0 items-center gap-0.5 font-medium text-muted-foreground">
-                          <Star className="h-3.5 w-3.5 fill-warning text-warning" />
+                        <span className="flex shrink-0 items-center gap-0.5 font-medium text-neutral-600">
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                           {job.employer.rating?.toFixed(1)} ({job.employer.reviewCount})
                         </span>
                       )}
@@ -233,7 +233,7 @@ export default function JobDetails() {
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
                     placeholder="e.g. fake listing, misleading info, spam..."
-                    className="mt-2 min-h-[56px] bg-card text-xs"
+                    className="mt-2 min-h-[56px] bg-white text-xs"
                   />
                   <div className="mt-2 flex gap-2">
                     <Button
@@ -442,7 +442,7 @@ export default function JobDetails() {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-11 w-11">
                     <AvatarImage src={job.employer.avatar} alt={job.employer.name} />
-                    <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
+                    <AvatarFallback className="bg-neutral-900 text-sm font-semibold text-white">
                       {initialsFromName(job.employer.name)}
                     </AvatarFallback>
                   </Avatar>

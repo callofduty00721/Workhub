@@ -4,13 +4,14 @@ import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 import { parsePagination, paginationMeta } from "../../utils/pagination.js";
+import { safeSearchRegex } from "../../utils/searchRegex.js";
 
 export const listAllContests = asyncHandler(async (req, res) => {
   const { search, status } = req.query;
 
   const filter = {};
   if (status) filter.status = status;
-  if (search) filter.title = new RegExp(search, "i");
+  if (search) filter.title = safeSearchRegex(search);
 
   const { pageNum, limitNum, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 100 });
 

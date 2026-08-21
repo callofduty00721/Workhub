@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { adminApi } from "@/api/admin";
 import { formatCurrency } from "@/lib/utils";
 import type { Withdrawal } from "@/types";
+
+const fadeIn = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
 
 function destinationLabel(w: Withdrawal) {
   return w.method === "upi" ? (w.upiId ?? "") : `${w.bankAccountHolder ?? ""} · ${w.bankAccountNumber ?? ""} · ${w.bankIfsc ?? ""}`;
@@ -38,6 +41,7 @@ export default function AdminWithdrawals() {
 
   return (
     <DashboardLayout role="super_admin" title="Withdrawal Requests" subtitle="Review pending freelancer withdrawal requests, then send the money and mark them complete.">
+      <motion.div variants={fadeIn} initial="hidden" animate="show">
       <Card className="overflow-x-auto">
         {isLoading ? (
           <div className="space-y-3 p-5">
@@ -106,6 +110,7 @@ export default function AdminWithdrawals() {
           </table>
         )}
       </Card>
+      </motion.div>
 
       <Dialog open={!!resolving} onOpenChange={(open) => !open && setResolving(null)}>
         <DialogContent>

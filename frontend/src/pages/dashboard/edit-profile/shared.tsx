@@ -98,11 +98,12 @@ export const STAGE_OPTIONS: { value: StartupStage; label: string }[] = [
 export const COMPANY_SIZES: CompanySize[] = ["1-10", "11-50", "51-200", "201-500", "500+"];
 
 export const PARTNER_TYPES: { value: PartnerType; label: string }[] = [
-  { value: "accelerator", label: "Accelerator" },
-  { value: "incubator", label: "Incubator" },
-  { value: "government", label: "Government" },
-  { value: "ngo", label: "NGO" },
+  { value: "agency", label: "Agency" },
+  { value: "company", label: "Company" },
+  { value: "consultant", label: "Consultant" },
   { value: "service_provider", label: "Service Provider" },
+  { value: "technology_partner", label: "Technology Partner" },
+  { value: "strategic_partner", label: "Strategic Partner" },
 ];
 
 export function splitList(input: string): string[] {

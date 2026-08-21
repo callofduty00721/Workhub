@@ -108,20 +108,20 @@ function StackedCard({
             <motion.div style={{opacity: dim}}>
                 <Link
                     to={item.href}
-                    className="group relative grid overflow-hidden rounded-[36px] border border-border bg-card shadow-[0_30px_70px_-25px_rgba(15,23,42,.35)] transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_60px_120px_-35px_rgba(15,23,42,.45)] hover:border-foreground/15 lg:grid-cols-2"
+                    className="group relative grid overflow-hidden rounded-[36px] border border-white/40 bg-white shadow-[0_30px_70px_-25px_rgba(15,23,42,.35)] transition-all duration-700 hover:-translate-y-2 hover:shadow-[0_60px_120px_-35px_rgba(15,23,42,.45)] hover:border-neutral-300 lg:grid-cols-2"
                 >
                     {/* LEFT SIDE */}
                     <div className="relative z-10 flex flex-col justify-center p-6 md:p-9">
-                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-foreground/80">
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-neutral-700">
                             <item.icon className="h-3.5 w-3.5" />
                             {item.tag}
                         </span>
 
-                        <h2 className="mt-5 text-3xl font-bold leading-tight text-foreground lg:text-4xl">
+                        <h2 className="mt-5 text-3xl font-bold leading-tight text-neutral-900 lg:text-4xl">
                             {item.title}
                         </h2>
 
-                        <p className="mt-3 max-w-lg text-base leading-7 text-muted-foreground">{item.description}</p>
+                        <p className="mt-3 max-w-lg text-base leading-7 text-neutral-500">{item.description}</p>
 
                         <div className="mt-6 space-y-3">
                             {item.points.map((point) => (
@@ -129,12 +129,12 @@ function StackedCard({
                                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-success/10">
                                         <Check className="h-3.5 w-3.5 text-success" />
                                     </div>
-                                    <span className="text-[14px] font-medium text-foreground/80">{point}</span>
+                                    <span className="text-[14px] font-medium text-neutral-700">{point}</span>
                                 </div>
                             ))}
                         </div>
 
-                        <button className="mt-7 inline-flex w-fit items-center gap-3 rounded-2xl bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-soft transition-all duration-300 group-hover:gap-5">
+                        <button className="mt-7 inline-flex w-fit items-center gap-3 rounded-2xl bg-primary px-6 py-3 font-semibold text-white transition-all duration-300 group-hover:gap-5">
                             {item.ctaLabel ?? "Get Started"}
                             <ArrowUpRight size={18} />
                         </button>

@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Users, Briefcase, FolderKanban, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ const TABS = [
 
 export default function MarketplaceTabs({ tab, setTab }: Props) {
   return (
-    <div className="flex w-full max-w-2xl gap-1 rounded-xl border border-white/[0.08] bg-[#0A0A0A] p-1.5 sm:gap-1.5">
+    <div className="flex w-full max-w-xl gap-1 rounded-xl border border-neutral-200 bg-white p-1 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:gap-1">
       {TABS.map((item) => {
         const active = tab === item.id;
         return (
@@ -30,15 +31,20 @@ export default function MarketplaceTabs({ tab, setTab }: Props) {
             onClick={() => setTab(item.id)}
             aria-label={item.title}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-2 text-[11px] font-medium transition-all duration-200 sm:gap-2 sm:px-6 sm:py-2.5 sm:text-[15px]",
-              active
-                ? "bg-gradient-to-b from-[#E8FF25] to-[#22C55E] text-black"
-                : "text-[#A1A1AA] hover:bg-white/5 hover:text-white"
+              "relative flex flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[11px] font-medium transition-colors sm:gap-1.5 sm:px-4 sm:py-2 sm:text-sm",
+              active ? "text-black" : "text-neutral-500 hover:text-neutral-900"
             )}
           >
-            <item.icon className="h-4 w-4 shrink-0" />
-            <span className="sm:hidden">{item.shortTitle}</span>
-            <span className="hidden sm:inline">{item.title}</span>
+            {active && (
+              <motion.span
+                layoutId="marketplace-tab-active"
+                className="absolute inset-0 rounded-lg bg-gradient-to-b from-[#65A30D] to-[#22C55E] shadow-[0_6px_16px_-6px_rgba(34,197,94,0.55)]"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
+            <item.icon className="relative z-10 h-3.5 w-3.5 shrink-0" />
+            <span className="relative z-10 sm:hidden">{item.shortTitle}</span>
+            <span className="relative z-10 hidden sm:inline">{item.title}</span>
           </button>
         );
       })}

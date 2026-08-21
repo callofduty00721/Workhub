@@ -49,10 +49,7 @@ async function isPayeeOrGigTeammate(payment, user) {
 }
 
 export const deliverWork = asyncHandler(async (req, res) => {
-  const { deliverables = [], note = "" } = req.body;
-  if (!Array.isArray(deliverables) || deliverables.filter((d) => d.url?.trim()).length === 0) {
-    throw new ApiError(400, "Add at least one deliverable link");
-  }
+  const { deliverables, note = "" } = req.body;
 
   const payment = await Payment.findById(req.params.id);
   if (!payment) throw new ApiError(404, "Payment not found");
@@ -63,7 +60,7 @@ export const deliverWork = asyncHandler(async (req, res) => {
   }
 
   payment.orderStatus = "delivered";
-  payment.deliverables = deliverables.filter((d) => d.url?.trim()).map((d) => ({ url: d.url.trim(), name: d.name || "" }));
+  payment.deliverables = deliverables.map((d) => ({ url: d.url, name: d.name || "" }));
   payment.deliveryNote = note;
   payment.deliveredAt = new Date();
   await payment.save();
@@ -136,7 +133,6 @@ export const requestRevision = asyncHandler(async (req, res) => {
 
 export const requestExtension = asyncHandler(async (req, res) => {
   const { proposedDeadline, reason = "" } = req.body;
-  if (!proposedDeadline) throw new ApiError(400, "Propose a new deadline date");
 
   const payment = await Payment.findById(req.params.id);
   if (!payment) throw new ApiError(404, "Payment not found");
@@ -167,7 +163,6 @@ export const requestExtension = asyncHandler(async (req, res) => {
 
 export const respondExtension = asyncHandler(async (req, res) => {
   const { action } = req.body;
-  if (!["approve", "reject"].includes(action)) throw new ApiError(400, "Invalid action");
 
   const payment = await Payment.findById(req.params.id);
   if (!payment) throw new ApiError(404, "Payment not found");

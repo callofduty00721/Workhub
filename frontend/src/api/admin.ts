@@ -1,5 +1,5 @@
 import { api } from "./axios";
-import type { AdminStats, AdminVerificationRequest, AdminActivityEntry, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job, Project, Withdrawal, Grievance, PlatformSettings, PhoneAuthProvider, Plan, AdminPermission } from "@/types";
+import type { AdminStats, AdminVerificationRequest, AdminActivityEntry, FlaggedStartup, Paginated, Startup, User, Service, Contest, Payment, Job, Project, Withdrawal, Grievance, PlatformSettings, PhoneAuthProvider, Plan, AdminPermission, Subscription, Review, Campaign } from "@/types";
 
 export type AdminUserStatus = "active" | "banned" | "deactivated";
 
@@ -22,6 +22,92 @@ export interface AdminModerationFilters {
   status?: string;
   page?: number;
   limit?: number;
+  // Jobs only — other resource types using this same filter shape simply
+  // ignore it, since their backend list endpoints don't read it.
+  hasReports?: boolean;
+}
+
+export interface AdminSubscriptionFilters {
+  search?: string;
+  status?: string;
+  provider?: string;
+  role?: string;
+  tier?: string;
+  billingCycle?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminSubscriptionStats {
+  totalSubscribers: number;
+  activeCount: number;
+  expiredCount: number;
+  cancelledCount: number;
+  failedCount: number;
+  revenue: number;
+}
+
+export type AdminSubscriptionRow = Subscription & {
+  user: { _id: string; name: string; email: string; avatar?: string };
+  planName: string;
+};
+
+export interface AdminSecurityEventFilters {
+  type?: string;
+  email?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminSecurityEvent {
+  _id: string;
+  type: string;
+  user: { _id: string; name: string; email: string; role: string } | null;
+  email: string;
+  ip: string;
+  userAgent: string;
+  detail: string;
+  createdAt: string;
+}
+
+export interface AdminReviewFilters {
+  targetType?: string;
+  rating?: number;
+  page?: number;
+  limit?: number;
+}
+
+export type AdminReviewRow = Review & {
+  reviewer: { _id: string; name: string; email: string; avatar?: string };
+  targetLabel: string | null;
+};
+
+export interface AdminReferralStats {
+  referredUserCount: number;
+  totalBonusPaid: number;
+}
+
+export interface AdminReferrerRow {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  referralCode: string;
+  referralBonusBalance: number;
+  referralBonusTotal: number;
+  referredCount: number;
+}
+
+export interface AdminAnnouncement {
+  _id: string;
+  title: string;
+  message: string;
+  targetRole: string | null;
+  sentBy: { _id: string; name: string; email: string } | null;
+  recipientCount: number;
+  createdAt: string;
 }
 
 export const adminApi = {
@@ -84,6 +170,8 @@ export const adminApi = {
 
   removeJob: (jobId: string) => api.delete(`/admin/jobs/${jobId}`).then((r) => r.data),
 
+  dismissJobReports: (jobId: string) => api.put<{ success: boolean; message: string }>(`/admin/jobs/${jobId}/dismiss-reports`).then((r) => r.data),
+
   projects: (filters: AdminModerationFilters = {}) => api.get<Paginated<Project>>("/admin/projects", { params: filters }).then((r) => r.data),
 
   toggleProjectStatus: (projectId: string) =>
@@ -91,8 +179,9 @@ export const adminApi = {
 
   removeProject: (projectId: string) => api.delete(`/admin/projects/${projectId}`).then((r) => r.data),
 
-  payments: (filters: { disputeStatus?: string; page?: number; limit?: number } = {}) =>
-    api.get<Paginated<Payment>>("/admin/payments", { params: filters }).then((r) => r.data),
+  payments: (
+    filters: { search?: string; type?: string; status?: string; disputeStatus?: string; page?: number; limit?: number } = {}
+  ) => api.get<Paginated<Payment>>("/admin/payments", { params: filters }).then((r) => r.data),
 
   resolveDispute: (paymentId: string, action: "refund" | "reject", note?: string, refundAmount?: number) =>
     api
@@ -123,23 +212,38 @@ export const adminApi = {
   updateGrievance: (grievanceId: string, action: "acknowledge" | "resolve", note?: string) =>
     api.put<{ success: boolean; data: Grievance }>(`/admin/grievances/${grievanceId}`, { action, note }).then((r) => r.data.data),
 
-  kycRequests: () =>
-    api
-      .get<{ success: boolean; data: AdminKycRequest[] }>("/admin/kyc-requests")
-      .then((r) => r.data.data),
+  kycRequests: (filters: { page?: number; limit?: number } = {}) =>
+    api.get<Paginated<AdminKycRequest>>("/admin/kyc-requests", { params: filters }).then((r) => r.data),
 
   reviewKyc: (userId: string, action: "approve" | "reject", note?: string) =>
     api.put<{ success: boolean; data: User }>(`/admin/kyc-requests/${userId}/review`, { action, note }).then((r) => r.data.data),
 
-  profileVerificationRequests: (type: ProfileVerificationType) =>
+  profileVerificationRequests: (type: ProfileVerificationType, filters: { page?: number; limit?: number } = {}) =>
     api
-      .get<{ success: boolean; data: AdminProfileVerificationRequest[] }>(`/admin/profile-verification-requests/${type}`)
-      .then((r) => r.data.data),
+      .get<Paginated<AdminProfileVerificationRequest>>(`/admin/profile-verification-requests/${type}`, { params: filters })
+      .then((r) => r.data),
 
   reviewProfileVerification: (type: ProfileVerificationType, userId: string, action: "approve" | "reject", note?: string) =>
     api
       .put<{ success: boolean; data: User }>(`/admin/profile-verification-requests/${type}/${userId}/review`, { action, note })
       .then((r) => r.data.data),
+
+  // Every verification type (kyc/face/address/bank/role) only keeps a single
+  // overwritable slot on the User document — a resubmission destroys the
+  // previous selfie/documents and rejection reason. This PDF is the one place
+  // the full history (every past attempt, approved or rejected, and why)
+  // survives — pulled from a separate VerificationAttempt audit trail.
+  downloadVerificationHistory: async (userId: string, userName: string) => {
+    const res = await api.get(`/admin/users/${userId}/verification-history.pdf`, { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `verification-history-${userName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 
   plans: () => api.get<{ success: boolean; data: Plan[] }>("/admin/plans").then((r) => r.data.data),
 
@@ -148,13 +252,50 @@ export const adminApi = {
     payload: { name?: string; priceInInr?: number; priceInInrYearly?: number; features?: string[]; maxListings?: number }
   ) => api.put<{ success: boolean; data: Plan }>(`/admin/plans/${planId}`, payload).then((r) => r.data.data),
 
+  subscriptions: (filters: AdminSubscriptionFilters = {}) =>
+    api.get<Paginated<AdminSubscriptionRow>>("/admin/subscriptions", { params: filters }).then((r) => r.data),
+
+  subscriptionStats: () =>
+    api.get<{ success: boolean; data: AdminSubscriptionStats }>("/admin/subscriptions/stats").then((r) => r.data.data),
+
+  securityEvents: (filters: AdminSecurityEventFilters = {}) =>
+    api.get<Paginated<AdminSecurityEvent>>("/admin/security-events", { params: filters }).then((r) => r.data),
+
+  reviews: (filters: AdminReviewFilters = {}) =>
+    api.get<Paginated<AdminReviewRow>>("/admin/reviews", { params: filters }).then((r) => r.data),
+
+  referralStats: () => api.get<{ success: boolean; data: AdminReferralStats }>("/admin/referrals/stats").then((r) => r.data.data),
+
+  topReferrers: (filters: { page?: number; limit?: number } = {}) =>
+    api.get<Paginated<AdminReferrerRow>>("/admin/referrals", { params: filters }).then((r) => r.data),
+
+  campaigns: (filters: AdminModerationFilters = {}) =>
+    api.get<Paginated<Campaign>>("/admin/campaigns", { params: filters }).then((r) => r.data),
+
+  toggleCampaignStatus: (campaignId: string) =>
+    api.put<{ success: boolean; status: Campaign["status"] }>(`/admin/campaigns/${campaignId}/toggle-status`).then((r) => r.data),
+
+  removeCampaign: (campaignId: string) => api.delete(`/admin/campaigns/${campaignId}`).then((r) => r.data),
+
+  // Reuses the existing public (super_admin-gated) toggle a brand can't
+  // reach themselves — see campaign.routes.js's PUT /campaigns/:id/feature.
+  toggleCampaignFeatured: (campaignId: string) =>
+    api.put<{ success: boolean; data: Campaign }>(`/campaigns/${campaignId}/feature`).then((r) => r.data.data),
+
+  sendAnnouncement: (payload: { title: string; message: string; targetRole?: string }) =>
+    api.post<{ success: boolean; data: AdminAnnouncement }>("/admin/announcements", payload).then((r) => r.data.data),
+
+  announcements: (filters: { page?: number; limit?: number } = {}) =>
+    api.get<Paginated<AdminAnnouncement>>("/admin/announcements", { params: filters }).then((r) => r.data),
+
   getSettings: () => api.get<{ success: boolean; data: PlatformSettings }>("/admin/settings").then((r) => r.data.data),
 
   updateSettings: (
     commissionPercent: number,
     phoneAuthProvider?: PhoneAuthProvider,
     allowedEmailDomains?: string[],
-    jobsEnabled?: boolean
+    jobsEnabled?: boolean,
+    disabledRoles?: string[]
   ) =>
     api
       .put<{ success: boolean; data: PlatformSettings }>("/admin/settings", {
@@ -162,13 +303,14 @@ export const adminApi = {
         phoneAuthProvider,
         allowedEmailDomains,
         jobsEnabled,
+        disabledRoles,
       })
       .then((r) => r.data.data),
 
   // Role verification lives under /roles (see backend/src/routes/roleRoutes.js),
   // not /admin — kept here anyway so every admin-only call reads from one file.
-  roleVerificationRequests: () =>
-    api.get<{ success: boolean; data: AdminRoleVerificationRequest[] }>("/roles/verification-requests").then((r) => r.data.data),
+  roleVerificationRequests: (filters: { page?: number; limit?: number } = {}) =>
+    api.get<Paginated<AdminRoleVerificationRequest>>("/roles/verification-requests", { params: filters }).then((r) => r.data),
 
   reviewRoleVerification: (userId: string, action: "approve" | "reject", note?: string) =>
     api

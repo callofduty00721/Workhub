@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { motion } from "framer-motion";
 import { Loader2, Check, X, Pencil } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,12 @@ import type { Plan, PlanRole, PlanTier } from "@/types";
 
 const TIER_LABELS: Record<PlanTier, string> = { free: "Free", pro: "Pro", enterprise: "Enterprise" };
 const TIER_ORDER: PlanTier[] = ["free", "pro", "enterprise"];
+
+const gridVariants = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
+const cardVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+};
 
 export default function AdminPlans() {
   const { data: plans, isLoading } = useQuery({ queryKey: ["admin", "plans"], queryFn: adminApi.plans });
@@ -36,12 +43,16 @@ export default function AdminPlans() {
           {Object.entries(grouped ?? {}).map(([role, rolePlans]) => (
             <div key={role}>
               <h3 className="mb-3 text-sm font-semibold text-foreground">{ROLE_LABELS[role as PlanRole] ?? role}</h3>
-              <div className="grid gap-4 lg:grid-cols-3">
+              <motion.div variants={gridVariants} initial="hidden" animate="show" className="grid gap-4 lg:grid-cols-3">
                 {TIER_ORDER.map((tier) => {
                   const plan = rolePlans.find((p) => p.tier === tier);
-                  return plan ? <PlanCard key={plan._id} plan={plan} /> : null;
+                  return plan ? (
+                    <motion.div key={plan._id} variants={cardVariants}>
+                      <PlanCard plan={plan} />
+                    </motion.div>
+                  ) : null;
                 })}
-              </div>
+              </motion.div>
             </div>
           ))}
         </div>
@@ -100,7 +111,11 @@ function PlanCard({ plan }: { plan: Plan }) {
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{TIER_LABELS[plan.tier]}</span>
           {!editing && (
-            <button type="button" onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors hover:bg-[#EFF6FF] hover:text-[#2563EB]"
+            >
               <Pencil className="h-3.5 w-3.5" />
             </button>
           )}

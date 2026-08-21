@@ -10,7 +10,7 @@ export function SaveButton({
   id,
   className,
 }: {
-  type: "job" | "project" | "service" | "freelancer" | "contest" | "influencer" | "campaign";
+  type: "job" | "project" | "service" | "freelancer" | "contest" | "influencer" | "campaign" | "investor" | "mentor" | "partner";
   id: string;
   className?: string;
 }) {
@@ -28,7 +28,13 @@ export function SaveButton({
               ? user?.savedInfluencers?.includes(id)
               : type === "campaign"
                 ? user?.savedCampaigns?.includes(id)
-                : user?.savedFreelancers?.includes(id);
+                : type === "investor"
+                  ? user?.savedInvestors?.includes(id)
+                  : type === "mentor"
+                    ? user?.savedMentors?.includes(id)
+                    : type === "partner"
+                      ? user?.savedPartners?.includes(id)
+                      : user?.savedFreelancers?.includes(id);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -44,7 +50,13 @@ export function SaveButton({
                 ? userApi.toggleSavedInfluencer(id)
                 : type === "campaign"
                   ? userApi.toggleSavedCampaign(id)
-                  : userApi.toggleSavedFreelancer(id),
+                  : type === "investor"
+                    ? userApi.toggleSavedInvestor(id)
+                    : type === "mentor"
+                      ? userApi.toggleSavedMentor(id)
+                      : type === "partner"
+                        ? userApi.toggleSavedPartner(id)
+                        : userApi.toggleSavedFreelancer(id),
     onSuccess: () => refreshUser(),
   });
 
@@ -56,12 +68,21 @@ export function SaveButton({
   // Saving an influencer is narrower still — only roles that can actually
   // hire one via a Campaign (see CAMPAIGN_HIRER_ROLES) ever see this button.
   // Saving a campaign is the influencer's own equivalent of that — bookmark
-  // one to apply to later.
+  // one to apply to later. Saving an investor/mentor/partner is open to any
+  // logged-in user not of that same role (a founder bookmarking one to reach
+  // out to later is the primary case, but nothing else in the app restricts
+  // who can browse /investors, /mentors, or /partners).
   if (!user) return null;
   if (type === "influencer") {
     if (!user.role || !CAMPAIGN_HIRER_ROLES.includes(user.role)) return null;
   } else if (type === "campaign") {
     if (user.role !== "influencer") return null;
+  } else if (type === "investor") {
+    if (user.role === "investor") return null;
+  } else if (type === "mentor") {
+    if (user.role === "mentor") return null;
+  } else if (type === "partner") {
+    if (user.role === "partner") return null;
   } else if (type !== "freelancer" && user.role !== "freelancer") {
     return null;
   }

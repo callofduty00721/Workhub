@@ -38,11 +38,11 @@ export interface Payment {
   disputeResolutionNote?: string;
   disputeRaisedAt?: string;
   disputeEscalated?: boolean;
-  service?: string;
+  service?: { _id: string; title: string } | string;
   servicePackage?: { name: PackageName; title?: string; price: number; deliveryDays: number; revisions?: number };
-  application?: string;
-  milestone?: string;
-  contest?: string;
+  application?: { _id: string; job?: { _id: string; title: string } } | string;
+  milestone?: { _id: string; title: string; amount: number; status: "pending" | "funded" | "released" } | string;
+  contest?: { _id: string; title: string } | string;
   contestEntry?: string;
   note?: string;
   orderStatus?: OrderStatus;

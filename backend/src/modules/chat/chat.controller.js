@@ -4,7 +4,9 @@ import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { notify } from "../../utils/notify.js";
 
-const MAX_ATTACHMENTS_PER_MESSAGE = 5;
+// Per-attachment count is capped in chat.validation.js's sendMessageSchema
+// (kept in sync with that file's .max(5)); this one's a cross-field sum, so
+// it stays a controller-side check.
 const MAX_COMBINED_ATTACHMENT_BYTES = 256 * 1024 * 1024;
 
 export const getMyConversations = asyncHandler(async (req, res) => {
@@ -17,7 +19,6 @@ export const getMyConversations = asyncHandler(async (req, res) => {
 
 export const getOrCreateConversation = asyncHandler(async (req, res) => {
   const { userId } = req.body;
-  if (!userId) throw new ApiError(400, "userId is required");
   if (userId === req.user._id.toString()) throw new ApiError(400, "Cannot start a conversation with yourself");
 
   let conversation = await Conversation.findOne({
@@ -56,12 +57,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not part of this conversation");
   }
 
-  const { text } = req.body;
-  const attachments = Array.isArray(req.body.attachments) ? req.body.attachments.filter((a) => a?.url) : [];
-  if (!text?.trim() && attachments.length === 0) throw new ApiError(400, "Message text or an attachment is required");
-  if (attachments.length > MAX_ATTACHMENTS_PER_MESSAGE) {
-    throw new ApiError(400, `You can attach up to ${MAX_ATTACHMENTS_PER_MESSAGE} files per message`);
-  }
+  const { text, attachments = [] } = req.body;
   const combinedBytes = attachments.reduce((sum, a) => sum + (a.size || 0), 0);
   if (combinedBytes > MAX_COMBINED_ATTACHMENT_BYTES) {
     throw new ApiError(400, "Combined attachments must be under 256MB");

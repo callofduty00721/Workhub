@@ -306,7 +306,7 @@ describe("User model validation", () => {
   // frontend/src/pages/dashboard/Explore.tsx) to pick a category and role(s)
   // rather than being defaulted into one.
   it("defaults role to null until the user picks one", () => {
-    const user = new User({ name: "Test User", email: "test@growhive.demo" });
+    const user = new User({ name: "Test User", email: "test@mahahub.demo" });
     expect(user.validateSync()).toBeUndefined();
     expect(user.role).toBeNull();
   });
@@ -318,7 +318,7 @@ describe("User model validation", () => {
   });
 
   it("rejects a role outside the known enum", () => {
-    const user = new User({ name: "Test User", email: "test@growhive.demo", role: "not_a_role" });
+    const user = new User({ name: "Test User", email: "test@mahahub.demo", role: "not_a_role" });
     expect(user.validateSync().errors.role).toBeDefined();
   });
 
@@ -330,7 +330,7 @@ describe("User model validation", () => {
   it("accepts staff as a role, with a staffPermissions array scoped to the known permission values", () => {
     const user = new User({
       name: "Support Staff",
-      email: "staff@growhive.demo",
+      email: "staff@mahahub.demo",
       role: "staff",
       staffPermissions: ["grievances", "kyc"],
     });
@@ -341,7 +341,7 @@ describe("User model validation", () => {
   it("rejects a staffPermissions value outside the known permission enum", () => {
     const user = new User({
       name: "Support Staff",
-      email: "staff@growhive.demo",
+      email: "staff@mahahub.demo",
       role: "staff",
       staffPermissions: ["withdrawals"],
     });
@@ -365,7 +365,7 @@ describe("Grievance model validation", () => {
   });
 
   it("defaults status to open", () => {
-    const grievance = new Grievance({ name: "Aditya", email: "a@growhive.demo", message: "Help" });
+    const grievance = new Grievance({ name: "Aditya", email: "a@mahahub.demo", message: "Help" });
     expect(grievance.validateSync()).toBeUndefined();
     expect(grievance.status).toBe("open");
   });
@@ -375,7 +375,7 @@ describe("Grievance model validation", () => {
   });
 
   it("rejects a status outside the known enum", () => {
-    const grievance = new Grievance({ name: "Aditya", email: "a@growhive.demo", message: "Help", status: "closed" });
+    const grievance = new Grievance({ name: "Aditya", email: "a@mahahub.demo", message: "Help", status: "closed" });
     expect(grievance.validateSync().errors.status).toBeDefined();
   });
 });

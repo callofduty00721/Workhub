@@ -13,6 +13,7 @@ export interface Contest {
   status: ContestStatus;
   entriesCount: number;
   winnerEntry?: string;
+  isDemo?: boolean;
   createdAt: string;
 }
 

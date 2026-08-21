@@ -143,6 +143,10 @@ const jobSchema = new mongoose.Schema(
     salaryMax: { type: Number, default: 0 },
     currency: { type: String, default: "INR" },
     status: { type: String, enum: ["open", "closed", "draft"], default: "open" },
+    // Set only by scripts/seed/seedDemoContent.js — lets marketplace cards
+    // show a "Demo" badge on seeded content instead of passing it off as a
+    // real listing, since the platform has no real users yet.
+    isDemo: { type: Boolean, default: false },
     applicationsCount: { type: Number, default: 0 },
     viewsCount: { type: Number, default: 0 },
 

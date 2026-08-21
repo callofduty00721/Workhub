@@ -33,9 +33,11 @@ export interface Subscription {
   plan: PlanTier;
   billingCycle: BillingCycle;
   provider: "razorpay" | "stripe";
+  providerPaymentId?: string;
   status: "pending" | "active" | "failed" | "cancelled" | "expired";
   amount: number;
   currency: string;
   startedAt?: string;
   expiresAt?: string;
+  createdAt: string;
 }

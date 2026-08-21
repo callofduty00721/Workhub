@@ -40,6 +40,15 @@ export const userApi = {
   toggleSavedCampaign: (campaignId: string) =>
     api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-campaigns/${campaignId}`).then((r) => r.data.data),
 
+  toggleSavedInvestor: (investorId: string) =>
+    api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-investors/${investorId}`).then((r) => r.data.data),
+
+  toggleSavedMentor: (mentorId: string) =>
+    api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-mentors/${mentorId}`).then((r) => r.data.data),
+
+  toggleSavedPartner: (partnerId: string) =>
+    api.put<{ success: boolean; data: { saved: boolean } }>(`/users/me/saved-partners/${partnerId}`).then((r) => r.data.data),
+
   getSavedItems: () =>
     api
       .get<{

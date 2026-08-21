@@ -51,7 +51,7 @@ export function DashboardLayout({
 
         {mobileOpen && (
           <div className="fixed inset-0 z-50 flex lg:hidden">
-            <div className="absolute inset-0 bg-ink/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+            <div className="absolute inset-0 bg-slate-950/40" onClick={() => setMobileOpen(false)} />
             <div className="relative">
               <DashboardSidebar role={role} onNavigate={() => setMobileOpen(false)} />
             </div>

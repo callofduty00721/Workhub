@@ -1,52 +1,15 @@
 import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
-import { UserCircle2, Compass, Rocket, Briefcase, Building2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { isAxiosError } from "axios";
+import { UserCircle2, Compass, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { rolesApi } from "@/api/roles";
 import { CATEGORY_LABELS, CATEGORY_ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, dashboardPathForRole } from "@/lib/roles";
+import { CATEGORY_OPTIONS, CATEGORY_STYLES } from "@/lib/categoryUI";
 import { cn } from "@/lib/utils";
 import type { RoleCategory, UserRole } from "@/types";
-
-const CATEGORY_OPTIONS: { value: RoleCategory; desc: string; icon: typeof Rocket }[] = [
-  { value: "talent", desc: "Find gigs, jobs, or grow as a creator", icon: Briefcase },
-  { value: "hiring", desc: "Hire freelancers or full-time employees", icon: Building2 },
-  { value: "startup", desc: "Build, invest in, or support startups", icon: Rocket },
-];
-
-// One accent per category — echoes the GrowHive mark (teal/emerald "Grow" +
-// orange "Hive"), plus violet for Startup Ecosystem as a third, distinct
-// identity. Scoped to just this page rather than changing --primary
-// globally (that's every button/accent app-wide, a much bigger call).
-const CATEGORY_STYLES: Record<
-  RoleCategory,
-  { iconBg: string; iconColor: string; border: string; tint: string; ring: string; gradient: string }
-> = {
-  talent: {
-    iconBg: "bg-teal-100 dark:bg-teal-500/15",
-    iconColor: "text-teal-600 dark:text-teal-400",
-    border: "border-teal-500",
-    tint: "bg-teal-50 dark:bg-teal-500/10",
-    ring: "ring-teal-500/30",
-    gradient: "from-teal-500 to-emerald-500",
-  },
-  hiring: {
-    iconBg: "bg-amber-100 dark:bg-amber-500/15",
-    iconColor: "text-amber-600 dark:text-amber-400",
-    border: "border-amber-500",
-    tint: "bg-amber-50 dark:bg-amber-500/10",
-    ring: "ring-amber-500/30",
-    gradient: "from-amber-500 to-orange-500",
-  },
-  startup: {
-    iconBg: "bg-violet-100 dark:bg-violet-500/15",
-    iconColor: "text-violet-600 dark:text-violet-400",
-    border: "border-violet-500",
-    tint: "bg-violet-50 dark:bg-violet-500/10",
-    ring: "ring-violet-500/30",
-    gradient: "from-violet-500 to-purple-500",
-  },
-};
 
 // Landing spot for a registered user who hasn't picked a role yet. Nothing
 // here is role-gated: a banner for the (role-independent) basic profile, and
@@ -60,6 +23,7 @@ export default function Explore() {
   const [category, setCategory] = useState<RoleCategory | null>(null);
   const [checked, setChecked] = useState<Set<UserRole>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const hasBasics = Boolean(user?.avatar || user?.bio || user?.location);
 
@@ -79,12 +43,15 @@ export default function Explore() {
   const handleConfirm = async () => {
     if (!category || checked.size === 0) return;
     setSubmitting(true);
+    setError(null);
     try {
       await rolesApi.selectCategory(category);
       await rolesApi.addRoles(Array.from(checked));
       await refreshUser();
       // Redirect happens automatically once user.role is set (see the
       // Navigate above) — refreshUser() re-renders this component with it.
+    } catch (err) {
+      setError(isAxiosError(err) ? err.response?.data?.message || "Something went wrong. Please try again." : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -93,16 +60,18 @@ export default function Explore() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-14">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Welcome to GrowHive, {user?.name?.split(" ")[0]}.</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome to GrowHive, {user?.name?.split(" ")[0]}.</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
           You're in — no role picked yet. Browse around, and choose what you're here to do whenever you're ready.
         </p>
       </div>
 
       {!hasBasics && (
-        <div className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+        <div className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-xs">
           <div className="flex items-center gap-3">
-            <UserCircle2 className="h-8 w-8 flex-shrink-0 text-muted-foreground" />
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+              <UserCircle2 className="h-5 w-5 text-muted-foreground" />
+            </span>
             <div>
               <p className="text-sm font-semibold text-foreground">Complete your basic profile</p>
               <p className="text-xs text-muted-foreground">A photo, location, and short bio — works no matter what role you pick.</p>
@@ -114,9 +83,9 @@ export default function Explore() {
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 via-amber-500 to-violet-500">
+      <div className="rounded-[24px] border border-border bg-card p-5 shadow-card sm:p-6">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 via-amber-500 to-violet-500 shadow-glow">
             <Compass className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -125,7 +94,7 @@ export default function Explore() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {CATEGORY_OPTIONS.map((opt) => {
             const style = CATEGORY_STYLES[opt.value];
             const active = category === opt.value;
@@ -138,66 +107,88 @@ export default function Explore() {
                   setChecked(new Set());
                 }}
                 className={cn(
-                  "flex flex-col items-start gap-2.5 rounded-lg border-2 p-3.5 text-left transition-all",
-                  active ? cn(style.border, style.tint, "ring-2", style.ring) : "border-border bg-card hover:border-border/80 hover:bg-accent/40"
+                  "group relative flex cursor-pointer flex-col items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-200",
+                  active
+                    ? cn(style.border, style.tint, "ring-2", style.ring, style.glow)
+                    : "border-border bg-card hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-md"
                 )}
               >
-                <span className={cn("flex h-9 w-9 items-center justify-center rounded-lg", active ? style.iconBg : "bg-muted")}>
-                  <opt.icon className={cn("h-4.5 w-4.5", active ? style.iconColor : "text-muted-foreground")} />
+                <span className={cn("flex h-10 w-10 items-center justify-center rounded-xl transition-colors", active ? style.iconBg : "bg-muted")}>
+                  <opt.icon className={cn("h-5 w-5", active ? style.iconColor : "text-muted-foreground")} />
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{CATEGORY_LABELS[opt.value]}</p>
-                  <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{opt.desc}</p>
                 </div>
+                {active && (
+                  <motion.span
+                    layoutId="explore-category-check"
+                    className={cn("absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br text-white", style.gradient)}
+                  >
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </motion.span>
+                )}
               </button>
             );
           })}
         </div>
 
-        {category && (
-          <div className="mt-4 space-y-2 border-t border-border/60 pt-4">
-            <p className="text-xs font-medium text-muted-foreground">Pick as many as apply:</p>
-            {CATEGORY_ROLES[category].map((role) => {
-              const style = CATEGORY_STYLES[category];
-              const active = checked.has(role);
-              return (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => toggleRole(role)}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-lg border-2 p-3 text-left transition-all",
-                    active ? cn(style.border, style.tint) : "border-border bg-card hover:bg-accent/40"
-                  )}
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{ROLE_LABELS[role]}</p>
-                    <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
-                  </div>
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[10px] text-white transition-colors",
-                      active ? cn(style.border, "bg-gradient-to-br", style.gradient) : "border-border"
-                    )}
-                  >
-                    {active ? "✓" : ""}
-                  </span>
-                </button>
-              );
-            })}
-
-            <Button
-              className={cn(
-                "mt-2 w-full bg-gradient-to-r text-white shadow-md transition-opacity hover:opacity-90",
-                CATEGORY_STYLES[category].gradient
-              )}
-              disabled={checked.size === 0 || submitting}
-              onClick={handleConfirm}
+        <AnimatePresence initial={false}>
+          {category && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="overflow-hidden"
             >
-              Continue
-            </Button>
-          </div>
-        )}
+              <div className="mt-5 space-y-2 border-t border-border/60 pt-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pick as many as apply</p>
+                {CATEGORY_ROLES[category].map((role) => {
+                  const style = CATEGORY_STYLES[category];
+                  const active = checked.has(role);
+                  return (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => toggleRole(role)}
+                      className={cn(
+                        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border-2 p-3.5 text-left transition-all duration-150",
+                        active ? cn(style.border, style.tint) : "border-border bg-card hover:border-foreground/15 hover:bg-accent/40"
+                      )}
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{ROLE_LABELS[role]}</p>
+                        <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
+                      </div>
+                      <span
+                        className={cn(
+                          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-white transition-colors",
+                          active ? cn(style.border, "bg-gradient-to-br", style.gradient) : "border-border"
+                        )}
+                      >
+                        {active && <Check className="h-3 w-3" strokeWidth={3} />}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                <Button
+                  className={cn(
+                    "mt-2 w-full bg-gradient-to-r text-white shadow-md transition-opacity hover:opacity-90",
+                    CATEGORY_STYLES[category].gradient
+                  )}
+                  disabled={checked.size === 0 || submitting}
+                  onClick={handleConfirm}
+                >
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Continue
+                </Button>
+                {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

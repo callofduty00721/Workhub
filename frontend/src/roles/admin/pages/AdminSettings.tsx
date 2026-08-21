@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { Loader2, Percent, Phone, AlertTriangle, Mail, Plus, X, Briefcase } from "lucide-react";
+import { motion } from "framer-motion";
+import { Loader2, Percent, Phone, AlertTriangle, Mail, Plus, X, Briefcase, UserX } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { adminApi } from "@/api/admin";
-import type { PhoneAuthProvider } from "@/types";
+import { ROLE_LABELS } from "@/lib/roles";
+import type { PhoneAuthProvider, UserRole } from "@/types";
+
+const fadeIn = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } } };
+const iconBox = "flex h-8 w-8 items-center justify-center rounded-lg text-[#2563EB] bg-[#EFF6FF]";
+
+// super_admin/staff have no public signup path (staff accounts are only ever
+// created by another admin via Admin > Staff) — disabling them here would be
+// a no-op, so they're left out of the picker even though the backend enum
+// technically allows them.
+const SIGNUP_ROLES = (Object.keys(ROLE_LABELS) as UserRole[]).filter((r) => r !== "super_admin" && r !== "staff");
 
 const PHONE_PROVIDER_OPTIONS: { value: PhoneAuthProvider; label: string; desc: string }[] = [
   { value: "disabled", label: "Disabled", desc: "No phone verification gate at all." },
@@ -22,6 +33,7 @@ export default function AdminSettings() {
   const [phoneAuthProvider, setPhoneAuthProvider] = useState<PhoneAuthProvider>("disabled");
   const [allowedEmailDomains, setAllowedEmailDomains] = useState<string[]>([]);
   const [domainInput, setDomainInput] = useState("");
+  const [disabledRoles, setDisabledRoles] = useState<string[]>([]);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["admin", "settings"],
@@ -33,6 +45,7 @@ export default function AdminSettings() {
       setCommissionPercent(String(settings.commissionPercent));
       setPhoneAuthProvider(settings.phoneAuthProvider);
       setAllowedEmailDomains(settings.allowedEmailDomains ?? []);
+      setDisabledRoles(settings.disabledRoles ?? []);
     }
   }, [settings]);
 
@@ -69,6 +82,19 @@ export default function AdminSettings() {
     },
   });
 
+  const disabledRolesMutation = useMutation({
+    mutationFn: (roles: string[]) => adminApi.updateSettings(settings?.commissionPercent ?? 0, undefined, undefined, undefined, roles),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["admin", "settings"], data);
+      setDisabledRoles(data.disabledRoles ?? []);
+    },
+  });
+
+  const toggleDisabledRole = (role: UserRole) => {
+    const next = disabledRoles.includes(role) ? disabledRoles.filter((r) => r !== role) : [...disabledRoles, role];
+    disabledRolesMutation.mutate(next);
+  };
+
   const addDomain = () => {
     const domain = domainInput.trim().toLowerCase().replace(/^@/, "");
     if (!domain || allowedEmailDomains.includes(domain)) return;
@@ -88,9 +114,12 @@ export default function AdminSettings() {
       {isLoading ? (
         <Skeleton className="h-56 w-full max-w-lg" />
       ) : (
+        <motion.div variants={fadeIn} initial="hidden" animate="show">
         <Card className="max-w-lg p-6">
-          <div className="flex items-center gap-2">
-            <Percent className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <span className={iconBox}>
+              <Percent className="h-4 w-4" />
+            </span>
             <h3 className="text-sm font-semibold">Platform Commission</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -139,12 +168,16 @@ export default function AdminSettings() {
             </div>
           )}
         </Card>
+        </motion.div>
       )}
 
       {!isLoading && (
+        <motion.div variants={fadeIn} initial="hidden" animate="show">
         <Card className="mt-6 max-w-lg p-6">
-          <div className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <span className={iconBox}>
+              <Phone className="h-4 w-4" />
+            </span>
             <h3 className="text-sm font-semibold">Phone Verification</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -198,12 +231,16 @@ export default function AdminSettings() {
             </p>
           )}
         </Card>
+        </motion.div>
       )}
 
       {!isLoading && (
+        <motion.div variants={fadeIn} initial="hidden" animate="show">
         <Card className="mt-6 max-w-lg p-6">
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <span className={iconBox}>
+              <Mail className="h-4 w-4" />
+            </span>
             <h3 className="text-sm font-semibold">Email Domain Allowlist</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -253,12 +290,16 @@ export default function AdminSettings() {
             </p>
           )}
         </Card>
+        </motion.div>
       )}
 
       {!isLoading && (
+        <motion.div variants={fadeIn} initial="hidden" animate="show">
         <Card className="mt-6 max-w-lg p-6">
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <span className={iconBox}>
+              <Briefcase className="h-4 w-4" />
+            </span>
             <h3 className="text-sm font-semibold">Jobs Feature</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -299,6 +340,51 @@ export default function AdminSettings() {
             </p>
           )}
         </Card>
+        </motion.div>
+      )}
+
+      {!isLoading && (
+        <motion.div variants={fadeIn} initial="hidden" animate="show">
+        <Card className="mt-6 max-w-lg p-6">
+          <div className="flex items-center gap-2.5">
+            <span className={iconBox}>
+              <UserX className="h-4 w-4" />
+            </span>
+            <h3 className="text-sm font-semibold">Disabled Roles</h3>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Blocks new sign-ups from picking a disabled role — at registration and when an existing user adds a new role. Anyone who
+            already holds a role keeps full access to it either way; this only stops it from being picked going forward.
+          </p>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {SIGNUP_ROLES.map((role) => {
+              const disabled = disabledRoles.includes(role);
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  disabled={disabledRolesMutation.isPending}
+                  onClick={() => toggleDisabledRole(role)}
+                  className={cn(
+                    "flex items-center justify-between gap-2 rounded-lg border p-2.5 text-left text-xs transition-colors disabled:opacity-50",
+                    disabled ? "border-danger/40 bg-danger/5 text-danger" : "border-border text-foreground hover:bg-accent"
+                  )}
+                >
+                  <span className="truncate">{ROLE_LABELS[role]}</span>
+                  {disabled && <span className="shrink-0 text-[10px] font-semibold uppercase">Off</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {disabledRolesMutation.isError && (
+            <p className="mt-3 text-xs text-danger">
+              {isAxiosError(disabledRolesMutation.error) ? disabledRolesMutation.error.response?.data?.message : "Something went wrong."}
+            </p>
+          )}
+        </Card>
+        </motion.div>
       )}
     </DashboardLayout>
   );

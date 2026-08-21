@@ -23,18 +23,7 @@ export const createMilestones = asyncHandler(async (req, res) => {
   if (existing > 0) throw new ApiError(400, "Milestones already exist for this application. Delete them first to redefine.");
 
   const { milestones } = req.body;
-  if (!Array.isArray(milestones) || milestones.length === 0) throw new ApiError(400, "Add at least one milestone");
-
-  const cleaned = milestones.map((m, i) => ({
-    application: application._id,
-    title: String(m.title || "").trim(),
-    amount: Number(m.amount),
-    order: i,
-  }));
-
-  if (cleaned.some((m) => !m.title || !m.amount || m.amount <= 0)) {
-    throw new ApiError(400, "Every milestone needs a title and an amount greater than 0");
-  }
+  const cleaned = milestones.map((m, i) => ({ application: application._id, title: m.title, amount: m.amount, order: i }));
 
   const total = cleaned.reduce((sum, m) => sum + m.amount, 0);
   if (application.proposedRate && total > application.proposedRate) {

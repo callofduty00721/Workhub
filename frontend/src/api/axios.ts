@@ -1,7 +1,13 @@
 import axios from "axios";
 
+// Local dev keeps the relative path — Vite's dev proxy (vite.config.ts)
+// forwards it to localhost:5000 on the same origin. In production the
+// frontend (Vercel) and backend (Railway) are on different domains, so this
+// needs to be the backend's full URL instead; VITE_API_URL supplies that.
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "/api";
+
 export const api = axios.create({
-  baseURL: "/api",
+  baseURL: API_BASE,
   withCredentials: true,
 });
 

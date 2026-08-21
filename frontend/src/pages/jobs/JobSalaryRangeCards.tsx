@@ -41,12 +41,12 @@ export function JobSalaryRangeCards({
             type="button"
             onClick={() => onSelect(isSelected ? null : { min: range.min, max: range.max })}
             className={cn(
-              "rounded-2xl border bg-card px-4 py-3.5 text-left transition-colors",
-              isSelected ? "border-brand ring-1 ring-brand" : "border-border hover:border-muted-foreground/30"
+              "rounded-2xl border bg-white px-4 py-3.5 text-left transition-colors",
+              isSelected ? "border-[#171717] ring-1 ring-[#171717]" : "border-neutral-200 hover:border-neutral-300"
             )}
           >
-            <p className="text-[18px] font-bold text-foreground">{range.label}</p>
-            <p className="mt-0.5 text-[15px] font-medium text-brand">{range.count.toLocaleString()} Jobs</p>
+            <p className="text-[18px] font-bold text-neutral-900">{range.label}</p>
+            <p className="mt-0.5 text-[15px] font-medium text-[#2563EB]">{range.count.toLocaleString()} Jobs</p>
           </button>
         );
       })}

@@ -30,12 +30,12 @@ export function JobCard({ job }: { job: Job }) {
 
   return (
     <Link to={`/jobs/${job._id}`}>
-      <Card className="flex h-full flex-col p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-hover">
+      <Card className="flex h-full flex-col p-5 transition-all hover:-translate-y-0.5 hover:shadow-card">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <Avatar className="h-11 w-11 shrink-0 rounded-lg">
               <AvatarImage src={employer?.avatar} alt={job.companyName} className="rounded-lg object-cover" />
-              <AvatarFallback className="rounded-lg text-sm font-bold">
+              <AvatarFallback className="rounded-lg bg-primary text-sm font-bold text-white">
                 {job.companyName[0]}
               </AvatarFallback>
             </Avatar>
@@ -48,8 +48,8 @@ export function JobCard({ job }: { job: Job }) {
                     this is the employer's genuine review history, not a fabricated
                     number. "—" shown honestly when they have zero reviews yet. */}
                 {!!employer?.reviewCount && (
-                  <span className="flex shrink-0 items-center gap-0.5 font-medium text-foreground/80">
-                    <Star className="h-3 w-3 fill-warning text-warning" />
+                  <span className="flex shrink-0 items-center gap-0.5 font-medium text-neutral-600">
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                     {employer.rating?.toFixed(1)} ({employer.reviewCount})
                   </span>
                 )}

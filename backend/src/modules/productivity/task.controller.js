@@ -1,4 +1,4 @@
-import Task, { TASK_TYPE_VALUES } from "./task.model.js";
+import Task from "./task.model.js";
 import { ApiError } from "../../middleware/errorHandler.js";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 
@@ -20,11 +20,8 @@ export const listMyTasks = asyncHandler(async (req, res) => {
 
 export const createTask = asyncHandler(async (req, res) => {
   const { title, dueAt, type } = req.body;
-  if (!title?.trim()) throw new ApiError(400, "Task title is required");
-  if (!dueAt) throw new ApiError(400, "Due date is required");
-  if (type && !TASK_TYPE_VALUES.includes(type)) throw new ApiError(400, "Invalid task type");
 
-  const task = await Task.create({ user: req.user._id, title: title.trim(), dueAt, type: type || "task" });
+  const task = await Task.create({ user: req.user._id, title, dueAt, type: type || "task" });
   res.status(201).json({ success: true, data: task });
 });
 

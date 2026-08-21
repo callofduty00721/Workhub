@@ -18,6 +18,13 @@ export interface RazorpayOrderResponse {
   paymentId: string;
 }
 
+export interface SubscriptionHistoryFilters {
+  page?: number;
+  limit?: number;
+}
+
+export type SubscriptionWithUser = Subscription & { user: { _id: string; name: string; email: string } };
+
 export const paymentApi = {
   createRazorpayOrder: (role: PlanRole, tier: PlanTier, billingCycle: BillingCycle = "monthly") =>
     api
@@ -82,6 +89,27 @@ export const paymentApi = {
     link.remove();
     window.URL.revokeObjectURL(url);
   },
+
+  mySubscriptions: (filters: SubscriptionHistoryFilters = {}) =>
+    api.get<Paginated<Subscription>>("/payments/subscriptions/mine", { params: filters }).then((r) => r.data),
+
+  getSubscriptionById: (id: string) =>
+    api.get<{ success: boolean; data: SubscriptionWithUser }>(`/payments/subscriptions/${id}`).then((r) => r.data.data),
+
+  downloadSubscriptionInvoice: async (subscriptionId: string) => {
+    const res = await api.get(`/payments/subscriptions/${subscriptionId}/invoice`, { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `invoice-${subscriptionId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  emailSubscriptionInvoice: (subscriptionId: string) =>
+    api.post<{ success: boolean; message: string }>(`/payments/subscriptions/${subscriptionId}/invoice/email`).then((r) => r.data),
 
   myEarnings: (filters: PaymentHistoryFilters = {}) =>
     api.get<{ success: boolean; data: EarningsSummary }>("/payments/earnings/mine", { params: filters }).then((r) => r.data.data),

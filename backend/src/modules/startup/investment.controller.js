@@ -12,15 +12,14 @@ const VERIFICATION_FEE_INR = 199;
 const REFUND_KEEP_PCT = 0.06; // platform keeps 6% (covers gateway fee + handling) on auto-refunds
 const NO_RESPONSE_REFUND_DAYS = 15;
 
-async function assertCanReportInvestment(startup, user, amount) {
+// `amount` itself is validated at the route level (investment.validation.js)
+// before any of these controllers run, so this only checks business rules.
+async function assertCanReportInvestment(startup, user) {
   if (startup.founder.toString() === user._id.toString()) {
     throw new ApiError(400, "You cannot report an investment in your own startup");
   }
   if (!user.isEmailVerified) {
     throw new ApiError(403, "Please verify your email before reporting an investment.");
-  }
-  if (!amount || amount <= 0) {
-    throw new ApiError(400, "Enter a valid investment amount");
   }
 
   const existingActive = await Investment.findOne({
@@ -36,7 +35,7 @@ async function assertCanReportInvestment(startup, user, amount) {
 export const createInvestment = asyncHandler(async (req, res) => {
   const startup = await Startup.findById(req.params.startupId);
   if (!startup) throw new ApiError(404, "Startup not found");
-  await assertCanReportInvestment(startup, req.user, req.body.amount);
+  await assertCanReportInvestment(startup, req.user);
 
   const investment = await Investment.create({
     startup: startup._id,
@@ -77,9 +76,6 @@ export const updateInvestmentStatus = asyncHandler(async (req, res) => {
   assertStartupFounder(startup, req.user, "Only the founder can confirm or decline investments");
 
   const { status } = req.body;
-  if (!["pending", "confirmed", "declined"].includes(status)) {
-    throw new ApiError(400, "Invalid status");
-  }
 
   const wasConfirmed = investment.status === "confirmed";
   const willBeConfirmed = status === "confirmed";
@@ -125,7 +121,7 @@ export const createVerificationOrder = asyncHandler(async (req, res) => {
   const order = await razorpay.orders.create({
     amount: amountInPaise,
     currency: "INR",
-    receipt: `growhive_invverify_${investment._id}_${Date.now()}`,
+    receipt: `mahahub_invverify_${investment._id}_${Date.now()}`,
   });
 
   investment.verificationOrderId = order.id;
@@ -179,13 +175,13 @@ export const createPreInvestmentVerificationOrder = asyncHandler(async (req, res
 
   const startup = await Startup.findById(req.params.startupId);
   if (!startup) throw new ApiError(404, "Startup not found");
-  await assertCanReportInvestment(startup, req.user, req.body.amount);
+  await assertCanReportInvestment(startup, req.user);
 
   const razorpay = getRazorpayClient();
   const order = await razorpay.orders.create({
     amount: VERIFICATION_FEE_INR * 100,
     currency: "INR",
-    receipt: `growhive_preinvverify_${startup._id}_${req.user._id}_${Date.now()}`,
+    receipt: `mahahub_preinvverify_${startup._id}_${req.user._id}_${Date.now()}`,
   });
 
   res.status(201).json({
@@ -201,7 +197,7 @@ export const createVerifiedInvestment = asyncHandler(async (req, res) => {
   if (!startup) throw new ApiError(404, "Startup not found");
   // Re-checked here (not just at order-creation time) in case anything changed
   // — e.g. another report was submitted — while the investor was paying.
-  await assertCanReportInvestment(startup, req.user, amount);
+  await assertCanReportInvestment(startup, req.user);
 
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
